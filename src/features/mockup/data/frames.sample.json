@@ -1,0 +1,29 @@
+{
+  "frames": [
+    {
+      "id": "iphone-15-pro",
+      "name": "iPhone 15 Pro",
+      "category": "smartphone",
+      "frameImage": "/assets/frames/iphone-15-pro.png",
+      "maskImage": "/assets/frames/iphone-15-pro-mask.png",
+      "pixelSize": { "width": 3000, "height": 3000 },
+      "screen": {
+        "kind": "rect",
+        "rect": { "x": 420, "y": 320, "width": 2160, "height": 1350, "rotation": 0 }
+      },
+      "aspectSupport": ["9:16", "1:1", "16:9"]
+    },
+    {
+      "id": "macbook-pro-14",
+      "name": "MacBook Pro 14",
+      "category": "laptop",
+      "frameImage": "/assets/frames/macbook-pro-14.png",
+      "pixelSize": { "width": 4000, "height": 2600 },
+      "screen": {
+        "kind": "rect",
+        "rect": { "x": 250, "y": 300, "width": 3500, "height": 2200, "rotation": 0 }
+      },
+      "aspectSupport": ["16:9", "1:1"]
+    }
+  ]
+}

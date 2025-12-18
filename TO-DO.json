@@ -1,0 +1,1 @@
+[{"id":"TASK-1","content":"重複画像（jpg/png vs webp）を特定し、webp以外を削除","status":"completed","priority":"high"},{"id":"TASK-2","content":"フィルタ機能の現状調査（ファイル名解析ロジックを確認）","status":"completed","priority":"high"},{"id":"TASK-3","content":"誤配置ファイルを正しいフォルダに移動＆メタデータ再生成","status":"completed","priority":"high"},{"id":"TASK-4","content":"npm run buildでビルド確認","status":"completed","priority":"high"}]

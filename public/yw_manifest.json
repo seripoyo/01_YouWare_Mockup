@@ -1,0 +1,11 @@
+{
+  "project_type": "react",
+  "ai_config": {
+    "image_editor": {
+      "model": "nano-banana",
+      "size": "1024x1024",
+      "response_format": "b64_json",
+      "prompt_template": "Remove all text, typography, and logos from the device mockup frame while preserving edges, bezels, reflections, and non-text dark elements. Inpaint removed areas to match surrounding background cleanly."
+    }
+  }
+}
