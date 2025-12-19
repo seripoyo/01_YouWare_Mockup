@@ -855,7 +855,15 @@ export default function MultiDeviceMockup({ initialMockup }: MultiDeviceMockupPr
         hasHardMaskUrl: !!region.hardMaskUrl,
         hasImageNatural: !!region.imageNatural,
         hasRect: !!region.rect,
-        imageUrl: imageUrl
+        imageUrl: imageUrl,
+        // デバッグ用に詳細情報を追加
+        rectDetails: region.rect ? {
+          xPct: region.rect.xPct.toFixed(3),
+          yPct: region.rect.yPct.toFixed(3),
+          wPct: region.rect.wPct.toFixed(3),
+          hPct: region.rect.hPct.toFixed(3)
+        } : null,
+        isActive: region.isActive
       });
 
       (async () => {
@@ -874,6 +882,13 @@ export default function MultiDeviceMockup({ initialMockup }: MultiDeviceMockupPr
         // lastMasksRefが空の場合でも、region.rectとframeNaturalがあれば処理を続行
         if (!region.hardMaskUrl || !imageUrl || !region.imageNatural || !region.rect || !frameNatural) {
           console.log(`❌ Device ${region.deviceIndex}: Missing prerequisites. Skipping.`);
+          console.log(`   Missing: ${[
+            !region.hardMaskUrl ? 'hardMaskUrl' : null,
+            !imageUrl ? 'imageUrl' : null,
+            !region.imageNatural ? 'imageNatural' : null,
+            !region.rect ? 'rect' : null,
+            !frameNatural ? 'frameNatural' : null
+          ].filter(Boolean).join(', ')}`);
           if (region.compositeUrl) {
             setDeviceRegions(prev => prev.map((r, idx) =>
               idx === deviceIndex ? { ...r, compositeUrl: null } : r
@@ -1185,7 +1200,7 @@ export default function MultiDeviceMockup({ initialMockup }: MultiDeviceMockupPr
           try {
             rotationAngle = determineDeviceOrientation(
               deviceDetectionResult.type,
-              maskDataForAnalysis,
+              undefined,  // maskDataはオプショナル
               region.rect,
               region.imageNatural ?? undefined
             );

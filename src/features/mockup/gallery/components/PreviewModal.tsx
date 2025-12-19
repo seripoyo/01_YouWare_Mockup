@@ -1202,76 +1202,27 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
             rotation = 0; // No rotation for partial regions
           } else {
             // Calculate dimensions from corners
+            // corners: [topLeft, topRight, bottomRight, bottomLeft] (時計回り、minAreaRectで並び替え済み)
             const corners = region.corners;
-            const edge01 = Math.sqrt((corners[1].x - corners[0].x) ** 2 + (corners[1].y - corners[0].y) ** 2);
-            const edge12 = Math.sqrt((corners[2].x - corners[1].x) ** 2 + (corners[2].y - corners[1].y) ** 2);
-            
-            // Determine which edge is width vs height based on aspect ratio
-            // Laptops are typically landscape (wider), smartphones are portrait (taller)
-            const isLaptopDevice = region.isLandscape || region.deviceType === 'laptop';
-            
-            if (isLaptopDevice) {
-              // Laptop: For cover mode, we need to use the ACTUAL bounding box of the clipping area
-              // The screen is a tilted quadrilateral, so we need to fill its bounding box
-              const oc = region.originalCorners;
-              const minX = Math.min(oc[0].x, oc[1].x, oc[2].x, oc[3].x);
-              const maxX = Math.max(oc[0].x, oc[1].x, oc[2].x, oc[3].x);
-              const minY = Math.min(oc[0].y, oc[1].y, oc[2].y, oc[3].y);
-              const maxY = Math.max(oc[0].y, oc[1].y, oc[2].y, oc[3].y);
-              
-              // Use the bounding box dimensions for scaling to ensure complete coverage
-              screenW = maxX - minX;
-              screenH = maxY - minY;
-              
-              // Center is the center of the bounding box (not the quadrilateral center)
-              centerX = (minX + maxX) / 2;
-              centerY = (minY + maxY) / 2;
-            } else {
-              // Smartphone (portrait): width is shorter, height is longer
-              screenW = Math.min(edge01, edge12);
-              screenH = Math.max(edge01, edge12);
-              
-              centerX = (corners[0].x + corners[1].x + corners[2].x + corners[3].x) / 4;
-              centerY = (corners[0].y + corners[1].y + corners[2].y + corners[3].y) / 4;
-            }
-            
-            // IMPORTANT: Laptop screens should NOT rotate the user image
-            // Laptops display content in the same orientation as the original image
-            // Only smartphones/tablets need rotation to match device orientation
-            if (isLaptopDevice) {
-              // Laptop: NO rotation - the image should be displayed as-is
-              rotation = 0;
-            } else {
-              // Smartphone/tablet: Apply rotation to match device tilt
-              // The rotation value represents the angle to rotate the image so it aligns
-              // with the tilted device screen
-              // Calculate rotation directly from the device's long edge direction
-              const isEdge01Longer = edge01 < edge12; // edge12 is longer (vertical for portrait)
-              let deviceAngle: number;
-              
-              if (isEdge01Longer) {
-                // edge01 is shorter (width direction), edge12 is longer (height direction)
-                // Calculate angle from the "height" edge direction
-                const dx = corners[2].x - corners[1].x;
-                const dy = corners[2].y - corners[1].y;
-                deviceAngle = Math.atan2(dy, dx);
-              } else {
-                // edge12 is shorter (height direction), edge01 is longer (width direction)
-                const dx = corners[1].x - corners[0].x;
-                const dy = corners[1].y - corners[0].y;
-                deviceAngle = Math.atan2(dy, dx) + Math.PI / 2;
-              }
-              
-              // The device angle represents the direction of the device's "up" vector
-              // For a perfectly vertical device, this would be -PI/2 (pointing up in screen coords)
-              // We need to rotate the image so that the TOP of the image aligns with the
-              // physical TOP of the smartphone (where the bezel/notch is)
-              // 
-              // IMPORTANT: Smartphones have their physical top at the NARROWER bezel end
-              // The narrower bezel/notch area indicates the TOP of the device
-              // We need to flip the rotation by 180 degrees to match this convention
-              rotation = deviceAngle - (-Math.PI / 2) + Math.PI; // Add PI to flip orientation
-            }
+
+            // ガイドの辺の長さを計算
+            const edge01 = Math.sqrt((corners[1].x - corners[0].x) ** 2 + (corners[1].y - corners[0].y) ** 2); // 上辺 (幅)
+            const edge12 = Math.sqrt((corners[2].x - corners[1].x) ** 2 + (corners[2].y - corners[1].y) ** 2); // 右辺 (高さ)
+
+            // ガイドの中心を計算
+            centerX = (corners[0].x + corners[1].x + corners[2].x + corners[3].x) / 4;
+            centerY = (corners[0].y + corners[1].y + corners[2].y + corners[3].y) / 4;
+
+            // region.rotationを使用（minAreaRectで計算された「正立」にするための回転角度）
+            // これはデバイスの向きに基づいて画像を正しく配置するための角度
+            rotation = region.rotation;
+
+            // ガイドの幅と高さ（辺の長さベース）
+            // minAreaRectでは top-left から時計回りに並べ替えられるため:
+            // - edge01 (corner[0]→corner[1]) は「上辺」= 幅
+            // - edge12 (corner[1]→corner[2]) は「右辺」= 高さ
+            screenW = edge01;
+            screenH = edge12;
           }
           
           // Calculate scale based on fit mode - preserve image aspect ratio
@@ -1298,13 +1249,13 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
 
           // Use Canvas clip() for precise clipping
           ctx.save();
-          
+
           if (region.isPartialRegion) {
             // For partial regions, use pixel mask-based clipping via path from contour
             // Create path from the mask boundary
             const { x: rx, y: ry, width: rw, height: rh } = region.originalRect;
             const mask = region.originalMask;
-            
+
             // Build clipping path by scanning mask edges
             ctx.beginPath();
             // Use a simpler approach: draw a filled path covering masked area
@@ -1324,22 +1275,88 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
               }
             }
             ctx.clip();
+
+            // Draw user image (no rotation for partial regions)
+            ctx.translate(centerX, centerY);
+            ctx.drawImage(userImg, 0, 0, imgW, imgH, -drawW / 2, -drawH / 2, drawW, drawH);
           } else {
             // For full quadrilateral regions, use corners path
+            // 重要: 編集後の頂点を使用（originalCornersではなくcorners）
             ctx.beginPath();
-            const oc = region.originalCorners;
-            ctx.moveTo(oc[0].x, oc[0].y);
-            ctx.lineTo(oc[1].x, oc[1].y);
-            ctx.lineTo(oc[2].x, oc[2].y);
-            ctx.lineTo(oc[3].x, oc[3].y);
+            const clipCorners = region.corners;
+            ctx.moveTo(clipCorners[0].x, clipCorners[0].y);
+            ctx.lineTo(clipCorners[1].x, clipCorners[1].y);
+            ctx.lineTo(clipCorners[2].x, clipCorners[2].y);
+            ctx.lineTo(clipCorners[3].x, clipCorners[3].y);
             ctx.closePath();
             ctx.clip();
+
+            // 画像をガイドの形に沿って描画
+            // Canvas 2Dは透視変換をサポートしないため、アフィン変換で近似
+            //
+            // ガイドの上辺ベクトルと右辺ベクトルを使用して変換行列を構築
+            const corners = region.corners;
+
+            // ガイドの上辺と右辺のベクトル
+            const topEdgeX = corners[1].x - corners[0].x;
+            const topEdgeY = corners[1].y - corners[0].y;
+            const rightEdgeX = corners[2].x - corners[1].x;
+            const rightEdgeY = corners[2].y - corners[1].y;
+
+            // 上辺と右辺の長さ
+            const topEdgeLen = Math.sqrt(topEdgeX * topEdgeX + topEdgeY * topEdgeY);
+            const rightEdgeLen = Math.sqrt(rightEdgeX * rightEdgeX + rightEdgeY * rightEdgeY);
+
+            // 画像のスケールファクターを計算
+            // contain: 画像全体がガイド内に収まるようにスケール
+            // cover: ガイド全体を覆うようにスケール
+            const scaleX = topEdgeLen / drawW;
+            const scaleY = rightEdgeLen / drawH;
+
+            // 変換行列を設定
+            // [a, b, c, d, e, f] = [scaleX * cos, scaleX * sin, scaleY * (-sin), scaleY * cos, tx, ty]
+            // ここで、上辺の方向が画像のX軸、右辺の方向が画像のY軸になるように変換
+
+            // 単位ベクトル
+            const ux = topEdgeX / topEdgeLen;
+            const uy = topEdgeY / topEdgeLen;
+            const vx = rightEdgeX / rightEdgeLen;
+            const vy = rightEdgeY / rightEdgeLen;
+
+            // 変換行列: 画像座標 -> キャンバス座標
+            // 画像の (0,0) がガイドの左上 + オフセット
+            // 画像の (1,0) 方向が上辺方向
+            // 画像の (0,1) 方向が右辺方向
+
+            // containの場合のオフセット計算（中央配置）
+            let offsetX = 0;
+            let offsetY = 0;
+            if (fitMode === 'contain') {
+              // 描画サイズとガイドサイズの差分
+              const widthDiff = topEdgeLen - drawW * scaleX;
+              const heightDiff = rightEdgeLen - drawH * scaleY;
+              // 中央配置のためのオフセット（ガイド座標系で）
+              offsetX = widthDiff / 2;
+              offsetY = heightDiff / 2;
+            }
+
+            // 描画開始点（ガイドの左上からオフセット）
+            const startX = corners[0].x + ux * offsetX + vx * offsetY;
+            const startY = corners[0].y + uy * offsetX + vy * offsetY;
+
+            // setTransformで変換行列を設定
+            // a = ux * (drawW / imgW), b = uy * (drawW / imgW)
+            // c = vx * (drawH / imgH), d = vy * (drawH / imgH)
+            // e = startX, f = startY
+            const a = ux * (drawW / imgW);
+            const b = uy * (drawW / imgW);
+            const c = vx * (drawH / imgH);
+            const d = vy * (drawH / imgH);
+
+            ctx.setTransform(a, b, c, d, startX, startY);
+            ctx.drawImage(userImg, 0, 0, imgW, imgH, 0, 0, imgW, imgH);
+            ctx.setTransform(1, 0, 0, 1, 0, 0); // リセット
           }
-          
-          // Draw user image with transformation at the center
-          ctx.translate(centerX, centerY);
-          ctx.rotate(rotation);
-          ctx.drawImage(userImg, 0, 0, imgW, imgH, -drawW / 2, -drawH / 2, drawW, drawH);
           
           ctx.restore();
 
@@ -1393,12 +1410,14 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
     if (!frameImageData || !frameNatural) return;
 
     // 白エリアを検出（ログ付き）
+    // 傾いたデバイスや角丸画面に対応するため、閾値を緩和
     const { regions, log } = detectDeviceScreensWithLog(frameImageData, {
       luminanceThreshold: 0.90,
       minAreaRatio: 0.005,
-      minRectangularity: 0.65,
-      minBezelScore: 0.4,
+      minRectangularity: 0.35,  // 0.65→0.35: 傾いたデバイス(sp_1x1_023_pink等)に対応
+      minBezelScore: 0.20,      // 0.4→0.20: 画像端のデバイスや傾いたベゼルに対応
       bezelWidth: 15,
+      minBezelEdges: 1,         // 2→1: 片側のみベゼルが見えるケースに対応
     });
 
     setDetectedScreenRegions(regions);
@@ -1444,7 +1463,13 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
     const url = compositeUrl || item.publicPath;
     const link = document.createElement("a");
     link.href = url;
-    link.download = compositeUrl ? `edited_${item.originalFilename}` : item.originalFilename;
+    // compositeUrlはPNG形式なので、拡張子を.pngに変更
+    if (compositeUrl) {
+      const baseName = item.originalFilename.replace(/\.[^/.]+$/, '');
+      link.download = `edited_${baseName}.png`;
+    } else {
+      link.download = item.originalFilename;
+    }
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1452,9 +1477,28 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(window.location.origin + item.publicPath);
+      // 編集済み画像がある場合は画像をクリップボードにコピー
+      if (compositeUrl) {
+        const response = await fetch(compositeUrl);
+        const blob = await response.blob();
+        // PNG形式でコピー
+        const pngBlob = new Blob([blob], { type: 'image/png' });
+        await navigator.clipboard.write([
+          new ClipboardItem({ 'image/png': pngBlob })
+        ]);
+        console.log('編集済み画像をクリップボードにコピーしました');
+      } else {
+        // 編集済み画像がない場合はURLをコピー
+        await navigator.clipboard.writeText(window.location.origin + item.publicPath);
+      }
     } catch (err) {
       console.error("Failed to copy:", err);
+      // フォールバック：URLをコピー
+      try {
+        await navigator.clipboard.writeText(window.location.origin + item.publicPath);
+      } catch (fallbackErr) {
+        console.error("Fallback copy also failed:", fallbackErr);
+      }
     }
   };
 
@@ -1916,7 +1960,7 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
                 className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 rounded-xl font-medium text-sm transition-colors"
               >
                 <span className="material-icons text-lg">content_copy</span>
-                コピー
+                {compositeUrl ? "画像コピー" : "URLコピー"}
               </button>
               <button
                 onClick={handleShare}

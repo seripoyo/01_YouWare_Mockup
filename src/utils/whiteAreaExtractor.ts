@@ -52,11 +52,11 @@ export interface DetectionOptions {
 const DEFAULT_OPTIONS: Required<DetectionOptions> = {
   luminanceThreshold: 0.90,
   minAreaRatio: 0.005,
-  minRectangularity: 0.40,  // 0.65→0.40: 傾いたデバイスや角丸画面に対応
-  minBezelScore: 0.25,      // 0.4→0.25: 画像端のデバイスに対応
+  minRectangularity: 0.35,  // 0.65→0.35: 傾いたデバイスや角丸画面に対応（sp_1x1_023_pink等）
+  minBezelScore: 0.20,      // 0.4→0.20: 画像端のデバイスや傾いたベゼルに対応
   bezelWidth: 15,
   darkThreshold: 0.25,
-  minBezelEdges: 2,         // 3→2: 片側配置のデバイスに対応
+  minBezelEdges: 1,         // 3→1: 片側のみベゼルが見えるケースに対応
 };
 
 /**
@@ -665,9 +665,9 @@ export function detectDeviceScreensWithLog(
     }
     afterBezelScoreFilter++;
 
-    // 4辺のうち指定数以上がベゼルを持つかチェック
+    // 4辺のうち指定数以上がベゼルを持つかチェック（閾値0.15: detectDeviceScreensと同一）
     const edgesWithBezel = [bezelEdges.top, bezelEdges.bottom, bezelEdges.left, bezelEdges.right]
-      .filter(score => score > 0.3).length;
+      .filter(score => score > 0.15).length;
 
     if (edgesWithBezel < opts.minBezelEdges) {
       log.filteredOutReasons.push({
