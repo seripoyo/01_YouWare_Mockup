@@ -3,6 +3,7 @@ import type { MockupGalleryItem } from "../types";
 import type { DeviceCategory } from "../../types/frame";
 import { detectDeviceScreensWithLog, fillWhiteAreasWithColors, formatDetectionLogForCopy, DEVICE_FILL_COLORS } from "../../../../utils/whiteAreaExtractor";
 import type { ScreenRegion as ExtractorScreenRegion, DetectionLog } from "../../../../utils/whiteAreaExtractor";
+import { drawPerspectiveImage, type Point as PerspectivePoint } from "../../../../utils/perspectiveTransform";
 
 interface PreviewModalProps {
   item: MockupGalleryItem | null;
@@ -1291,160 +1292,146 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
             ctx.closePath();
             ctx.clip();
 
-            // 画像をガイドの形に沿って描画
-            // ステップ1: ガイドの4辺のベクトルと長さを計算
+            // ========== 透視変換による画像描画 ==========
+            // 画像の4隅をガイドの4隅に正確にマッピング
             const corners = region.corners;
 
-            // ========== デバッグ情報 ==========
-            console.log('=== ガイドライン変換デバッグ ===');
-            console.log('corners座標:');
+            // デバッグ情報
+            console.log('=== 透視変換デバッグ ===');
+            console.log('ガイドcorners座標:');
             corners.forEach((c, i) => {
               console.log(`  corner[${i}]: (${c.x.toFixed(1)}, ${c.y.toFixed(1)})`);
             });
 
-            // 隣接する2辺のベクトルを計算
-            // edge01: corners[0] → corners[1]
-            // edge12: corners[1] → corners[2]
-            const edge01 = {
-              dx: corners[1].x - corners[0].x,
-              dy: corners[1].y - corners[0].y,
-              length: 0,
-              angle: 0
-            };
-            const edge12 = {
-              dx: corners[2].x - corners[1].x,
-              dy: corners[2].y - corners[1].y,
-              length: 0,
-              angle: 0
-            };
+            // ステップ1: cornersの順序を [左上, 右上, 右下, 左下] に並べ替え
+            // 現在のcornersは検出順なので、座標に基づいて並べ替える必要がある
+            const sortedCorners = [...corners];
 
-            edge01.length = Math.sqrt(edge01.dx * edge01.dx + edge01.dy * edge01.dy);
-            edge01.angle = Math.atan2(edge01.dy, edge01.dx);
-            edge12.length = Math.sqrt(edge12.dx * edge12.dx + edge12.dy * edge12.dy);
-            edge12.angle = Math.atan2(edge12.dy, edge12.dx);
+            // 中心座標を計算
+            const centerX = corners.reduce((sum, c) => sum + c.x, 0) / 4;
+            const centerY = corners.reduce((sum, c) => sum + c.y, 0) / 4;
 
-            console.log('edge01 (corner0→1):', {
-              dx: edge01.dx.toFixed(1),
-              dy: edge01.dy.toFixed(1),
-              length: edge01.length.toFixed(1),
-              angle_rad: edge01.angle.toFixed(3),
-              angle_deg: (edge01.angle * 180 / Math.PI).toFixed(1)
-            });
-            console.log('edge12 (corner1→2):', {
-              dx: edge12.dx.toFixed(1),
-              dy: edge12.dy.toFixed(1),
-              length: edge12.length.toFixed(1),
-              angle_rad: edge12.angle.toFixed(3),
-              angle_deg: (edge12.angle * 180 / Math.PI).toFixed(1)
-            });
+            // 各コーナーを中心からの角度でソート
+            // 左上 = 角度が -180° ~ -90° の範囲（第3象限寄り）
+            // 右上 = 角度が -90° ~ 0° の範囲（第4象限）
+            // 右下 = 角度が 0° ~ 90° の範囲（第1象限）
+            // 左下 = 角度が 90° ~ 180° の範囲（第2象限）
+            const cornersWithAngle = corners.map((c, i) => ({
+              point: c,
+              index: i,
+              angle: Math.atan2(c.y - centerY, c.x - centerX)
+            }));
 
-            // ステップ2: エッジの角度に基づいて幅・高さを決定
-            // 水平に近いエッジを「幅」、垂直に近いエッジを「高さ」として選択
-            // これによりラップトップ（横長）とスマートフォン（縦長）の両方に対応
-            let widthEdge: typeof edge01;
-            let heightEdge: typeof edge01;
+            // 角度でソート（-PI から PI）
+            cornersWithAngle.sort((a, b) => a.angle - b.angle);
 
-            // 各エッジの角度を-π/2〜π/2の範囲に正規化して「水平からの偏差」を計算
-            const normalizeAngle = (angle: number): number => {
-              // 角度を0〜πの範囲に正規化
-              let normalized = angle % Math.PI;
-              if (normalized < 0) normalized += Math.PI;
-              // 水平（0°または180°）からの偏差を計算（0〜π/2の範囲）
-              return Math.min(normalized, Math.PI - normalized);
-            };
+            // ソート後の順序: [左, 左下, 右下, 右上] または [左上, 左下, 右下, 右上]
+            // 実際には角度の開始点によって変わるので、Y座標が小さい2点を「上」とする
+            const topTwo = [...cornersWithAngle].sort((a, b) => a.point.y - b.point.y).slice(0, 2);
+            const bottomTwo = [...cornersWithAngle].sort((a, b) => a.point.y - b.point.y).slice(2, 4);
 
-            const edge01HorizDev = normalizeAngle(edge01.angle); // 水平からの偏差
-            const edge12HorizDev = normalizeAngle(edge12.angle); // 水平からの偏差
+            // 上の2点のうちX座標が小さい方が左上
+            topTwo.sort((a, b) => a.point.x - b.point.x);
+            const topLeft = topTwo[0].point;
+            const topRight = topTwo[1].point;
 
-            console.log('エッジ角度分析:');
-            console.log(`  edge01: 角度=${(edge01.angle * 180 / Math.PI).toFixed(1)}°, 水平偏差=${(edge01HorizDev * 180 / Math.PI).toFixed(1)}°`);
-            console.log(`  edge12: 角度=${(edge12.angle * 180 / Math.PI).toFixed(1)}°, 水平偏差=${(edge12HorizDev * 180 / Math.PI).toFixed(1)}°`);
+            // 下の2点のうちX座標が大きい方が右下
+            bottomTwo.sort((a, b) => a.point.x - b.point.x);
+            const bottomLeft = bottomTwo[0].point;
+            const bottomRight = bottomTwo[1].point;
 
-            // 水平に近い方（水平偏差が小さい方）を幅として選択
-            if (edge01HorizDev <= edge12HorizDev) {
-              widthEdge = edge01;
-              heightEdge = edge12;
-              console.log('選択結果: edge01(より水平)を幅、edge12を高さとして選択');
-            } else {
-              widthEdge = edge12;
-              heightEdge = edge01;
-              console.log('選択結果: edge12(より水平)を幅、edge01を高さとして選択');
-            }
+            // drawPerspectiveImage が期待する順序: [左上, 右上, 右下, 左下]
+            const dstCorners: [PerspectivePoint, PerspectivePoint, PerspectivePoint, PerspectivePoint] = [
+              topLeft,
+              topRight,
+              bottomRight,
+              bottomLeft
+            ];
 
-            const guideWidth = widthEdge.length;
-            const guideHeight = heightEdge.length;
+            console.log('並べ替え後のdstCorners:');
+            console.log(`  左上: (${topLeft.x.toFixed(1)}, ${topLeft.y.toFixed(1)})`);
+            console.log(`  右上: (${topRight.x.toFixed(1)}, ${topRight.y.toFixed(1)})`);
+            console.log(`  右下: (${bottomRight.x.toFixed(1)}, ${bottomRight.y.toFixed(1)})`);
+            console.log(`  左下: (${bottomLeft.x.toFixed(1)}, ${bottomLeft.y.toFixed(1)})`);
 
-            // ステップ3: 回転角度を決定
-            // 台形のガイドではedge01とedge12が直交しない場合がある
-            // heightEdge（高さ方向）を基準にして、その方向から90°引いた方向を画像のX軸とする
-            // これにより画像のY軸がheightEdgeに平行になる
-            const rotationAngle = heightEdge.angle - Math.PI / 2;
+            // ステップ2: ガイドのサイズを計算（上辺と左辺の長さ）
+            const guideTopWidth = Math.sqrt(
+              Math.pow(topRight.x - topLeft.x, 2) +
+              Math.pow(topRight.y - topLeft.y, 2)
+            );
+            const guideLeftHeight = Math.sqrt(
+              Math.pow(bottomLeft.x - topLeft.x, 2) +
+              Math.pow(bottomLeft.y - topLeft.y, 2)
+            );
+            const guideAspectRatio = guideTopWidth / guideLeftHeight;
+            const imgAspectRatio = imgW / imgH;
 
-            console.log('変換パラメータ:');
-            console.log(`  guideWidth: ${guideWidth.toFixed(1)}`);
-            console.log(`  guideHeight: ${guideHeight.toFixed(1)}`);
-            console.log(`  widthEdge角度: ${widthEdge.angle.toFixed(3)} rad = ${(widthEdge.angle * 180 / Math.PI).toFixed(1)} deg`);
-            console.log(`  heightEdge角度: ${heightEdge.angle.toFixed(3)} rad = ${(heightEdge.angle * 180 / Math.PI).toFixed(1)} deg`);
-            console.log(`  rotationAngle (heightEdge-90°): ${rotationAngle.toFixed(3)} rad = ${(rotationAngle * 180 / Math.PI).toFixed(1)} deg`);
-
-            // ステップ4: 画像のスケールを計算
-            const scaleToFitWidth = guideWidth / imgW;
-            const scaleToFitHeight = guideHeight / imgH;
-
-            let imageScale: number;
-            if (fitMode === 'cover') {
-              imageScale = Math.max(scaleToFitWidth, scaleToFitHeight);
-            } else {
-              imageScale = Math.min(scaleToFitWidth, scaleToFitHeight);
-            }
-
+            console.log('サイズ情報:');
+            console.log(`  ガイド上辺: ${guideTopWidth.toFixed(1)}, ガイド左辺: ${guideLeftHeight.toFixed(1)}`);
+            console.log(`  ガイドアスペクト比: ${guideAspectRatio.toFixed(3)}`);
+            console.log(`  画像サイズ: ${imgW}x${imgH}, アスペクト比: ${imgAspectRatio.toFixed(3)}`);
             console.log(`  fitMode: ${fitMode}`);
-            console.log(`  scaleToFitWidth: ${scaleToFitWidth.toFixed(4)}, scaleToFitHeight: ${scaleToFitHeight.toFixed(4)}`);
-            console.log(`  imageScale: ${imageScale.toFixed(4)}`);
 
-            // スケール後の画像サイズ
-            const scaledImgW = imgW * imageScale;
-            const scaledImgH = imgH * imageScale;
+            // ステップ3: ソース画像の4隅を計算（contain/coverに応じて）
+            let srcCorners: [PerspectivePoint, PerspectivePoint, PerspectivePoint, PerspectivePoint];
 
-            // ステップ5: 回転行列を構築
-            const cosA = Math.cos(rotationAngle);
-            const sinA = Math.sin(rotationAngle);
+            if (fitMode === 'cover') {
+              // cover: ガイドを完全に覆う（画像の一部がクリップされる）
+              // 画像のアスペクト比をガイドに合わせてクロップ
+              let cropW = imgW;
+              let cropH = imgH;
+              let cropX = 0;
+              let cropY = 0;
 
-            // 画像のX軸: 幅方向（rotationAngle の方向）
-            // 画像のY軸: 高さ方向（rotationAngle + 90度 の方向）
-            const ux = cosA;
-            const uy = sinA;
-            const vx = -sinA;
-            const vy = cosA;
+              if (imgAspectRatio > guideAspectRatio) {
+                // 画像の方が横長 → 左右をクロップ
+                cropW = imgH * guideAspectRatio;
+                cropX = (imgW - cropW) / 2;
+              } else {
+                // 画像の方が縦長 → 上下をクロップ
+                cropH = imgW / guideAspectRatio;
+                cropY = (imgH - cropH) / 2;
+              }
 
-            console.log('回転行列:');
-            console.log(`  cos(angle)=${cosA.toFixed(4)}, sin(angle)=${sinA.toFixed(4)}`);
-            console.log(`  ux=${ux.toFixed(4)}, uy=${uy.toFixed(4)} (画像X軸方向)`);
-            console.log(`  vx=${vx.toFixed(4)}, vy=${vy.toFixed(4)} (画像Y軸方向)`);
+              srcCorners = [
+                { x: cropX, y: cropY },                    // 左上
+                { x: cropX + cropW, y: cropY },            // 右上
+                { x: cropX + cropW, y: cropY + cropH },    // 右下
+                { x: cropX, y: cropY + cropH }             // 左下
+              ];
 
-            // ステップ6: ガイドの中心を計算
-            const guideCenterX = (corners[0].x + corners[1].x + corners[2].x + corners[3].x) / 4;
-            const guideCenterY = (corners[0].y + corners[1].y + corners[2].y + corners[3].y) / 4;
+              console.log(`  cover: クロップ領域 (${cropX.toFixed(1)}, ${cropY.toFixed(1)}) - ${cropW.toFixed(1)}x${cropH.toFixed(1)}`);
+            } else {
+              // contain: 画像全体がガイド内に収まる
+              // 画像全体を使用し、ガイド内で余白ができる場合は中央配置
+              //
+              // ただし透視変換では「ガイドの形に画像を変形」するので、
+              // containの場合は画像のアスペクト比を維持しながら
+              // ガイド内に収まる最大サイズで描画する
 
-            // ステップ7: 描画開始点を計算（画像中心がガイド中心に来るように）
-            const startX = guideCenterX - (ux * scaledImgW / 2) - (vx * scaledImgH / 2);
-            const startY = guideCenterY - (uy * scaledImgW / 2) - (vy * scaledImgH / 2);
+              // 画像全体を変形してガイドにマッピング
+              // これにより画像がガイドの形に変形される
+              srcCorners = [
+                { x: 0, y: 0 },           // 左上
+                { x: imgW, y: 0 },        // 右上
+                { x: imgW, y: imgH },     // 右下
+                { x: 0, y: imgH }         // 左下
+              ];
 
-            console.log('描画位置:');
-            console.log(`  ガイド中心: (${guideCenterX.toFixed(1)}, ${guideCenterY.toFixed(1)})`);
-            console.log(`  描画開始点: (${startX.toFixed(1)}, ${startY.toFixed(1)})`);
-            console.log(`  スケール後画像サイズ: ${scaledImgW.toFixed(1)}x${scaledImgH.toFixed(1)}`);
-            console.log('=== デバッグ終了 ===');
+              console.log(`  contain: 画像全体を使用 (0, 0) - ${imgW}x${imgH}`);
+            }
 
-            // ステップ8: setTransformで変換行列を設定して描画
-            const a = ux * imageScale;
-            const b = uy * imageScale;
-            const c = vx * imageScale;
-            const d = vy * imageScale;
+            console.log('srcCorners:');
+            srcCorners.forEach((c, i) => {
+              console.log(`  src[${i}]: (${c.x.toFixed(1)}, ${c.y.toFixed(1)})`);
+            });
+            console.log('=== 透視変換デバッグ終了 ===');
 
-            ctx.setTransform(a, b, c, d, startX, startY);
-            ctx.drawImage(userImg, 0, 0, imgW, imgH, 0, 0, imgW, imgH);
-            ctx.setTransform(1, 0, 0, 1, 0, 0); // リセット
+            // ステップ4: 透視変換で画像を描画
+            // meshSize を調整してパフォーマンスと品質のバランスを取る
+            const meshSize = 16; // デフォルト値（256セル × 2三角形 = 512回の描画）
+
+            drawPerspectiveImage(ctx, userImg, srcCorners, dstCorners, meshSize);
           }
 
           ctx.restore();
@@ -1486,33 +1473,34 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
                 const corners = region.corners;
                 if (!corners) return;
 
-                // edge計算（角度も計算）
-                const edge01 = {
-                  dx: corners[1].x - corners[0].x,
-                  dy: corners[1].y - corners[0].y,
-                  length: Math.sqrt(Math.pow(corners[1].x - corners[0].x, 2) + Math.pow(corners[1].y - corners[0].y, 2)),
-                  angle: Math.atan2(corners[1].y - corners[0].y, corners[1].x - corners[0].x)
-                };
-                const edge12 = {
-                  dx: corners[2].x - corners[1].x,
-                  dy: corners[2].y - corners[1].y,
-                  length: Math.sqrt(Math.pow(corners[2].x - corners[1].x, 2) + Math.pow(corners[2].y - corners[1].y, 2)),
-                  angle: Math.atan2(corners[2].y - corners[1].y, corners[2].x - corners[1].x)
-                };
+                // 透視変換と同じロジックでコーナーを並べ替え
+                const centerX = corners.reduce((sum, c) => sum + c.x, 0) / 4;
+                const centerY = corners.reduce((sum, c) => sum + c.y, 0) / 4;
 
-                // 水平偏差を計算
-                const normalizeAngle = (angle: number): number => {
-                  let normalized = angle % Math.PI;
-                  if (normalized < 0) normalized += Math.PI;
-                  return Math.min(normalized, Math.PI - normalized);
-                };
-                const edge01HorizDev = normalizeAngle(edge01.angle);
-                const edge12HorizDev = normalizeAngle(edge12.angle);
-                const edge01IsWidth = edge01HorizDev <= edge12HorizDev;
+                const cornersWithAngle = corners.map((c, i) => ({
+                  point: c,
+                  index: i,
+                  angle: Math.atan2(c.y - centerY, c.x - centerX)
+                }));
 
-                // corners番号を描画（0=赤, 1=緑, 2=青, 3=黄）
+                const topTwo = [...cornersWithAngle].sort((a, b) => a.point.y - b.point.y).slice(0, 2);
+                const bottomTwo = [...cornersWithAngle].sort((a, b) => a.point.y - b.point.y).slice(2, 4);
+
+                topTwo.sort((a, b) => a.point.x - b.point.x);
+                const topLeft = topTwo[0].point;
+                const topRight = topTwo[1].point;
+
+                bottomTwo.sort((a, b) => a.point.x - b.point.x);
+                const bottomLeft = bottomTwo[0].point;
+                const bottomRight = bottomTwo[1].point;
+
+                // 並べ替え後のコーナーを表示
+                // TL=赤, TR=緑, BR=青, BL=黄
+                const sortedCorners = [topLeft, topRight, bottomRight, bottomLeft];
                 const debugColors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00'];
-                corners.forEach((c, i) => {
+                const debugLabels = ['TL', 'TR', 'BR', 'BL'];
+
+                sortedCorners.forEach((c, i) => {
                   ctx.beginPath();
                   ctx.arc(c.x, c.y, 25, 0, Math.PI * 2);
                   ctx.fillStyle = debugColors[i];
@@ -1521,42 +1509,48 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
                   ctx.lineWidth = 4;
                   ctx.stroke();
 
-                  ctx.font = 'bold 20px sans-serif';
+                  ctx.font = 'bold 16px sans-serif';
                   ctx.fillStyle = '#FFF';
                   ctx.textAlign = 'center';
                   ctx.textBaseline = 'middle';
-                  ctx.fillText(String(i), c.x, c.y);
+                  ctx.fillText(debugLabels[i], c.x, c.y);
                 });
 
-                // widthEdge（水平に近い=幅）をマゼンタ太線で描画
+                // 4辺を描画（透視変換の順序で）
+                // 上辺: TL→TR（マゼンタ）
                 ctx.beginPath();
-                if (edge01IsWidth) {
-                  ctx.moveTo(corners[0].x, corners[0].y);
-                  ctx.lineTo(corners[1].x, corners[1].y);
-                } else {
-                  ctx.moveTo(corners[1].x, corners[1].y);
-                  ctx.lineTo(corners[2].x, corners[2].y);
-                }
+                ctx.moveTo(topLeft.x, topLeft.y);
+                ctx.lineTo(topRight.x, topRight.y);
                 ctx.strokeStyle = '#FF00FF';
-                ctx.lineWidth = 8;
+                ctx.lineWidth = 6;
                 ctx.stroke();
 
-                // heightEdge（垂直に近い=高さ）をシアン点線で描画
+                // 右辺: TR→BR（オレンジ）
                 ctx.beginPath();
-                ctx.setLineDash([15, 8]);
-                if (edge01IsWidth) {
-                  ctx.moveTo(corners[1].x, corners[1].y);
-                  ctx.lineTo(corners[2].x, corners[2].y);
-                } else {
-                  ctx.moveTo(corners[0].x, corners[0].y);
-                  ctx.lineTo(corners[1].x, corners[1].y);
-                }
-                ctx.strokeStyle = '#00FFFF';
-                ctx.lineWidth = 8;
+                ctx.moveTo(topRight.x, topRight.y);
+                ctx.lineTo(bottomRight.x, bottomRight.y);
+                ctx.strokeStyle = '#FF8800';
+                ctx.lineWidth = 6;
                 ctx.stroke();
-                ctx.setLineDash([]);
+
+                // 下辺: BR→BL（シアン）
+                ctx.beginPath();
+                ctx.moveTo(bottomRight.x, bottomRight.y);
+                ctx.lineTo(bottomLeft.x, bottomLeft.y);
+                ctx.strokeStyle = '#00FFFF';
+                ctx.lineWidth = 6;
+                ctx.stroke();
+
+                // 左辺: BL→TL（ライム）
+                ctx.beginPath();
+                ctx.moveTo(bottomLeft.x, bottomLeft.y);
+                ctx.lineTo(topLeft.x, topLeft.y);
+                ctx.strokeStyle = '#88FF00';
+                ctx.lineWidth = 6;
+                ctx.stroke();
               });
-              console.log('デバッグ可視化完了: 赤=0, 緑=1, 青=2, 黄=3, マゼンタ=幅(水平に近い), シアン=高さ(垂直に近い)');
+              console.log('デバッグ可視化完了: TL=赤, TR=緑, BR=青, BL=黄');
+              console.log('辺の色: 上辺=マゼンタ, 右辺=オレンジ, 下辺=シアン, 左辺=ライム');
             }
             // ========== デバッグ可視化終了 ==========
 
