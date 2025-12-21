@@ -545,7 +545,7 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
   const [frameNatural, setFrameNatural] = useState<{ w: number; h: number } | null>(null);
   const [compositeUrl, setCompositeUrl] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [showInstructions, setShowInstructions] = useState(true);
+  const [showInstructions, setShowInstructions] = useState(false); // Start hidden, show only if auto-detection fails
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [dragOverRegionIndex, setDragOverRegionIndex] = useState<number | null>(null);
   
@@ -589,7 +589,7 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
     setFrameImageData(null);
     setFrameNatural(null);
     setCompositeUrl(null);
-    setShowInstructions(true);
+    setShowInstructions(false); // Start hidden, auto-detection will show if it fails
     setIsCornerEditMode(false);
     setEditingCorners([]);
     setOriginalCorners([]);
@@ -639,6 +639,100 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
     };
     img.src = item.publicPath;
   }, [item]);
+
+  // Auto-detect white regions when frame image is loaded
+  useEffect(() => {
+    if (!frameImageData || !frameNatural || !item) return;
+    // Skip if regions are already detected
+    if (deviceRegions.length > 0) return;
+
+    setIsProcessing(true);
+
+    // Use detectDeviceScreensWithLog for automatic detection
+    const { regions } = detectDeviceScreensWithLog(frameImageData, {
+      luminanceThreshold: 0.90,
+      minAreaRatio: 0.005,
+      minRectangularity: 0.35,
+      minBezelScore: 0.20,
+      bezelWidth: 15,
+      minBezelEdges: 1,
+    });
+
+    if (regions.length === 0) {
+      setIsProcessing(false);
+      setShowInstructions(true); // Show manual detection instructions when auto-detection fails
+      return;
+    }
+
+    // Get template hints from filename
+    const templateHints = parseTemplateDeviceHints(item.originalFilename);
+
+    // Convert ScreenRegion to DeviceRegion with precise corner detection
+    const imageWidth = frameImageData.width;
+    const imageHeight = frameImageData.height;
+
+    const newDeviceRegions: DeviceRegion[] = regions.map((region, idx) => {
+      const { bounds, mask } = region;
+
+      // Create full-image-size visited mask from region-local mask
+      const visited = new Uint8Array(imageWidth * imageHeight);
+      for (let j = 0; j < bounds.height; j++) {
+        for (let i = 0; i < bounds.width; i++) {
+          if (mask[j * bounds.width + i] === 1) {
+            const globalIdx = (bounds.y + j) * imageWidth + (bounds.x + i);
+            visited[globalIdx] = 1;
+          }
+        }
+      }
+
+      // Use detectCorners for precise corner detection (follows black frame contours)
+      const minX = bounds.x;
+      const minY = bounds.y;
+      const maxX = bounds.x + bounds.width - 1;
+      const maxY = bounds.y + bounds.height - 1;
+      const { corners: preciseCorners, rotation, isPartial } = detectCorners(
+        visited, imageWidth, imageHeight, minX, minY, maxX, maxY
+      );
+
+      // Prepare region info for device type inference
+      const regionArea = bounds.width * bounds.height;
+      const allRegionsInfo = regions.map(r => ({
+        width: r.bounds.width,
+        height: r.bounds.height,
+        area: r.bounds.width * r.bounds.height
+      }));
+
+      // Infer device type
+      const { deviceType, isLandscape } = inferDeviceType(
+        { width: bounds.width, height: bounds.height, area: regionArea },
+        allRegionsInfo,
+        templateHints
+      );
+
+      return {
+        index: idx,
+        rect: { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height },
+        originalRect: { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height },
+        corners: preciseCorners.map(c => ({ x: c.x, y: c.y })),
+        originalCorners: preciseCorners.map(c => ({ x: c.x, y: c.y })),
+        rotation,
+        mask,
+        originalMask: new Uint8Array(mask),
+        userImage: null,
+        userImageNatural: null,
+        fitMode: 'cover' as const,
+        isPartialRegion: isPartial,
+        deviceType,
+        isLandscape,
+      };
+    });
+
+    setDeviceRegions(newDeviceRegions);
+    setSelectedRegionIndex(0);
+    setShowInstructions(false);
+    setIsProcessing(false);
+    // Note: drawOverlay will be called automatically by the useEffect that watches deviceRegions and selectedRegionIndex
+  }, [frameImageData, frameNatural, item]);
 
   // Close on Escape key
   useEffect(() => {
@@ -800,13 +894,11 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
     setSelectedRegionIndex(deviceRegions.length);
     setShowInstructions(false);
     setIsProcessing(false);
-
-    // Draw overlay
-    drawOverlay([...deviceRegions, newRegion]);
+    // Note: drawOverlay will be called automatically by the useEffect that watches deviceRegions and selectedRegionIndex
   }, [frameImageData, frameNatural, deviceRegions]);
 
   // Draw overlay with region highlights and corner handles
-  const drawOverlay = useCallback((regions: DeviceRegion[], editingCornersOverride?: Point[]) => {
+  const drawOverlay = useCallback((regions: DeviceRegion[], selectedIdx: number | null, editingCornersOverride?: Point[]) => {
     const overlay = overlayCanvasRef.current;
     if (!overlay || !frameNatural) return;
 
@@ -815,71 +907,431 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
 
     ctx.clearRect(0, 0, overlay.width, overlay.height);
 
+    // First pass: Draw non-selected regions with dimmed appearance
     regions.forEach((region, idx) => {
-      // Use editing corners if in edit mode and this is the selected region
-      const corners = (isCornerEditMode && idx === selectedRegionIndex && editingCornersOverride)
-        ? editingCornersOverride
-        : region.corners;
-      
-      // Draw region border as quadrilateral using the detected corners
-      ctx.strokeStyle = idx === selectedRegionIndex ? "#6366f1" : "#94a3b8";
-      ctx.lineWidth = 3;
-      
+      if (idx === selectedIdx) return; // Skip selected region in first pass
+
+      const corners = region.corners;
+
+      // Draw semi-transparent overlay for non-selected regions
+      ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
       ctx.beginPath();
       ctx.moveTo(corners[0].x, corners[0].y);
       ctx.lineTo(corners[1].x, corners[1].y);
       ctx.lineTo(corners[2].x, corners[2].y);
       ctx.lineTo(corners[3].x, corners[3].y);
       ctx.closePath();
+      ctx.fill();
+
+      // Draw region border
+      ctx.strokeStyle = "#94a3b8";
+      ctx.lineWidth = 2;
       ctx.stroke();
 
-      // Draw corner handles in edit mode
-      if (isCornerEditMode && idx === selectedRegionIndex) {
-        const handleRadius = 12;
-        corners.forEach((corner, cornerIdx) => {
-          ctx.beginPath();
-          ctx.arc(corner.x, corner.y, handleRadius, 0, Math.PI * 2);
-          
-          // Highlight dragging corner
+      // Draw region number
+      ctx.fillStyle = "#64748b";
+      ctx.font = "bold 20px sans-serif";
+      ctx.fillText(`${idx + 1}`, corners[0].x + 8, corners[0].y + 24);
+    });
+
+    // Second pass: Draw selected region with highlight
+    if (selectedIdx !== null && selectedIdx < regions.length) {
+      const region = regions[selectedIdx];
+      const corners = (isCornerEditMode && editingCornersOverride)
+        ? editingCornersOverride
+        : region.corners;
+
+      // Draw highlight fill for selected region
+      ctx.fillStyle = "rgba(99, 102, 241, 0.1)"; // indigo with low opacity
+      ctx.beginPath();
+      ctx.moveTo(corners[0].x, corners[0].y);
+      ctx.lineTo(corners[1].x, corners[1].y);
+      ctx.lineTo(corners[2].x, corners[2].y);
+      ctx.lineTo(corners[3].x, corners[3].y);
+      ctx.closePath();
+      ctx.fill();
+
+      // Draw prominent border for selected region
+      ctx.strokeStyle = "#6366f1";
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      // Draw outer glow effect
+      ctx.strokeStyle = "rgba(99, 102, 241, 0.3)";
+      ctx.lineWidth = 8;
+      ctx.stroke();
+
+      // Always draw corner handles for selected region (not just in edit mode)
+      // Use larger radius to be visible when canvas is scaled down
+      const handleRadius = isCornerEditMode ? 28 : 20;
+
+      // Different colors for each corner for better visibility
+      const cornerColors = [
+        { fill: "#ef4444", stroke: "#dc2626" }, // Red - Top-left
+        { fill: "#22c55e", stroke: "#16a34a" }, // Green - Top-right
+        { fill: "#3b82f6", stroke: "#2563eb" }, // Blue - Bottom-right
+        { fill: "#f59e0b", stroke: "#d97706" }, // Amber - Bottom-left
+      ];
+
+      corners.forEach((corner, cornerIdx) => {
+        ctx.beginPath();
+        ctx.arc(corner.x, corner.y, handleRadius, 0, Math.PI * 2);
+
+        if (isCornerEditMode) {
+          // Edit mode: larger, more prominent handles
           if (cornerIdx === draggingCornerIndex) {
-            ctx.fillStyle = "#f97316"; // orange
+            ctx.fillStyle = "#f97316"; // orange for dragging
             ctx.strokeStyle = "#ea580c";
           } else {
-            ctx.fillStyle = "#6366f1"; // indigo
-            ctx.strokeStyle = "#4338ca";
+            const colors = cornerColors[cornerIdx % 4];
+            ctx.fillStyle = colors.fill;
+            ctx.strokeStyle = colors.stroke;
           }
-          ctx.fill();
-          ctx.lineWidth = 2;
-          ctx.stroke();
-          
-          // Draw corner number
-          ctx.fillStyle = "white";
-          ctx.font = "bold 10px sans-serif";
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.fillText(`${cornerIdx + 1}`, corner.x, corner.y);
+          ctx.lineWidth = 4;
+        } else {
+          // Normal mode: different color for each corner
+          const colors = cornerColors[cornerIdx % 4];
+          ctx.fillStyle = colors.fill;
+          ctx.strokeStyle = colors.stroke;
+          ctx.lineWidth = 4;
+        }
+        ctx.fill();
+        ctx.stroke();
+
+        // Draw corner number
+        ctx.fillStyle = "white";
+        ctx.font = `bold ${isCornerEditMode ? 14 : 12}px sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(`${cornerIdx + 1}`, corner.x, corner.y);
+      });
+
+      // Reset text alignment
+      ctx.textAlign = "start";
+      ctx.textBaseline = "alphabetic";
+
+      // Draw "selected" label with device number
+      const labelText = `デバイス ${selectedIdx + 1}`;
+      const labelX = corners[0].x;
+      const labelY = corners[0].y - 12;
+
+      // Label background
+      ctx.font = "bold 14px sans-serif";
+      const textMetrics = ctx.measureText(labelText);
+      const padding = 6;
+      ctx.fillStyle = "#6366f1";
+      ctx.beginPath();
+      ctx.roundRect(labelX - padding, labelY - 14, textMetrics.width + padding * 2, 20, 4);
+      ctx.fill();
+
+      // Label text
+      ctx.fillStyle = "white";
+      ctx.fillText(labelText, labelX, labelY);
+
+      // Draw drop zone indicator if no user image is uploaded (area.jsx style - exact reproduction)
+      if (!region.userImage && !isCornerEditMode) {
+        // Calculate center of the region
+        const centerX = (corners[0].x + corners[1].x + corners[2].x + corners[3].x) / 4;
+        const centerY = (corners[0].y + corners[1].y + corners[2].y + corners[3].y) / 4;
+
+        // Calculate region dimensions
+        const edge1 = Math.sqrt(
+          Math.pow(corners[1].x - corners[0].x, 2) + Math.pow(corners[1].y - corners[0].y, 2)
+        );
+        const edge2 = Math.sqrt(
+          Math.pow(corners[2].x - corners[1].x, 2) + Math.pow(corners[2].y - corners[1].y, 2)
+        );
+        const regionWidth = Math.max(edge1, edge2);
+        const regionHeight = Math.min(edge1, edge2);
+        const minDimension = regionHeight;
+
+        // Check if this is a narrow region (smartphone portrait)
+        const isNarrow = minDimension < 120;
+
+        // Base scale from area.jsx: iconContainer is 100x80px in design
+        // We scale based on available height, targeting roughly 180px reference
+        const baseScale = Math.max(0.4, Math.min(1.8, minDimension / 200));
+        const iconScale = isNarrow ? baseScale * 0.7 : baseScale;
+
+        ctx.save();
+
+        // Colors matching area.jsx but using #4338ca (indigo) instead of white
+        const mainColor = "#4338ca";
+        const mainColorStroke = "rgba(67, 56, 202, 0.9)";
+        const mainColorLight = "rgba(67, 56, 202, 0.7)";
+        const mainColorFaint = "rgba(67, 56, 202, 0.6)";
+        const mainColorFill = "rgba(67, 56, 202, 0.15)";
+
+        // ============================================
+        // area.jsx Layout Reference:
+        // iconContainer: 100px x 80px, marginBottom: 24px
+        // - cloudIcon: 80x60px at top:0, left:10px (SVG viewBox 0 0 64 48)
+        // - arrowContainer: at top:12px, left:32px
+        //   - arrowIcon: 28x28px (SVG viewBox 0 0 24 24)
+        // - imageIcon: 40x40px at bottom:-5px, right:5px (SVG viewBox 0 0 32 32)
+        // ============================================
+
+        // Icon container dimensions (scaled from 100x80)
+        const iconContainerW = 100 * iconScale;
+        const iconContainerH = 80 * iconScale;
+        const iconContainerX = centerX - iconContainerW / 2;
+        const iconContainerY = centerY - iconContainerH / 2 - 30 * iconScale; // Shift up for text
+
+        // ============================================
+        // CLOUD ICON - area.jsx SVG viewBox 0 0 64 48
+        // Position: 80x60px at top:0, left:10px within 100x80 container
+        // ============================================
+        const cloudW = 80 * iconScale;
+        const cloudH = 60 * iconScale;
+        const cloudX = iconContainerX + 10 * iconScale;
+        const cloudY = iconContainerY;
+
+        // Scale from SVG viewBox (64x48) to our cloud size
+        const cloudScaleX = cloudW / 64;
+        const cloudScaleY = cloudH / 48;
+
+        // Transform SVG coordinates to canvas
+        const cloudToCanvas = (svgX: number, svgY: number) => ({
+          x: cloudX + svgX * cloudScaleX,
+          y: cloudY + svgY * cloudScaleY
         });
-        ctx.textAlign = "start";
-        ctx.textBaseline = "alphabetic";
-      }
 
-      // Draw region number at the top-left corner
-      if (!isCornerEditMode || idx !== selectedRegionIndex) {
-        ctx.fillStyle = idx === selectedRegionIndex ? "#6366f1" : "#64748b";
-        ctx.font = "bold 24px sans-serif";
-        ctx.fillText(`${idx + 1}`, corners[0].x + 8, corners[0].y + 28);
-      }
-    });
-  }, [frameNatural, selectedRegionIndex, isCornerEditMode, draggingCornerIndex]);
+        // Draw cloud path from area.jsx:
+        // "M52 28C52 22.4772 47.5228 18 42 18C41.6558 18 41.3145 18.0137 40.9766 18.0407
+        //  C38.8924 12.2353 33.4286 8 27 8C18.7157 8 12 14.7157 12 23C12 23.3404 12.0112 23.6782 12.0333 24.0132
+        //  C6.46891 25.1396 2 30.0471 2 36C2 42.6274 7.37258 48 14 48H50
+        //  C56.6274 48 62 42.6274 62 36C62 31.0543 58.6329 26.8822 54.0489 25.3644
+        //  C53.3749 25.1301 52.6862 24.9426 52 24.8048"
+        ctx.strokeStyle = mainColorStroke;
+        ctx.fillStyle = mainColorFill;
+        ctx.lineWidth = Math.max(2, 3 * iconScale);
+        ctx.lineCap = "round";
 
-  // Redraw overlay when selection changes or editing corners change
-  useEffect(() => {
-    if (isCornerEditMode && editingCorners.length > 0) {
-      drawOverlay(deviceRegions, editingCorners);
-    } else {
-      drawOverlay(deviceRegions);
+        ctx.beginPath();
+        // M52 28
+        let p = cloudToCanvas(52, 28);
+        ctx.moveTo(p.x, p.y);
+        // C52 22.4772 47.5228 18 42 18
+        let cp1 = cloudToCanvas(52, 22.4772);
+        let cp2 = cloudToCanvas(47.5228, 18);
+        let end = cloudToCanvas(42, 18);
+        ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
+        // C41.6558 18 41.3145 18.0137 40.9766 18.0407
+        cp1 = cloudToCanvas(41.6558, 18);
+        cp2 = cloudToCanvas(41.3145, 18.0137);
+        end = cloudToCanvas(40.9766, 18.0407);
+        ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
+        // C38.8924 12.2353 33.4286 8 27 8
+        cp1 = cloudToCanvas(38.8924, 12.2353);
+        cp2 = cloudToCanvas(33.4286, 8);
+        end = cloudToCanvas(27, 8);
+        ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
+        // C18.7157 8 12 14.7157 12 23
+        cp1 = cloudToCanvas(18.7157, 8);
+        cp2 = cloudToCanvas(12, 14.7157);
+        end = cloudToCanvas(12, 23);
+        ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
+        // C12 23.3404 12.0112 23.6782 12.0333 24.0132
+        cp1 = cloudToCanvas(12, 23.3404);
+        cp2 = cloudToCanvas(12.0112, 23.6782);
+        end = cloudToCanvas(12.0333, 24.0132);
+        ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
+        // C6.46891 25.1396 2 30.0471 2 36
+        cp1 = cloudToCanvas(6.46891, 25.1396);
+        cp2 = cloudToCanvas(2, 30.0471);
+        end = cloudToCanvas(2, 36);
+        ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
+        // C2 42.6274 7.37258 48 14 48
+        cp1 = cloudToCanvas(2, 42.6274);
+        cp2 = cloudToCanvas(7.37258, 48);
+        end = cloudToCanvas(14, 48);
+        ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
+        // H50 (horizontal line to x=50)
+        end = cloudToCanvas(50, 48);
+        ctx.lineTo(end.x, end.y);
+        // C56.6274 48 62 42.6274 62 36
+        cp1 = cloudToCanvas(56.6274, 48);
+        cp2 = cloudToCanvas(62, 42.6274);
+        end = cloudToCanvas(62, 36);
+        ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
+        // C62 31.0543 58.6329 26.8822 54.0489 25.3644
+        cp1 = cloudToCanvas(62, 31.0543);
+        cp2 = cloudToCanvas(58.6329, 26.8822);
+        end = cloudToCanvas(54.0489, 25.3644);
+        ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
+        // C53.3749 25.1301 52.6862 24.9426 52 24.8048
+        cp1 = cloudToCanvas(53.3749, 25.1301);
+        cp2 = cloudToCanvas(52.6862, 24.9426);
+        end = cloudToCanvas(52, 24.8048);
+        ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
+
+        ctx.fill();
+        ctx.stroke();
+
+        // ============================================
+        // ARROW ICON - area.jsx SVG viewBox 0 0 24 24
+        // Position: 28x28px at top:12px, left:32px within 100x80 container
+        // Path: "M12 19V5M12 5L5 12M12 5L19 12"
+        // ============================================
+        const arrowW = 28 * iconScale;
+        const arrowH = 28 * iconScale;
+        const arrowX = iconContainerX + 32 * iconScale;
+        const arrowY = iconContainerY + 12 * iconScale;
+
+        // Scale from SVG viewBox (24x24)
+        const arrowScaleX = arrowW / 24;
+        const arrowScaleY = arrowH / 24;
+
+        const arrowToCanvas = (svgX: number, svgY: number) => ({
+          x: arrowX + svgX * arrowScaleX,
+          y: arrowY + svgY * arrowScaleY
+        });
+
+        ctx.strokeStyle = mainColorStroke;
+        ctx.lineWidth = Math.max(2, 2.5 * iconScale);
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+
+        // M12 19V5 (vertical line from bottom to top)
+        ctx.beginPath();
+        p = arrowToCanvas(12, 19);
+        ctx.moveTo(p.x, p.y);
+        p = arrowToCanvas(12, 5);
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+
+        // M12 5L5 12 (left arrow head)
+        ctx.beginPath();
+        p = arrowToCanvas(12, 5);
+        ctx.moveTo(p.x, p.y);
+        p = arrowToCanvas(5, 12);
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+
+        // M12 5L19 12 (right arrow head)
+        ctx.beginPath();
+        p = arrowToCanvas(12, 5);
+        ctx.moveTo(p.x, p.y);
+        p = arrowToCanvas(19, 12);
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+
+        // ============================================
+        // IMAGE ICON - area.jsx SVG viewBox 0 0 32 32
+        // Position: 40x40px at bottom:-5px, right:5px within 100x80 container
+        // ============================================
+        const imgIconW = 40 * iconScale;
+        const imgIconH = 40 * iconScale;
+        // bottom:-5px means iconContainerY + iconContainerH + 5 - imgIconH
+        // right:5px means iconContainerX + iconContainerW - 5 - imgIconW
+        const imgIconX = iconContainerX + iconContainerW - 5 * iconScale - imgIconW;
+        const imgIconY = iconContainerY + iconContainerH + 5 * iconScale - imgIconH;
+
+        // Scale from SVG viewBox (32x32)
+        const imgScaleX = imgIconW / 32;
+        const imgScaleY = imgIconH / 32;
+
+        const imgToCanvas = (svgX: number, svgY: number) => ({
+          x: imgIconX + svgX * imgScaleX,
+          y: imgIconY + svgY * imgScaleY
+        });
+
+        // Rounded rectangle: rect x=2, y=6, width=28, height=20, rx=3
+        ctx.strokeStyle = mainColorLight;
+        ctx.fillStyle = mainColorFill;
+        ctx.lineWidth = Math.max(1.5, 2 * iconScale);
+
+        const rectStart = imgToCanvas(2, 6);
+        const rectW = 28 * imgScaleX;
+        const rectH = 20 * imgScaleY;
+        const rectRx = 3 * imgScaleX;
+
+        ctx.beginPath();
+        ctx.moveTo(rectStart.x + rectRx, rectStart.y);
+        ctx.lineTo(rectStart.x + rectW - rectRx, rectStart.y);
+        ctx.quadraticCurveTo(rectStart.x + rectW, rectStart.y, rectStart.x + rectW, rectStart.y + rectRx);
+        ctx.lineTo(rectStart.x + rectW, rectStart.y + rectH - rectRx);
+        ctx.quadraticCurveTo(rectStart.x + rectW, rectStart.y + rectH, rectStart.x + rectW - rectRx, rectStart.y + rectH);
+        ctx.lineTo(rectStart.x + rectRx, rectStart.y + rectH);
+        ctx.quadraticCurveTo(rectStart.x, rectStart.y + rectH, rectStart.x, rectStart.y + rectH - rectRx);
+        ctx.lineTo(rectStart.x, rectStart.y + rectRx);
+        ctx.quadraticCurveTo(rectStart.x, rectStart.y, rectStart.x + rectRx, rectStart.y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Circle (sun): cx=10, cy=13, r=3
+        const circleCenter = imgToCanvas(10, 13);
+        const circleR = 3 * imgScaleX;
+        ctx.fillStyle = mainColorFaint;
+        ctx.beginPath();
+        ctx.arc(circleCenter.x, circleCenter.y, circleR, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Mountain path: "M4 22L10 16L14 20L22 12L28 18"
+        ctx.strokeStyle = mainColorFaint;
+        ctx.lineWidth = Math.max(1.5, 2 * iconScale);
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+
+        ctx.beginPath();
+        p = imgToCanvas(4, 22);
+        ctx.moveTo(p.x, p.y);
+        p = imgToCanvas(10, 16);
+        ctx.lineTo(p.x, p.y);
+        p = imgToCanvas(14, 20);
+        ctx.lineTo(p.x, p.y);
+        p = imgToCanvas(22, 12);
+        ctx.lineTo(p.x, p.y);
+        p = imgToCanvas(28, 18);
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+
+        // ============================================
+        // TEXT - area.jsx style
+        // title: fontSize: 18px, fontWeight: 600, lineHeight: 1.5
+        // subtitle: fontSize: 14px, fontWeight: 400
+        // ============================================
+        const textStartY = iconContainerY + iconContainerH + 24 * iconScale; // marginBottom: 24px
+        const titleFontSize = Math.max(11, 18 * iconScale);
+        const subtitleFontSize = Math.max(9, 14 * iconScale);
+
+        ctx.fillStyle = mainColor;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+        ctx.font = `600 ${titleFontSize}px -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif`;
+
+        if (isNarrow) {
+          // Compact text for narrow regions
+          ctx.fillText("Drag & drop", centerX, textStartY);
+          ctx.fillText("or click", centerX, textStartY + titleFontSize * 1.5);
+        } else {
+          // Full text as in area.jsx: "Drag & drop an image here, or click to select file"
+          ctx.fillText("Drag & drop an image here,", centerX, textStartY);
+          ctx.fillText("or click to select file", centerX, textStartY + titleFontSize * 1.5);
+        }
+
+        // Subtitle: "JPG, PNG, WebP (最大 5MB)"
+        ctx.fillStyle = mainColorLight;
+        ctx.font = `400 ${subtitleFontSize}px -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif`;
+        ctx.fillText("JPG, PNG, WebP", centerX, textStartY + titleFontSize * 3.2);
+
+        ctx.restore();
+      }
     }
-  }, [deviceRegions, selectedRegionIndex, drawOverlay, isCornerEditMode, editingCorners]);
+  }, [frameNatural, isCornerEditMode, draggingCornerIndex]);
+
+  // Redraw overlay when selection changes, editing corners change, or frame is loaded
+  useEffect(() => {
+    if (!frameNatural) return; // Wait for frame to be loaded
+    if (deviceRegions.length === 0) return; // Wait for regions to be detected
+
+    if (isCornerEditMode && editingCorners.length > 0) {
+      drawOverlay(deviceRegions, selectedRegionIndex, editingCorners);
+    } else {
+      drawOverlay(deviceRegions, selectedRegionIndex);
+    }
+  }, [deviceRegions, selectedRegionIndex, drawOverlay, isCornerEditMode, editingCorners, frameNatural]);
 
   // Corner editing functions
   const startCornerEditMode = useCallback(() => {
@@ -1763,14 +2215,6 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
 
         {/* Left: Interactive Canvas Area */}
         <div className="flex-1 bg-gradient-to-br from-slate-100 to-slate-200 p-4 md:p-6 flex flex-col items-center justify-center min-h-[300px] relative overflow-hidden">
-          {/* Corner Edit Mode Banner */}
-          {isCornerEditMode && (
-            <div className="absolute top-4 left-4 right-4 bg-orange-500 text-white px-4 py-3 rounded-xl text-sm font-medium shadow-lg z-20 flex items-center gap-3">
-              <span className="material-icons text-xl">touch_app</span>
-              <span>頂点をドラッグして位置を微調整できます</span>
-            </div>
-          )}
-
           {/* Instructions */}
           {showInstructions && deviceRegions.length === 0 && !isCornerEditMode && (
             <div className="absolute top-4 left-4 right-4 bg-indigo-600 text-white px-4 py-3 rounded-xl text-sm font-medium shadow-lg z-20 flex items-center gap-3">
@@ -1802,7 +2246,7 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
             {/* Interactive overlay */}
             <canvas
               ref={overlayCanvasRef}
-              className="absolute inset-0 h-full w-full object-contain rounded-xl"
+              className="absolute inset-0 h-full w-full object-contain rounded-xl z-10"
               onClick={isCornerEditMode ? undefined : handleCanvasClick}
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
@@ -1811,8 +2255,8 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
-              style={{ 
-                cursor: isCornerEditMode 
+              style={{
+                cursor: isCornerEditMode
                   ? (draggingCornerIndex !== null ? "grabbing" : "grab")
                   : (isProcessing ? "wait" : "crosshair"),
                 touchAction: isCornerEditMode ? "none" : "auto"
@@ -1962,10 +2406,10 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
                 {/* Corner Edit Mode Controls */}
                 {isCornerEditMode ? (
                   <div className="space-y-2">
-                    <p className="text-xs text-orange-700 bg-orange-100 px-3 py-2 rounded-lg flex items-center gap-2">
-                      <span className="material-icons text-sm">info</span>
-                      頂点をドラッグして位置を調整してください
-                    </p>
+                    <div className="bg-orange-500 text-white px-4 py-3 rounded-xl text-sm font-medium shadow-lg flex items-center gap-3">
+                      <span className="material-icons text-xl">touch_app</span>
+                      <span>頂点をドラッグして位置を微調整できます</span>
+                    </div>
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         onClick={confirmCornerEdit}

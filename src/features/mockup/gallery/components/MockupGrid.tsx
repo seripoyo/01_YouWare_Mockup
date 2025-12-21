@@ -2,28 +2,40 @@ import React from "react";
 import type { MockupGalleryItem } from "../types";
 
 interface MockupGridProps {
-  items: MockupGalleryItem[];
+  items: MockupGalleryItem[];         // All items (for DOM persistence)
+  visibleItems?: MockupGalleryItem[]; // Items that should be visible (filtering logic)
   onSelect: (item: MockupGalleryItem) => void;
   hideAspectRatioBadge?: boolean;
 }
 
-export function MockupGrid({ items, onSelect, hideAspectRatioBadge = false }: MockupGridProps) {
-  if (items.length === 0) {
+export function MockupGrid({
+  items,
+  visibleItems: visibleItemsProp,
+  onSelect,
+  hideAspectRatioBadge = false,
+}: MockupGridProps) {
+  // Use visibleItems if provided, otherwise use items
+  const displayItems = visibleItemsProp ?? items;
+
+  if (displayItems.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-96 text-slate-400">
-        <span className="material-icons text-5xl mb-4 opacity-50">local_offer</span>
+        <span className="material-icons text-5xl mb-4 opacity-50">
+          local_offer
+        </span>
         <p className="text-lg font-medium">テンプレートが見つかりませんでした</p>
       </div>
     );
   }
 
   return (
+    // Masonry layout with CSS columns
     <div className="relative w-full columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6 pb-20">
-      {items.map((item) => (
+      {displayItems.map((item) => (
         <div
           key={item.id}
           data-id={item.id}
-          className="mockup-item mb-6 w-full break-inside-avoid"
+          className="mockup-item mb-6 w-full break-inside-avoid animate-fadeIn"
           onClick={() => onSelect(item)}
         >
           {/* Card Container */}
@@ -48,10 +60,10 @@ export function MockupGrid({ items, onSelect, hideAspectRatioBadge = false }: Mo
                 <div className="absolute top-4 left-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">
                   <span
                     className="
-                      px-3 py-1.5 
+                      px-3 py-1.5
                       bg-black/20 backdrop-blur-md border border-white/10
                       shadow-sm
-                      rounded-full 
+                      rounded-full
                       text-[10px] font-medium text-white tracking-wider
                       flex items-center justify-center
                     "
@@ -61,7 +73,7 @@ export function MockupGrid({ items, onSelect, hideAspectRatioBadge = false }: Mo
                 </div>
               )}
 
-              {/* Glassmorphism Button */}
+              {/* Glassmorphism Button: "Use this template" */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 w-max opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-4 group-hover:translate-y-0">
                 <button
                   className="
