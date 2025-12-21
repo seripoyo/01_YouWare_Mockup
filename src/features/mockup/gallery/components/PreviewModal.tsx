@@ -1156,24 +1156,35 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
   }, [findRegionAtPosition, processImageForRegion, selectedRegionIndex, deviceRegions]);
 
   // Generate composite image with user images embedded
-  const generateComposite = useCallback(() => {
-    if (!item || !frameNatural || !frameImageData) return;
+  const generateComposite = useCallback((forDownload: boolean = false): Promise<string | null> => {
+    return new Promise((resolve) => {
+      if (!item || !frameNatural || !frameImageData) {
+        resolve(null);
+        return;
+      }
 
-    const canvas = document.createElement("canvas");
-    canvas.width = frameNatural.w;
-    canvas.height = frameNatural.h;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+      const canvas = document.createElement("canvas");
+      canvas.width = frameNatural.w;
+      canvas.height = frameNatural.h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        resolve(null);
+        return;
+      }
 
-    const frameImg = new Image();
-    frameImg.crossOrigin = "anonymous";
-    frameImg.onload = () => {
+      const frameImg = new Image();
+      frameImg.crossOrigin = "anonymous";
+      frameImg.onload = () => {
       const regionsWithImages = deviceRegions.filter(r => r.userImage);
       
       if (regionsWithImages.length === 0) {
         // No user images, just draw the frame
         ctx.drawImage(frameImg, 0, 0);
-        setCompositeUrl(canvas.toDataURL("image/png"));
+        const dataUrl = canvas.toDataURL("image/png");
+        if (!forDownload) {
+          setCompositeUrl(dataUrl);
+        }
+        resolve(dataUrl);
         return;
       }
 
@@ -1296,12 +1307,14 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
             // 画像の4隅をガイドの4隅に正確にマッピング
             const corners = region.corners;
 
-            // デバッグ情報
-            console.log('=== 透視変換デバッグ ===');
-            console.log('ガイドcorners座標:');
-            corners.forEach((c, i) => {
-              console.log(`  corner[${i}]: (${c.x.toFixed(1)}, ${c.y.toFixed(1)})`);
-            });
+            // デバッグ情報（ダウンロード時は出力しない）
+            if (!forDownload) {
+              console.log('=== 透視変換デバッグ ===');
+              console.log('ガイドcorners座標:');
+              corners.forEach((c, i) => {
+                console.log(`  corner[${i}]: (${c.x.toFixed(1)}, ${c.y.toFixed(1)})`);
+              });
+            }
 
             // ステップ1: cornersの順序を [左上, 右上, 右下, 左下] に並べ替え
             // 現在のcornersは検出順なので、座標に基づいて並べ替える必要がある
@@ -1348,11 +1361,13 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
               bottomLeft
             ];
 
-            console.log('並べ替え後のdstCorners:');
-            console.log(`  左上: (${topLeft.x.toFixed(1)}, ${topLeft.y.toFixed(1)})`);
-            console.log(`  右上: (${topRight.x.toFixed(1)}, ${topRight.y.toFixed(1)})`);
-            console.log(`  右下: (${bottomRight.x.toFixed(1)}, ${bottomRight.y.toFixed(1)})`);
-            console.log(`  左下: (${bottomLeft.x.toFixed(1)}, ${bottomLeft.y.toFixed(1)})`);
+            if (!forDownload) {
+              console.log('並べ替え後のdstCorners:');
+              console.log(`  左上: (${topLeft.x.toFixed(1)}, ${topLeft.y.toFixed(1)})`);
+              console.log(`  右上: (${topRight.x.toFixed(1)}, ${topRight.y.toFixed(1)})`);
+              console.log(`  右下: (${bottomRight.x.toFixed(1)}, ${bottomRight.y.toFixed(1)})`);
+              console.log(`  左下: (${bottomLeft.x.toFixed(1)}, ${bottomLeft.y.toFixed(1)})`);
+            }
 
             // ステップ2: ガイドのサイズを計算（上辺と左辺の長さ）
             const guideTopWidth = Math.sqrt(
@@ -1366,11 +1381,13 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
             const guideAspectRatio = guideTopWidth / guideLeftHeight;
             const imgAspectRatio = imgW / imgH;
 
-            console.log('サイズ情報:');
-            console.log(`  ガイド上辺: ${guideTopWidth.toFixed(1)}, ガイド左辺: ${guideLeftHeight.toFixed(1)}`);
-            console.log(`  ガイドアスペクト比: ${guideAspectRatio.toFixed(3)}`);
-            console.log(`  画像サイズ: ${imgW}x${imgH}, アスペクト比: ${imgAspectRatio.toFixed(3)}`);
-            console.log(`  fitMode: ${fitMode}`);
+            if (!forDownload) {
+              console.log('サイズ情報:');
+              console.log(`  ガイド上辺: ${guideTopWidth.toFixed(1)}, ガイド左辺: ${guideLeftHeight.toFixed(1)}`);
+              console.log(`  ガイドアスペクト比: ${guideAspectRatio.toFixed(3)}`);
+              console.log(`  画像サイズ: ${imgW}x${imgH}, アスペクト比: ${imgAspectRatio.toFixed(3)}`);
+              console.log(`  fitMode: ${fitMode}`);
+            }
 
             // ステップ3: ソース画像の4隅を計算（contain/coverに応じて）
             let srcCorners: [PerspectivePoint, PerspectivePoint, PerspectivePoint, PerspectivePoint];
@@ -1400,7 +1417,9 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
                 { x: cropX, y: cropY + cropH }             // 左下
               ];
 
-              console.log(`  cover: クロップ領域 (${cropX.toFixed(1)}, ${cropY.toFixed(1)}) - ${cropW.toFixed(1)}x${cropH.toFixed(1)}`);
+              if (!forDownload) {
+                console.log(`  cover: クロップ領域 (${cropX.toFixed(1)}, ${cropY.toFixed(1)}) - ${cropW.toFixed(1)}x${cropH.toFixed(1)}`);
+              }
             } else {
               // contain: 画像全体がガイド内に収まる
               // 画像全体を使用し、ガイド内で余白ができる場合は中央配置
@@ -1418,18 +1437,24 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
                 { x: 0, y: imgH }         // 左下
               ];
 
-              console.log(`  contain: 画像全体を使用 (0, 0) - ${imgW}x${imgH}`);
+              if (!forDownload) {
+                console.log(`  contain: 画像全体を使用 (0, 0) - ${imgW}x${imgH}`);
+              }
             }
 
-            console.log('srcCorners:');
-            srcCorners.forEach((c, i) => {
-              console.log(`  src[${i}]: (${c.x.toFixed(1)}, ${c.y.toFixed(1)})`);
-            });
-            console.log('=== 透視変換デバッグ終了 ===');
+            if (!forDownload) {
+              console.log('srcCorners:');
+              srcCorners.forEach((c, i) => {
+                console.log(`  src[${i}]: (${c.x.toFixed(1)}, ${c.y.toFixed(1)})`);
+              });
+              console.log('=== 透視変換デバッグ終了 ===');
+            }
 
             // ステップ4: 透視変換で画像を描画
             // meshSize を調整してパフォーマンスと品質のバランスを取る
-            const meshSize = 16; // デフォルト値（256セル × 2三角形 = 512回の描画）
+            // ダウンロード時は高品質 (64分割 = 4096セル × 2三角形 = 8192回の描画)
+            // プレビュー時は高速 (16分割 = 256セル × 2三角形 = 512回の描画)
+            const meshSize = forDownload ? 64 : 16;
 
             drawPerspectiveImage(ctx, userImg, srcCorners, dstCorners, meshSize);
           }
@@ -1467,7 +1492,8 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
             ctx.putImageData(compositeData, 0, 0);
 
             // ========== デバッグ可視化（ベゼル復元後に描画） ==========
-            const debugMode = true; // デバッグモード有効化フラグ
+            // ダウンロード時はデバッグ可視化を無効化
+            const debugMode = !forDownload; // プレビュー時のみデバッグ表示
             if (debugMode) {
               regionsWithImages.forEach((region) => {
                 const corners = region.corners;
@@ -1554,13 +1580,18 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
             }
             // ========== デバッグ可視化終了 ==========
 
-            setCompositeUrl(canvas.toDataURL("image/png"));
+            const dataUrl = canvas.toDataURL("image/png");
+            if (!forDownload) {
+              setCompositeUrl(dataUrl);
+            }
+            resolve(dataUrl);
           }
         };
         userImg.src = region.userImage;
       });
     };
     frameImg.src = item.publicPath;
+    });
   }, [item, frameNatural, deviceRegions, frameImageData]);
 
   // Regenerate composite when device regions change
@@ -1624,13 +1655,27 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
   const displayTitle = `${item.deviceType} Mockup`;
   const selectedRegion = selectedRegionIndex !== null ? deviceRegions[selectedRegionIndex] : null;
 
-  const handleDownload = () => {
-    const url = compositeUrl || item.publicPath;
+  const handleDownload = async () => {
+    let url: string;
+    const baseName = item.originalFilename.replace(/\.[^/.]+$/, '');
+
+    // ユーザー画像がある場合は高画質コンポジットを生成
+    if (deviceRegions.some(r => r.userImage)) {
+      // forDownload=true で高画質・デバッグなしのコンポジットを生成
+      const downloadUrl = await generateComposite(true);
+      if (downloadUrl) {
+        url = downloadUrl;
+      } else {
+        url = compositeUrl || item.publicPath;
+      }
+    } else {
+      url = item.publicPath;
+    }
+
     const link = document.createElement("a");
     link.href = url;
     // compositeUrlはPNG形式なので、拡張子を.pngに変更
-    if (compositeUrl) {
-      const baseName = item.originalFilename.replace(/\.[^/.]+$/, '');
+    if (url.startsWith('data:')) {
       link.download = `edited_${baseName}.png`;
     } else {
       link.download = item.originalFilename;
