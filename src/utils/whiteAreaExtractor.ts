@@ -55,7 +55,7 @@ const DEFAULT_OPTIONS: Required<DetectionOptions> = {
   minRectangularity: 0.35,  // 0.65→0.35: 傾いたデバイスや角丸画面に対応（sp_1x1_023_pink等）
   minBezelScore: 0.20,      // 0.4→0.20: 画像端のデバイスや傾いたベゼルに対応
   bezelWidth: 15,
-  darkThreshold: 0.25,
+  darkThreshold: 0.50,      // 0.25→0.50: グレーベゼル（輝度35-50%）も検出可能に
   minBezelEdges: 1,         // 3→1: 片側のみベゼルが見えるケースに対応
 };
 
