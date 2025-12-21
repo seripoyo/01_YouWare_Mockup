@@ -1,0 +1,174 @@
+chunk-4F6ZI27W.js?v=64f8a35d:519 Warning: validateDOMNesting(...): <button> cannot appear as a descendant of <button>.
+    at button
+    at button
+    at div
+    at div
+    at div
+    at div
+    at PreviewModal (http://127.0.0.1:5174/src/features/mockup/gallery/components/PreviewModal.tsx?t=1766126234029:333:32)
+    at div
+    at MockupGallery (http://127.0.0.1:5174/src/features/mockup/gallery/MockupGallery.tsx?t=1766126234029:36:33)
+    at ErrorBoundary (http://127.0.0.1:5174/src/components/ErrorBoundary.tsx:7:5)
+    at App (http://127.0.0.1:5174/src/App.tsx?t=1766126234029:25:27)
+printWarning @ chunk-4F6ZI27W.js?v=64f8a35d:519
+error @ chunk-4F6ZI27W.js?v=64f8a35d:503
+validateDOMNesting @ chunk-4F6ZI27W.js?v=64f8a35d:8301
+createInstance @ chunk-4F6ZI27W.js?v=64f8a35d:8373
+completeWork @ chunk-4F6ZI27W.js?v=64f8a35d:16336
+completeUnitOfWork @ chunk-4F6ZI27W.js?v=64f8a35d:19275
+performUnitOfWork @ chunk-4F6ZI27W.js?v=64f8a35d:19257
+workLoopSync @ chunk-4F6ZI27W.js?v=64f8a35d:19188
+renderRootSync @ chunk-4F6ZI27W.js?v=64f8a35d:19167
+performSyncWorkOnRoot @ chunk-4F6ZI27W.js?v=64f8a35d:18925
+flushSyncCallbacks @ chunk-4F6ZI27W.js?v=64f8a35d:9164
+（匿名） @ chunk-4F6ZI27W.js?v=64f8a35d:18675このエラーを分析
+PreviewModal.tsx:1031 Unable to preventDefault inside passive event listener invocation.
+preventDefault @ chunk-4F6ZI27W.js?v=64f8a35d:5773
+（匿名） @ PreviewModal.tsx:1031
+callCallback2 @ chunk-4F6ZI27W.js?v=64f8a35d:3678
+invokeGuardedCallbackDev @ chunk-4F6ZI27W.js?v=64f8a35d:3703
+invokeGuardedCallback @ chunk-4F6ZI27W.js?v=64f8a35d:3737
+invokeGuardedCallbackAndCatchFirstError @ chunk-4F6ZI27W.js?v=64f8a35d:3740
+executeDispatch @ chunk-4F6ZI27W.js?v=64f8a35d:7044
+processDispatchQueueItemsInOrder @ chunk-4F6ZI27W.js?v=64f8a35d:7064
+processDispatchQueue @ chunk-4F6ZI27W.js?v=64f8a35d:7073
+dispatchEventsForPlugins @ chunk-4F6ZI27W.js?v=64f8a35d:7081
+（匿名） @ chunk-4F6ZI27W.js?v=64f8a35d:7204
+batchedUpdates$1 @ chunk-4F6ZI27W.js?v=64f8a35d:18964
+batchedUpdates @ chunk-4F6ZI27W.js?v=64f8a35d:3583
+dispatchEventForPluginEventSystem @ chunk-4F6ZI27W.js?v=64f8a35d:7203
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-4F6ZI27W.js?v=64f8a35d:5482
+dispatchEvent @ chunk-4F6ZI27W.js?v=64f8a35d:5476
+dispatchContinuousEvent @ chunk-4F6ZI27W.js?v=64f8a35d:5465このエラーを分析
+PreviewModal.tsx:1031 Unable to preventDefault inside passive event listener invocation.
+preventDefault @ chunk-4F6ZI27W.js?v=64f8a35d:5773
+（匿名） @ PreviewModal.tsx:1031
+callCallback2 @ chunk-4F6ZI27W.js?v=64f8a35d:3678
+invokeGuardedCallbackDev @ chunk-4F6ZI27W.js?v=64f8a35d:3703
+invokeGuardedCallback @ chunk-4F6ZI27W.js?v=64f8a35d:3737
+invokeGuardedCallbackAndCatchFirstError @ chunk-4F6ZI27W.js?v=64f8a35d:3740
+executeDispatch @ chunk-4F6ZI27W.js?v=64f8a35d:7044
+processDispatchQueueItemsInOrder @ chunk-4F6ZI27W.js?v=64f8a35d:7064
+processDispatchQueue @ chunk-4F6ZI27W.js?v=64f8a35d:7073
+dispatchEventsForPlugins @ chunk-4F6ZI27W.js?v=64f8a35d:7081
+（匿名） @ chunk-4F6ZI27W.js?v=64f8a35d:7204
+batchedUpdates$1 @ chunk-4F6ZI27W.js?v=64f8a35d:18964
+batchedUpdates @ chunk-4F6ZI27W.js?v=64f8a35d:3583
+dispatchEventForPluginEventSystem @ chunk-4F6ZI27W.js?v=64f8a35d:7203
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-4F6ZI27W.js?v=64f8a35d:5482
+dispatchEvent @ chunk-4F6ZI27W.js?v=64f8a35d:5476
+dispatchContinuousEvent @ chunk-4F6ZI27W.js?v=64f8a35d:5465このエラーを分析
+PreviewModal.tsx:1031 Unable to preventDefault inside passive event listener invocation.
+preventDefault @ chunk-4F6ZI27W.js?v=64f8a35d:5773
+（匿名） @ PreviewModal.tsx:1031
+callCallback2 @ chunk-4F6ZI27W.js?v=64f8a35d:3678
+invokeGuardedCallbackDev @ chunk-4F6ZI27W.js?v=64f8a35d:3703
+invokeGuardedCallback @ chunk-4F6ZI27W.js?v=64f8a35d:3737
+invokeGuardedCallbackAndCatchFirstError @ chunk-4F6ZI27W.js?v=64f8a35d:3740
+executeDispatch @ chunk-4F6ZI27W.js?v=64f8a35d:7044
+processDispatchQueueItemsInOrder @ chunk-4F6ZI27W.js?v=64f8a35d:7064
+processDispatchQueue @ chunk-4F6ZI27W.js?v=64f8a35d:7073
+dispatchEventsForPlugins @ chunk-4F6ZI27W.js?v=64f8a35d:7081
+（匿名） @ chunk-4F6ZI27W.js?v=64f8a35d:7204
+batchedUpdates$1 @ chunk-4F6ZI27W.js?v=64f8a35d:18964
+batchedUpdates @ chunk-4F6ZI27W.js?v=64f8a35d:3583
+dispatchEventForPluginEventSystem @ chunk-4F6ZI27W.js?v=64f8a35d:7203
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-4F6ZI27W.js?v=64f8a35d:5482
+dispatchEvent @ chunk-4F6ZI27W.js?v=64f8a35d:5476
+dispatchContinuousEvent @ chunk-4F6ZI27W.js?v=64f8a35d:5465このエラーを分析
+PreviewModal.tsx:1031 Unable to preventDefault inside passive event listener invocation.
+preventDefault @ chunk-4F6ZI27W.js?v=64f8a35d:5773
+（匿名） @ PreviewModal.tsx:1031
+callCallback2 @ chunk-4F6ZI27W.js?v=64f8a35d:3678
+invokeGuardedCallbackDev @ chunk-4F6ZI27W.js?v=64f8a35d:3703
+invokeGuardedCallback @ chunk-4F6ZI27W.js?v=64f8a35d:3737
+invokeGuardedCallbackAndCatchFirstError @ chunk-4F6ZI27W.js?v=64f8a35d:3740
+executeDispatch @ chunk-4F6ZI27W.js?v=64f8a35d:7044
+processDispatchQueueItemsInOrder @ chunk-4F6ZI27W.js?v=64f8a35d:7064
+processDispatchQueue @ chunk-4F6ZI27W.js?v=64f8a35d:7073
+dispatchEventsForPlugins @ chunk-4F6ZI27W.js?v=64f8a35d:7081
+（匿名） @ chunk-4F6ZI27W.js?v=64f8a35d:7204
+batchedUpdates$1 @ chunk-4F6ZI27W.js?v=64f8a35d:18964
+batchedUpdates @ chunk-4F6ZI27W.js?v=64f8a35d:3583
+dispatchEventForPluginEventSystem @ chunk-4F6ZI27W.js?v=64f8a35d:7203
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-4F6ZI27W.js?v=64f8a35d:5482
+dispatchEvent @ chunk-4F6ZI27W.js?v=64f8a35d:5476
+dispatchContinuousEvent @ chunk-4F6ZI27W.js?v=64f8a35d:5465このエラーを分析
+PreviewModal.tsx:1031 Unable to preventDefault inside passive event listener invocation.
+preventDefault @ chunk-4F6ZI27W.js?v=64f8a35d:5773
+（匿名） @ PreviewModal.tsx:1031
+callCallback2 @ chunk-4F6ZI27W.js?v=64f8a35d:3678
+invokeGuardedCallbackDev @ chunk-4F6ZI27W.js?v=64f8a35d:3703
+invokeGuardedCallback @ chunk-4F6ZI27W.js?v=64f8a35d:3737
+invokeGuardedCallbackAndCatchFirstError @ chunk-4F6ZI27W.js?v=64f8a35d:3740
+executeDispatch @ chunk-4F6ZI27W.js?v=64f8a35d:7044
+processDispatchQueueItemsInOrder @ chunk-4F6ZI27W.js?v=64f8a35d:7064
+processDispatchQueue @ chunk-4F6ZI27W.js?v=64f8a35d:7073
+dispatchEventsForPlugins @ chunk-4F6ZI27W.js?v=64f8a35d:7081
+（匿名） @ chunk-4F6ZI27W.js?v=64f8a35d:7204
+batchedUpdates$1 @ chunk-4F6ZI27W.js?v=64f8a35d:18964
+batchedUpdates @ chunk-4F6ZI27W.js?v=64f8a35d:3583
+dispatchEventForPluginEventSystem @ chunk-4F6ZI27W.js?v=64f8a35d:7203
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-4F6ZI27W.js?v=64f8a35d:5482
+dispatchEvent @ chunk-4F6ZI27W.js?v=64f8a35d:5476
+dispatchContinuousEvent @ chunk-4F6ZI27W.js?v=64f8a35d:5465このエラーを分析
+PreviewModal.tsx:1299 === ガイドライン変換デバッグ ===
+PreviewModal.tsx:1300 corners座標:
+PreviewModal.tsx:1302   corner[0]: (1084.0, 188.1)
+PreviewModal.tsx:1302   corner[1]: (1748.0, 336.1)
+PreviewModal.tsx:1302   corner[2]: (932.0, 1832.1)
+PreviewModal.tsx:1302   corner[3]: (279.1, 1567.7)
+PreviewModal.tsx:1326 edge01 (corner0→1): {dx: '664.0', dy: '148.0', length: '680.3', angle_rad: '0.219', angle_deg: '12.6'}
+PreviewModal.tsx:1333 edge12 (corner1→2): {dx: '-816.0', dy: '1496.0', length: '1704.1', angle_rad: '2.070', angle_deg: '118.6'}
+PreviewModal.tsx:1352 アスペクト比比較:
+PreviewModal.tsx:1353   画像: 959x1705, aspect=0.562
+PreviewModal.tsx:1354   edge01を幅とした場合: aspect=0.399, diff=0.163
+PreviewModal.tsx:1355   edge12を幅とした場合: aspect=2.505, diff=1.942
+PreviewModal.tsx:1373 選択結果: edge01を幅として選択
+PreviewModal.tsx:1381 変換パラメータ:
+PreviewModal.tsx:1382   guideWidth: 680.3
+PreviewModal.tsx:1383   guideHeight: 1704.1
+PreviewModal.tsx:1384   rotationAngle: 0.219 rad = 12.6 deg
+PreviewModal.tsx:1397   fitMode: cover
+PreviewModal.tsx:1398   imageScale: 0.9995
+PreviewModal.tsx:1415 回転行列:
+PreviewModal.tsx:1416   cos(angle)=0.9760, sin(angle)=0.2176
+PreviewModal.tsx:1417   ux=0.9760, uy=0.2176 (画像X軸方向)
+PreviewModal.tsx:1418   vx=-0.2176, vy=0.9760 (画像Y軸方向)
+PreviewModal.tsx:1428 描画位置:
+PreviewModal.tsx:1429   ガイド中心: (1010.8, 981.0)
+PreviewModal.tsx:1430   描画開始点: (728.4, 45.1)
+PreviewModal.tsx:1431   スケール後画像サイズ: 958.5x1704.1
+PreviewModal.tsx:1432 === デバッグ終了 ===
+PreviewModal.tsx:1487 デバッグ可視化: 赤=corner0, 緑=corner1, 青=corner2, 黄=corner3
+PreviewModal.tsx:1488 マゼンタ線=edge01, シアン点線=edge12
+PreviewModal.tsx:1299 === ガイドライン変換デバッグ ===
+PreviewModal.tsx:1300 corners座標:
+PreviewModal.tsx:1302   corner[0]: (1084.0, 188.1)
+PreviewModal.tsx:1302   corner[1]: (1748.0, 336.1)
+PreviewModal.tsx:1302   corner[2]: (932.0, 1832.1)
+PreviewModal.tsx:1302   corner[3]: (279.1, 1567.7)
+PreviewModal.tsx:1326 edge01 (corner0→1): {dx: '664.0', dy: '148.0', length: '680.3', angle_rad: '0.219', angle_deg: '12.6'}
+PreviewModal.tsx:1333 edge12 (corner1→2): {dx: '-816.0', dy: '1496.0', length: '1704.1', angle_rad: '2.070', angle_deg: '118.6'}
+PreviewModal.tsx:1352 アスペクト比比較:
+PreviewModal.tsx:1353   画像: 959x1705, aspect=0.562
+PreviewModal.tsx:1354   edge01を幅とした場合: aspect=0.399, diff=0.163
+PreviewModal.tsx:1355   edge12を幅とした場合: aspect=2.505, diff=1.942
+PreviewModal.tsx:1373 選択結果: edge01を幅として選択
+PreviewModal.tsx:1381 変換パラメータ:
+PreviewModal.tsx:1382   guideWidth: 680.3
+PreviewModal.tsx:1383   guideHeight: 1704.1
+PreviewModal.tsx:1384   rotationAngle: 0.219 rad = 12.6 deg
+PreviewModal.tsx:1397   fitMode: contain
+PreviewModal.tsx:1398   imageScale: 0.7094
+PreviewModal.tsx:1415 回転行列:
+PreviewModal.tsx:1416   cos(angle)=0.9760, sin(angle)=0.2176
+PreviewModal.tsx:1417   ux=0.9760, uy=0.2176 (画像X軸方向)
+PreviewModal.tsx:1418   vx=-0.2176, vy=0.9760 (画像Y軸方向)
+PreviewModal.tsx:1428 描画位置:
+PreviewModal.tsx:1429   ガイド中心: (1010.8, 981.0)
+PreviewModal.tsx:1430   描画開始点: (810.4, 316.7)
+PreviewModal.tsx:1431   スケール後画像サイズ: 680.3x1209.5
+PreviewModal.tsx:1432 === デバッグ終了 ===
+PreviewModal.tsx:1487 デバッグ可視化: 赤=corner0, 緑=corner1, 青=corner2, 黄=corner3
+PreviewModal.tsx:1488 マゼンタ線=edge01, シアン点線=edge12
