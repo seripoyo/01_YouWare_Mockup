@@ -1627,11 +1627,15 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
       const frameImg = new Image();
       frameImg.crossOrigin = "anonymous";
       frameImg.onload = () => {
+      // 重要: 最初にフレーム画像全体を描画する
+      // これにより背景（テーブル、本、影など）が保持される
+      // ユーザー画像は後でクリップ領域内にのみ描画される
+      ctx.drawImage(frameImg, 0, 0);
+
       const regionsWithImages = deviceRegions.filter(r => r.userImage);
-      
+
       if (regionsWithImages.length === 0) {
-        // No user images, just draw the frame
-        ctx.drawImage(frameImg, 0, 0);
+        // No user images, frame already drawn above
         const dataUrl = canvas.toDataURL("image/png");
         if (!forDownload) {
           setCompositeUrl(dataUrl);
@@ -1921,17 +1925,17 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
             const compositeData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             const pixels = compositeData.data;
             const frameData = frameImageData.data;
-            
+
             for (let i = 0; i < pixels.length; i += 4) {
               const frameR = frameData[i];
               const frameG = frameData[i + 1];
               const frameB = frameData[i + 2];
               const frameA = frameData[i + 3];
-              
+
               // Frame pixel is opaque and not white -> it's part of the bezel/frame
               const isOpaque = frameA > 200;
               const isWhite = frameR >= 240 && frameG >= 240 && frameB >= 240;
-              
+
               if (isOpaque && !isWhite) {
                 // Overwrite with frame pixel to preserve bezel
                 pixels[i] = frameR;
@@ -1940,7 +1944,7 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
                 pixels[i + 3] = frameA;
               }
             }
-            
+
             ctx.putImageData(compositeData, 0, 0);
 
             // ========== デバッグ可視化（ベゼル復元後に描画） ==========
