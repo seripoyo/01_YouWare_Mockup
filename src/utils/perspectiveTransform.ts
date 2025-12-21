@@ -145,19 +145,25 @@ export function invertMatrix3x3(m: Matrix3x3): Matrix3x3 | null {
 }
 
 /**
- * 微小三角形分割法による透視変換描画
+ * ピクセル単位の逆変換による高品質透視変換描画
+ *
+ * 従来の三角形メッシュ分割法ではCanvas 2Dのclip()によるアンチエイリアシングで
+ * グリッドパターン（ドット/ノイズ）が発生していた。
+ * この実装では出力画像の各ピクセルに対して逆変換を適用し、
+ * ソース画像から直接サンプリングすることでアーティファクトを完全に排除する。
+ *
  * @param ctx 描画先のCanvas2Dコンテキスト
  * @param image ソース画像
- * @param srcCorners ソース画像の4隅（通常は画像の矩形）
- * @param dstCorners 描画先の4隅（変形後の形状）
- * @param meshSize メッシュの分割数（大きいほど精密だが重い）
+ * @param srcCorners ソース画像の4隅（通常は画像の矩形）[左上, 右上, 右下, 左下]
+ * @param dstCorners 描画先の4隅（変形後の形状）[左上, 右上, 右下, 左下]
+ * @param _meshSize 互換性のために残すが使用しない
  */
 export function drawPerspectiveImage(
   ctx: CanvasRenderingContext2D,
   image: HTMLImageElement | HTMLCanvasElement,
   srcCorners: [Point, Point, Point, Point],
   dstCorners: [Point, Point, Point, Point],
-  meshSize: number = 16
+  _meshSize: number = 16
 ): void {
   // 変換行列を計算（dst → src への逆変換）
   const matrix = computePerspectiveTransform(dstCorners, srcCorners);
@@ -166,126 +172,144 @@ export function drawPerspectiveImage(
     return;
   }
 
-  // メッシュを作成して三角形ごとに描画
-  const segments = meshSize;
+  // ソース画像のピクセルデータを取得
+  const srcCanvas = document.createElement('canvas');
+  srcCanvas.width = image.width;
+  srcCanvas.height = image.height;
+  const srcCtx = srcCanvas.getContext('2d');
+  if (!srcCtx) return;
+  srcCtx.drawImage(image, 0, 0);
+  const srcImageData = srcCtx.getImageData(0, 0, image.width, image.height);
+  const srcPixels = srcImageData.data;
+  const srcW = image.width;
+  const srcH = image.height;
 
-  // テキスト明瞭性を保つための設定
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
+  // 出力領域のバウンディングボックスを計算
+  const minX = Math.floor(Math.min(dstCorners[0].x, dstCorners[1].x, dstCorners[2].x, dstCorners[3].x));
+  const maxX = Math.ceil(Math.max(dstCorners[0].x, dstCorners[1].x, dstCorners[2].x, dstCorners[3].x));
+  const minY = Math.floor(Math.min(dstCorners[0].y, dstCorners[1].y, dstCorners[2].y, dstCorners[3].y));
+  const maxY = Math.ceil(Math.max(dstCorners[0].y, dstCorners[1].y, dstCorners[2].y, dstCorners[3].y));
 
-  for (let row = 0; row < segments; row++) {
-    for (let col = 0; col < segments; col++) {
-      // グリッドの4頂点を計算（変換先座標系）
-      const u0 = col / segments;
-      const v0 = row / segments;
-      const u1 = (col + 1) / segments;
-      const v1 = (row + 1) / segments;
+  // 出力領域のサイズ
+  const outW = maxX - minX;
+  const outH = maxY - minY;
 
-      // 双線形補間で変換先の4点を計算
-      const dstQuad = [
-        bilinearInterpolate(dstCorners, u0, v0), // 左上
-        bilinearInterpolate(dstCorners, u1, v0), // 右上
-        bilinearInterpolate(dstCorners, u1, v1), // 右下
-        bilinearInterpolate(dstCorners, u0, v1), // 左下
-      ];
+  if (outW <= 0 || outH <= 0) return;
 
-      // 変換元の4点を計算
-      const srcQuad = dstQuad.map(p => transformPoint(p, matrix));
+  // 出力用ImageDataを作成
+  const outImageData = ctx.createImageData(outW, outH);
+  const outPixels = outImageData.data;
 
-      // 2つの三角形に分割して描画
-      drawTriangle(
-        ctx, image,
-        [srcQuad[0], srcQuad[1], srcQuad[2]], // ソース三角形
-        [dstQuad[0], dstQuad[1], dstQuad[2]]  // 描画先三角形
-      );
+  // 各出力ピクセルに対して逆変換を適用
+  for (let y = 0; y < outH; y++) {
+    for (let x = 0; x < outW; x++) {
+      const dstX = minX + x;
+      const dstY = minY + y;
 
-      drawTriangle(
-        ctx, image,
-        [srcQuad[0], srcQuad[2], srcQuad[3]], // ソース三角形
-        [dstQuad[0], dstQuad[2], dstQuad[3]]  // 描画先三角形
-      );
+      // ポイントがdstCorners四角形の内部かチェック
+      if (!isPointInQuad({ x: dstX, y: dstY }, dstCorners)) {
+        continue; // 四角形外は描画しない
+      }
+
+      // 逆変換でソース座標を取得
+      const srcPoint = transformPoint({ x: dstX, y: dstY }, matrix);
+
+      // ソース画像の範囲内かチェック
+      if (srcPoint.x < 0 || srcPoint.x >= srcW || srcPoint.y < 0 || srcPoint.y >= srcH) {
+        continue;
+      }
+
+      // バイリニア補間でソースピクセルをサンプリング
+      const color = bilinearSample(srcPixels, srcW, srcH, srcPoint.x, srcPoint.y);
+
+      // 出力ピクセルに書き込み
+      const outIdx = (y * outW + x) * 4;
+      outPixels[outIdx] = color.r;
+      outPixels[outIdx + 1] = color.g;
+      outPixels[outIdx + 2] = color.b;
+      outPixels[outIdx + 3] = color.a;
     }
   }
+
+  // 出力画像をCanvasに描画
+  ctx.putImageData(outImageData, minX, minY);
 }
 
 /**
- * 4点での双線形補間
+ * 点が四角形（凸多角形）の内部にあるかチェック
+ * クロス積の符号で判定
  */
-function bilinearInterpolate(
-  corners: [Point, Point, Point, Point],
-  u: number,
-  v: number
-): Point {
-  const [tl, tr, br, bl] = corners;
+function isPointInQuad(p: Point, quad: [Point, Point, Point, Point]): boolean {
+  // 四角形の頂点を順番に取得 [左上, 右上, 右下, 左下]
+  const [p0, p1, p2, p3] = quad;
 
-  // 上辺と下辺で線形補間
-  const top = {
-    x: tl.x * (1 - u) + tr.x * u,
-    y: tl.y * (1 - u) + tr.y * u
-  };
-  const bottom = {
-    x: bl.x * (1 - u) + br.x * u,
-    y: bl.y * (1 - u) + br.y * u
-  };
+  // 各辺に対してクロス積を計算
+  // すべて同じ符号（または0）であれば内部
+  const cross0 = crossProduct(p0, p1, p);
+  const cross1 = crossProduct(p1, p2, p);
+  const cross2 = crossProduct(p2, p3, p);
+  const cross3 = crossProduct(p3, p0, p);
 
-  // 垂直方向で線形補間
+  // すべて非負またはすべて非正
+  const allPositive = cross0 >= 0 && cross1 >= 0 && cross2 >= 0 && cross3 >= 0;
+  const allNegative = cross0 <= 0 && cross1 <= 0 && cross2 <= 0 && cross3 <= 0;
+
+  return allPositive || allNegative;
+}
+
+/**
+ * クロス積を計算（2次元）
+ * (p1 - p0) × (p - p0) の符号で点pが辺p0→p1のどちら側にあるかを判定
+ */
+function crossProduct(p0: Point, p1: Point, p: Point): number {
+  return (p1.x - p0.x) * (p.y - p0.y) - (p1.y - p0.y) * (p.x - p0.x);
+}
+
+/**
+ * バイリニア補間によるピクセルサンプリング
+ * サブピクセル座標から4近傍ピクセルを補間して色を取得
+ */
+function bilinearSample(
+  pixels: Uint8ClampedArray,
+  width: number,
+  height: number,
+  x: number,
+  y: number
+): { r: number; g: number; b: number; a: number } {
+  // 整数部と小数部を分離
+  const x0 = Math.floor(x);
+  const y0 = Math.floor(y);
+  const x1 = Math.min(x0 + 1, width - 1);
+  const y1 = Math.min(y0 + 1, height - 1);
+  const fx = x - x0;
+  const fy = y - y0;
+
+  // 4近傍ピクセルのインデックス
+  const idx00 = (y0 * width + x0) * 4;
+  const idx10 = (y0 * width + x1) * 4;
+  const idx01 = (y1 * width + x0) * 4;
+  const idx11 = (y1 * width + x1) * 4;
+
+  // バイリニア補間
+  const r = bilerp(pixels[idx00], pixels[idx10], pixels[idx01], pixels[idx11], fx, fy);
+  const g = bilerp(pixels[idx00 + 1], pixels[idx10 + 1], pixels[idx01 + 1], pixels[idx11 + 1], fx, fy);
+  const b = bilerp(pixels[idx00 + 2], pixels[idx10 + 2], pixels[idx01 + 2], pixels[idx11 + 2], fx, fy);
+  const a = bilerp(pixels[idx00 + 3], pixels[idx10 + 3], pixels[idx01 + 3], pixels[idx11 + 3], fx, fy);
+
   return {
-    x: top.x * (1 - v) + bottom.x * v,
-    y: top.y * (1 - v) + bottom.y * v
+    r: Math.round(r),
+    g: Math.round(g),
+    b: Math.round(b),
+    a: Math.round(a)
   };
 }
 
 /**
- * アフィン変換による三角形描画
+ * 2次元バイリニア補間の計算
  */
-function drawTriangle(
-  ctx: CanvasRenderingContext2D,
-  image: HTMLImageElement | HTMLCanvasElement,
-  src: [Point, Point, Point],
-  dst: [Point, Point, Point]
-): void {
-  // クリッピング領域を設定
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(dst[0].x, dst[0].y);
-  ctx.lineTo(dst[1].x, dst[1].y);
-  ctx.lineTo(dst[2].x, dst[2].y);
-  ctx.closePath();
-  ctx.clip();
-
-  // アフィン変換行列を計算
-  const matrix = computeAffineTransform(src, dst);
-  if (matrix) {
-    ctx.transform(
-      matrix.a, matrix.d,
-      matrix.b, matrix.e,
-      matrix.c, matrix.f
-    );
-    ctx.drawImage(image, 0, 0);
-  }
-
-  ctx.restore();
+function bilerp(v00: number, v10: number, v01: number, v11: number, fx: number, fy: number): number {
+  const top = v00 * (1 - fx) + v10 * fx;
+  const bottom = v01 * (1 - fx) + v11 * fx;
+  return top * (1 - fy) + bottom * fy;
 }
 
-/**
- * 3点からアフィン変換行列を計算
- */
-function computeAffineTransform(
-  src: [Point, Point, Point],
-  dst: [Point, Point, Point]
-): { a: number; b: number; c: number; d: number; e: number; f: number } | null {
-  const [s0, s1, s2] = src;
-  const [d0, d1, d2] = dst;
-
-  const det = (s0.x - s2.x) * (s1.y - s2.y) - (s1.x - s2.x) * (s0.y - s2.y);
-  if (Math.abs(det) < 1e-10) return null;
-
-  const a = ((d0.x - d2.x) * (s1.y - s2.y) - (d1.x - d2.x) * (s0.y - s2.y)) / det;
-  const b = ((d1.x - d2.x) * (s0.x - s2.x) - (d0.x - d2.x) * (s1.x - s2.x)) / det;
-  const c = d2.x - a * s2.x - b * s2.y;
-  const d = ((d0.y - d2.y) * (s1.y - s2.y) - (d1.y - d2.y) * (s0.y - s2.y)) / det;
-  const e = ((d1.y - d2.y) * (s0.x - s2.x) - (d0.y - d2.y) * (s1.x - s2.x)) / det;
-  const f = d2.y - d * s2.x - e * s2.y;
-
-  return { a, b, c, d, e, f };
-}

@@ -1926,15 +1926,22 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
             const pixels = compositeData.data;
             const frameData = frameImageData.data;
 
+            // 白判定閾値を白領域検出と統一（ITU-R BT.601輝度 >= 0.90）
+            // これにより白いスキマ（境界のグレーピクセル露出）を防止
+            const WHITE_LUMINANCE_THRESHOLD = 0.90;
+
             for (let i = 0; i < pixels.length; i += 4) {
               const frameR = frameData[i];
               const frameG = frameData[i + 1];
               const frameB = frameData[i + 2];
               const frameA = frameData[i + 3];
 
+              // ITU-R BT.601輝度計算（白領域検出と同じ計算式）
+              const luminance = (0.299 * frameR + 0.587 * frameG + 0.114 * frameB) / 255;
+
               // Frame pixel is opaque and not white -> it's part of the bezel/frame
               const isOpaque = frameA > 200;
-              const isWhite = frameR >= 240 && frameG >= 240 && frameB >= 240;
+              const isWhite = luminance >= WHITE_LUMINANCE_THRESHOLD;
 
               if (isOpaque && !isWhite) {
                 // Overwrite with frame pixel to preserve bezel
