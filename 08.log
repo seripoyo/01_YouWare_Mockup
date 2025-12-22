@@ -1,0 +1,14 @@
+chunk-LPF6KSF2.js?v=2ea923c2:521 Warning: validateDOMNesting(...): <button> cannot appear as a descendant of <button>.
+    at button
+    at button
+    at div
+    at div
+    at div
+    at div
+    at PreviewModal (http://127.0.0.1:5173/src/features/mockup/gallery/components/PreviewModal.tsx?t=1766347494052:334:32)
+    at div
+    at MockupGallery (http://127.0.0.1:5173/src/features/mockup/gallery/MockupGallery.tsx?t=1766347494052:36:33)
+    at ErrorBoundary (http://127.0.0.1:5173/src/components/ErrorBoundary.tsx:7:5)
+    at App (http://127.0.0.1:5173/src/App.tsx?t=1766347494052:25:27)
+printWarning @ chunk-LPF6KSF2.js?v=2ea923c2:521このエラーを分析
+PreviewModal.tsx:2086 白エリアが検出されませんでした

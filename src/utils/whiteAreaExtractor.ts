@@ -51,13 +51,111 @@ export interface DetectionOptions {
 
 const DEFAULT_OPTIONS: Required<DetectionOptions> = {
   luminanceThreshold: 0.90,
-  minAreaRatio: 0.005,
-  minRectangularity: 0.35,  // 0.65→0.35: 傾いたデバイスや角丸画面に対応（sp_1x1_023_pink等）
-  minBezelScore: 0.20,      // 0.4→0.20: 画像端のデバイスや傾いたベゼルに対応
-  bezelWidth: 15,
-  darkThreshold: 0.50,      // 0.25→0.50: グレーベゼル（輝度35-50%）も検出可能に
-  minBezelEdges: 1,         // 3→1: 片側のみベゼルが見えるケースに対応
+  minAreaRatio: 0.003,      // 0.005→0.003: 小さな画面領域も検出可能に
+  minRectangularity: 0.25,  // 0.35→0.25: 平置き斜めデバイスの透視変形に対応
+  minBezelScore: 0.10,      // 0.12→0.10: 平置きデバイスで一部ベゼルが見えないケースに対応
+  bezelWidth: 20,           // 15→20: より広い範囲でベゼルを検出
+  darkThreshold: 0.55,      // 0.50→0.55: より明るいグレーベゼルも検出可能に
+  minBezelEdges: 1,         // 片側のみベゼルが見えるケースに対応
 };
+
+// ============================================
+// Phase 1: 検出精度向上のための新機能
+// ============================================
+
+/**
+ * デバイス画面らしいアスペクト比かどうかをスコア化
+ * スマートフォン: 約1.8〜2.2 (9:16〜9:20相当)
+ * タブレット: 約1.3〜1.5
+ * ラップトップ: 約0.56〜0.67 (16:9〜3:2相当)
+ */
+function calculateAspectRatioScore(bounds: { width: number; height: number }): number {
+  // 縦横どちらが長いかに応じてアスペクト比を計算
+  const aspectRatio = Math.max(bounds.width, bounds.height) / Math.min(bounds.width, bounds.height);
+
+  // スマートフォン画面のアスペクト比: 約1.8〜2.2
+  const smartphoneScore = 1 - Math.min(1, Math.abs(aspectRatio - 2.0) / 0.5);
+
+  // タブレット: 約1.3〜1.5
+  const tabletScore = 1 - Math.min(1, Math.abs(aspectRatio - 1.4) / 0.3);
+
+  // ラップトップ: 約1.5〜1.8 (16:9〜16:10相当)
+  const laptopScore = 1 - Math.min(1, Math.abs(aspectRatio - 1.65) / 0.3);
+
+  // 正方形に近い場合（1:1）も許容
+  const squareScore = 1 - Math.min(1, Math.abs(aspectRatio - 1.0) / 0.2);
+
+  // 最も高いスコアを採用（いずれかのデバイスタイプに近ければOK）
+  return Math.max(smartphoneScore, tabletScore, laptopScore, squareScore);
+}
+
+/**
+ * ベゼルの連続性をチェック
+ * 各辺を複数セグメントに分割し、連続して暗いピクセルが存在するかを評価
+ */
+function checkBezelContinuity(
+  imageData: ImageData,
+  bounds: { x: number; y: number; width: number; height: number },
+  bezelWidth: number,
+  darkThreshold: number
+): number {
+  const { width: imgW, height: imgH, data } = imageData;
+  const segments = 5; // 各辺を5分割
+
+  const checkEdgeSegments = (
+    isHorizontal: boolean,
+    start: number,
+    end: number,
+    fixedCoord: number,
+    direction: 'before' | 'after'
+  ): number => {
+    const length = end - start;
+    if (length <= 0) return 0;
+
+    const segmentSize = Math.floor(length / segments);
+    if (segmentSize <= 0) return 0;
+
+    let continuousCount = 0;
+
+    for (let i = 0; i < segments; i++) {
+      const segStart = start + i * segmentSize;
+      const segEnd = Math.min(segStart + segmentSize, end);
+
+      let darkCount = 0;
+      let totalCount = 0;
+
+      for (let pos = segStart; pos < segEnd; pos++) {
+        for (let offset = 1; offset <= bezelWidth; offset++) {
+          const x = isHorizontal ? pos : (direction === 'before' ? fixedCoord - offset : fixedCoord + offset);
+          const y = isHorizontal ? (direction === 'before' ? fixedCoord - offset : fixedCoord + offset) : pos;
+
+          if (x >= 0 && x < imgW && y >= 0 && y < imgH) {
+            const idx = (y * imgW + x) * 4;
+            const lum = getLuminance(data[idx], data[idx + 1], data[idx + 2]);
+            if (lum < darkThreshold) darkCount++;
+            totalCount++;
+          }
+        }
+      }
+
+      if (totalCount > 0 && darkCount / totalCount > 0.3) {
+        continuousCount++;
+      }
+    }
+
+    return continuousCount / segments;
+  };
+
+  const { x, y, width: w, height: h } = bounds;
+
+  const topContinuity = checkEdgeSegments(true, x, x + w, y, 'before');
+  const bottomContinuity = checkEdgeSegments(true, x, x + w, y + h, 'after');
+  const leftContinuity = checkEdgeSegments(false, y, y + h, x, 'before');
+  const rightContinuity = checkEdgeSegments(false, y, y + h, x + w, 'after');
+
+  // 連続性スコア（全辺の平均）
+  return (topContinuity + bottomContinuity + leftContinuity + rightContinuity) / 4;
+}
 
 /**
  * RGBから輝度を計算（ITU-R BT.601標準）
@@ -260,13 +358,15 @@ function createRegionMask(
 }
 
 /**
- * デバイス画面領域を検出（メイン関数）
+ * 内部検出処理（指定された輝度閾値で検出を実行）
+ * @param isPureWhiteMode trueの場合、純白（#FFF）のみを検出するモードで、
+ *                        デバイスらしいアスペクト比の領域はベゼル要件を緩和する
  */
-export function detectDeviceScreens(
+function detectDeviceScreensInternal(
   imageData: ImageData,
-  options: DetectionOptions = {}
-): ScreenRegion[] {
-  const opts = { ...DEFAULT_OPTIONS, ...options };
+  opts: Required<DetectionOptions>,
+  isPureWhiteMode: boolean = false
+): DetectedRegion[] {
   const { width, height } = imageData;
   const totalPixels = width * height;
 
@@ -305,19 +405,46 @@ export function detectDeviceScreens(
     const bezelEdges = checkBezelEdges(imageData, regionBounds, opts.bezelWidth, opts.darkThreshold);
     const bezelScore = calculateBezelScore(bezelEdges);
 
-    if (bezelScore < opts.minBezelScore) continue;
+    // Phase 1改良: アスペクト比スコアを先に計算
+    const aspectScore = calculateAspectRatioScore(regionBounds);
 
-    // 4辺のうち指定数以上がベゼルを持つかチェック（閾値を0.3→0.15に緩和）
+    // 純白モードかつデバイスらしいアスペクト比の場合、ベゼル要件を大幅に緩和
+    // 理由: 画面の白が#FFFのみで、アスペクト比がデバイスらしい場合、
+    //       ベゼルが薄い/見えにくいデバイスでも検出可能にする
+    const relaxedBezelThreshold = isPureWhiteMode && aspectScore > 0.5
+      ? opts.minBezelScore * 0.5  // 閾値を半分に（0.10 → 0.05）
+      : opts.minBezelScore;
+
+    if (bezelScore < relaxedBezelThreshold) continue;
+
+    // 4辺のうちベゼルを持つ辺の数をカウント（閾値0.10、純白モードでは0.05）
+    const edgeThreshold = isPureWhiteMode && aspectScore > 0.5 ? 0.05 : 0.10;
     const edgesWithBezel = [bezelEdges.top, bezelEdges.bottom, bezelEdges.left, bezelEdges.right]
-      .filter(score => score > 0.15).length;
+      .filter(score => score > edgeThreshold).length;
 
     if (edgesWithBezel < opts.minBezelEdges) continue;
+
+    // Phase 1: ベゼル連続性スコアを計算
+    const continuityScore = checkBezelContinuity(imageData, regionBounds, opts.bezelWidth, opts.darkThreshold);
 
     // マスク作成
     const regionMask = createRegionMask(pixels, regionBounds, width);
 
-    // 総合スコア計算
-    const overallScore = bezelScore * areaRatio * rectangularity * 1000;
+    // Phase 1改良: ベゼル辺数ボーナス
+    // 4辺すべてにベゼルがある領域を強く優先（白デスク/白背景との区別）
+    // edgesWithBezel: 1=1.0, 2=1.5, 3=2.0, 4=3.0
+    const bezelEdgeBonus = edgesWithBezel === 4 ? 3.0 :
+                           edgesWithBezel === 3 ? 2.0 :
+                           edgesWithBezel === 2 ? 1.5 : 1.0;
+
+    // 総合スコア計算（Phase 1改良: ベゼル辺数ボーナスを追加）
+    // - bezelScore: ベゼルの暗さ（0〜1）
+    // - areaRatio: 面積比（小さい値）
+    // - rectangularity: 矩形度（0〜1）
+    // - aspectScore: デバイスらしいアスペクト比（0〜1）
+    // - continuityScore: ベゼルの連続性（0〜1）
+    // - bezelEdgeBonus: ベゼル辺数ボーナス（1.0〜3.0）
+    const overallScore = bezelScore * areaRatio * rectangularity * (0.5 + aspectScore * 0.5) * (0.7 + continuityScore * 0.3) * bezelEdgeBonus * 1000;
 
     screenRegions.push({
       bounds: regionBounds,
@@ -330,6 +457,57 @@ export function detectDeviceScreens(
       bezelEdges,
     });
   }
+
+  return screenRegions;
+}
+
+/**
+ * デバイス画面領域を検出（メイン関数）
+ * Phase 1: 輝度閾値の段階的適用を実装
+ */
+export function detectDeviceScreens(
+  imageData: ImageData,
+  options: DetectionOptions = {}
+): ScreenRegion[] {
+  const opts = { ...DEFAULT_OPTIONS, ...options };
+  const { width } = imageData;
+
+  // Phase 1 Step 1.2: 輝度閾値の段階的適用（改良版）
+  // 画面の白は必ず#FFF（純粋な白）なので、高い閾値から検出を試みる
+  // 0.99: 純粋な白(#FFF)のみ → 白デスク/白背景との分離に最適
+  // 0.97: ほぼ純粋な白
+  // 0.95: 少しグレーがかった白も含む
+  // 0.90: 従来の閾値（フォールバック）
+  const thresholds = [0.99, 0.97, 0.95, 0.90];
+  let screenRegions: DetectedRegion[] = [];
+  let bestRegions: DetectedRegion[] = [];
+  let bestScore = 0;
+
+  for (const threshold of thresholds) {
+    const currentOpts = { ...opts, luminanceThreshold: threshold };
+    // 純白モード: 閾値0.97以上は純白検出モード（ベゼル要件を緩和）
+    const isPureWhiteMode = threshold >= 0.97;
+    const regions = detectDeviceScreensInternal(imageData, currentOpts, isPureWhiteMode);
+
+    if (regions.length > 0) {
+      // 最も高いoverallScoreを持つ結果を採用
+      const maxScore = Math.max(...regions.map(r => r.overallScore));
+
+      // 最初に見つかった結果、または明らかに良いスコアの場合は更新
+      if (bestRegions.length === 0 || maxScore > bestScore * 1.2) {
+        bestRegions = regions;
+        bestScore = maxScore;
+      }
+
+      // 高い閾値（0.97以上）で良い結果が見つかった場合は早期終了
+      // これにより白デスク/白背景との融合を防ぐ
+      if (threshold >= 0.97 && regions.length > 0) {
+        break;
+      }
+    }
+  }
+
+  screenRegions = bestRegions;
 
   // スコア順にソートして上位3つを選択
   const sorted = [...screenRegions].sort((a, b) => b.overallScore - a.overallScore);
@@ -544,6 +722,7 @@ export interface DetectionLog {
 
 /**
  * 詳細な検出ログを生成しながらデバイス画面領域を検出
+ * detectDeviceScreensと同じ段階的輝度閾値ロジックを使用
  */
 export function detectDeviceScreensWithLog(
   imageData: ImageData,
@@ -551,7 +730,6 @@ export function detectDeviceScreensWithLog(
 ): { regions: ScreenRegion[]; log: DetectionLog } {
   const opts = { ...DEFAULT_OPTIONS, ...options };
   const { width, height } = imageData;
-  const totalPixels = width * height;
 
   // ログ初期化
   const log: DetectionLog = {
@@ -577,134 +755,42 @@ export function detectDeviceScreensWithLog(
     },
   };
 
-  // ステップ1: 白ピクセルマスクを作成
-  const mask = createWhitePixelMask(imageData, opts.luminanceThreshold);
-  
-  // 白ピクセル数をカウント
-  let whitePixelCount = 0;
-  for (let i = 0; i < mask.length; i++) {
-    if (mask[i] === 1) whitePixelCount++;
-  }
-  log.stages.whitePixelCount = whitePixelCount;
-  log.stages.whitePixelRatio = whitePixelCount / totalPixels;
+  // Phase 1: 段階的輝度閾値（detectDeviceScreensと同一ロジック）
+  // 画面の白は必ず#FFF（純粋な白）なので、高い閾値から検出を試みる
+  const thresholds = [0.99, 0.97, 0.95, 0.90];
+  let bestRegions: DetectedRegion[] = [];
+  let bestScore = 0;
+  let bestThreshold = 0.99;
 
-  // ステップ2: BFS連結成分抽出
-  const rawRegions = extractConnectedRegions(mask, width, height);
-  log.stages.rawRegionsCount = rawRegions.length;
-  
-  // 生の領域情報を記録
-  rawRegions.forEach((region, index) => {
-    const { bounds, pixels } = region;
-    log.stages.rawRegions.push({
-      index,
-      bounds: {
-        x: bounds.minX,
-        y: bounds.minY,
-        width: bounds.maxX - bounds.minX + 1,
-        height: bounds.maxY - bounds.minY + 1,
-      },
-      pixelCount: pixels.length,
-      areaRatio: pixels.length / totalPixels,
-    });
-  });
+  for (const threshold of thresholds) {
+    const currentOpts = { ...opts, luminanceThreshold: threshold };
+    const isPureWhiteMode = threshold >= 0.97;
+    const regions = detectDeviceScreensInternalWithLog(imageData, currentOpts, isPureWhiteMode, log, threshold === thresholds[0]);
 
-  // ステップ3: フィルタリングとスコアリング
-  const screenRegions: DetectedRegion[] = [];
-  let afterAreaFilter = 0;
-  let afterRectangularityFilter = 0;
-  let afterBezelScoreFilter = 0;
-  let afterBezelEdgesFilter = 0;
+    if (regions.length > 0) {
+      const maxScore = Math.max(...regions.map(r => r.overallScore));
 
-  for (let regionIdx = 0; regionIdx < rawRegions.length; regionIdx++) {
-    const region = rawRegions[regionIdx];
-    const { bounds, pixels } = region;
-    const { minX, minY, maxX, maxY } = bounds;
+      if (bestRegions.length === 0 || maxScore > bestScore * 1.2) {
+        bestRegions = regions;
+        bestScore = maxScore;
+        bestThreshold = threshold;
+      }
 
-    const boundWidth = maxX - minX + 1;
-    const boundHeight = maxY - minY + 1;
-    const regionBounds = { x: minX, y: minY, width: boundWidth, height: boundHeight };
-
-    // 面積フィルタ
-    const areaRatio = pixels.length / totalPixels;
-    if (areaRatio < opts.minAreaRatio) {
-      log.filteredOutReasons.push({
-        regionIndex: regionIdx,
-        bounds: regionBounds,
-        reason: 'AREA_TOO_SMALL',
-        details: { areaRatio },
-      });
-      continue;
+      // 高い閾値（0.97以上）で良い結果が見つかった場合は早期終了
+      if (threshold >= 0.97 && regions.length > 0) {
+        break;
+      }
     }
-    afterAreaFilter++;
-
-    // 矩形度フィルタ
-    const rectangularity = calculateRectangularity(pixels.length, bounds);
-    if (rectangularity < opts.minRectangularity) {
-      log.filteredOutReasons.push({
-        regionIndex: regionIdx,
-        bounds: regionBounds,
-        reason: 'LOW_RECTANGULARITY',
-        details: { areaRatio, rectangularity },
-      });
-      continue;
-    }
-    afterRectangularityFilter++;
-
-    // ベゼルスコア計算
-    const bezelEdges = checkBezelEdges(imageData, regionBounds, opts.bezelWidth, opts.darkThreshold);
-    const bezelScore = calculateBezelScore(bezelEdges);
-
-    if (bezelScore < opts.minBezelScore) {
-      log.filteredOutReasons.push({
-        regionIndex: regionIdx,
-        bounds: regionBounds,
-        reason: 'LOW_BEZEL_SCORE',
-        details: { areaRatio, rectangularity, bezelScore, bezelEdges },
-      });
-      continue;
-    }
-    afterBezelScoreFilter++;
-
-    // 4辺のうち指定数以上がベゼルを持つかチェック（閾値0.15: detectDeviceScreensと同一）
-    const edgesWithBezel = [bezelEdges.top, bezelEdges.bottom, bezelEdges.left, bezelEdges.right]
-      .filter(score => score > 0.15).length;
-
-    if (edgesWithBezel < opts.minBezelEdges) {
-      log.filteredOutReasons.push({
-        regionIndex: regionIdx,
-        bounds: regionBounds,
-        reason: 'INSUFFICIENT_BEZEL_EDGES',
-        details: { areaRatio, rectangularity, bezelScore, bezelEdges, edgesWithBezel },
-      });
-      continue;
-    }
-    afterBezelEdgesFilter++;
-
-    // マスク作成
-    const regionMask = createRegionMask(pixels, regionBounds, width);
-
-    // 総合スコア計算
-    const overallScore = bezelScore * areaRatio * rectangularity * 1000;
-
-    screenRegions.push({
-      bounds: regionBounds,
-      pixels,
-      mask: regionMask,
-      area: pixels.length,
-      rectangularity,
-      bezelScore,
-      overallScore,
-      bezelEdges,
-    });
   }
 
-  log.stages.afterAreaFilter = afterAreaFilter;
-  log.stages.afterRectangularityFilter = afterRectangularityFilter;
-  log.stages.afterBezelScoreFilter = afterBezelScoreFilter;
-  log.stages.afterBezelEdgesFilter = afterBezelEdgesFilter;
+  // ログに使用した閾値を記録
+  log.options.luminanceThreshold = bestThreshold;
+
+  // 0.99での白ピクセル数を記録（初回の記録を使用）
+  // 既にlog.stagesに記録済み
 
   // スコア順にソートして上位3つを選択
-  const sorted = [...screenRegions].sort((a, b) => b.overallScore - a.overallScore);
+  const sorted = [...bestRegions].sort((a, b) => b.overallScore - a.overallScore);
   const top3 = sorted.slice(0, 3);
 
   // デバイス番号と色を割り当て
@@ -750,11 +836,185 @@ export function detectDeviceScreensWithLog(
     success: finalRegions.length > 0,
     detectedCount: finalRegions.length,
     message: finalRegions.length === 0
-      ? `白エリアが検出されませんでした。白ピクセル比率: ${(log.stages.whitePixelRatio * 100).toFixed(2)}%, 候補領域数: ${rawRegions.length}, フィルタ後: 0`
-      : `${finalRegions.length}個のデバイス画面を検出しました`,
+      ? `白エリアが検出されませんでした。白ピクセル比率: ${(log.stages.whitePixelRatio * 100).toFixed(2)}%, 候補領域数: ${log.stages.rawRegionsCount}, フィルタ後: 0`
+      : `${finalRegions.length}個のデバイス画面を検出しました（閾値: ${bestThreshold}）`,
   };
 
   return { regions: finalRegions, log };
+}
+
+/**
+ * ログ付き内部検出処理（段階的閾値で呼び出される）
+ */
+function detectDeviceScreensInternalWithLog(
+  imageData: ImageData,
+  opts: Required<DetectionOptions>,
+  isPureWhiteMode: boolean,
+  log: DetectionLog,
+  isFirstThreshold: boolean
+): DetectedRegion[] {
+  const { width, height } = imageData;
+  const totalPixels = width * height;
+
+  // ステップ1: 白ピクセルマスクを作成
+  const mask = createWhitePixelMask(imageData, opts.luminanceThreshold);
+
+  // 最初の閾値でのみログに白ピクセル情報を記録
+  if (isFirstThreshold) {
+    let whitePixelCount = 0;
+    for (let i = 0; i < mask.length; i++) {
+      if (mask[i] === 1) whitePixelCount++;
+    }
+    log.stages.whitePixelCount = whitePixelCount;
+    log.stages.whitePixelRatio = whitePixelCount / totalPixels;
+  }
+
+  // ステップ2: BFS連結成分抽出
+  const rawRegions = extractConnectedRegions(mask, width, height);
+
+  // 最初の閾値でのみログに領域情報を記録
+  if (isFirstThreshold) {
+    log.stages.rawRegionsCount = rawRegions.length;
+    rawRegions.forEach((region, index) => {
+      const { bounds, pixels } = region;
+      log.stages.rawRegions.push({
+        index,
+        bounds: {
+          x: bounds.minX,
+          y: bounds.minY,
+          width: bounds.maxX - bounds.minX + 1,
+          height: bounds.maxY - bounds.minY + 1,
+        },
+        pixelCount: pixels.length,
+        areaRatio: pixels.length / totalPixels,
+      });
+    });
+  }
+
+  // ステップ3: フィルタリングとスコアリング
+  const screenRegions: DetectedRegion[] = [];
+  let afterAreaFilter = 0;
+  let afterRectangularityFilter = 0;
+  let afterBezelScoreFilter = 0;
+  let afterBezelEdgesFilter = 0;
+
+  for (let regionIdx = 0; regionIdx < rawRegions.length; regionIdx++) {
+    const region = rawRegions[regionIdx];
+    const { bounds, pixels } = region;
+    const { minX, minY, maxX, maxY } = bounds;
+
+    const boundWidth = maxX - minX + 1;
+    const boundHeight = maxY - minY + 1;
+    const regionBounds = { x: minX, y: minY, width: boundWidth, height: boundHeight };
+
+    // 面積フィルタ
+    const areaRatio = pixels.length / totalPixels;
+    if (areaRatio < opts.minAreaRatio) {
+      if (isFirstThreshold) {
+        log.filteredOutReasons.push({
+          regionIndex: regionIdx,
+          bounds: regionBounds,
+          reason: 'AREA_TOO_SMALL',
+          details: { areaRatio },
+        });
+      }
+      continue;
+    }
+    afterAreaFilter++;
+
+    // 矩形度フィルタ
+    const rectangularity = calculateRectangularity(pixels.length, bounds);
+    if (rectangularity < opts.minRectangularity) {
+      if (isFirstThreshold) {
+        log.filteredOutReasons.push({
+          regionIndex: regionIdx,
+          bounds: regionBounds,
+          reason: 'LOW_RECTANGULARITY',
+          details: { areaRatio, rectangularity },
+        });
+      }
+      continue;
+    }
+    afterRectangularityFilter++;
+
+    // ベゼルスコア計算
+    const bezelEdges = checkBezelEdges(imageData, regionBounds, opts.bezelWidth, opts.darkThreshold);
+    const bezelScore = calculateBezelScore(bezelEdges);
+
+    // Phase 1改良: アスペクト比スコアを先に計算
+    const aspectScore = calculateAspectRatioScore(regionBounds);
+
+    // 純白モードかつデバイスらしいアスペクト比の場合、ベゼル要件を緩和
+    const relaxedBezelThreshold = isPureWhiteMode && aspectScore > 0.5
+      ? opts.minBezelScore * 0.5
+      : opts.minBezelScore;
+
+    if (bezelScore < relaxedBezelThreshold) {
+      if (isFirstThreshold) {
+        log.filteredOutReasons.push({
+          regionIndex: regionIdx,
+          bounds: regionBounds,
+          reason: 'LOW_BEZEL_SCORE',
+          details: { areaRatio, rectangularity, bezelScore, bezelEdges },
+        });
+      }
+      continue;
+    }
+    afterBezelScoreFilter++;
+
+    // 4辺のうちベゼルを持つ辺の数をカウント（純白モードでは閾値を緩和）
+    const edgeThreshold = isPureWhiteMode && aspectScore > 0.5 ? 0.05 : 0.10;
+    const edgesWithBezel = [bezelEdges.top, bezelEdges.bottom, bezelEdges.left, bezelEdges.right]
+      .filter(score => score > edgeThreshold).length;
+
+    if (edgesWithBezel < opts.minBezelEdges) {
+      if (isFirstThreshold) {
+        log.filteredOutReasons.push({
+          regionIndex: regionIdx,
+          bounds: regionBounds,
+          reason: 'INSUFFICIENT_BEZEL_EDGES',
+          details: { areaRatio, rectangularity, bezelScore, bezelEdges, edgesWithBezel },
+        });
+      }
+      continue;
+    }
+    afterBezelEdgesFilter++;
+
+    // Phase 1: ベゼル連続性スコアを計算
+    const continuityScore = checkBezelContinuity(imageData, regionBounds, opts.bezelWidth, opts.darkThreshold);
+
+    // マスク作成
+    const regionMask = createRegionMask(pixels, regionBounds, width);
+
+    // Phase 1改良: ベゼル辺数ボーナス
+    const bezelEdgeBonus = edgesWithBezel === 4 ? 3.0 :
+                           edgesWithBezel === 3 ? 2.0 :
+                           edgesWithBezel === 2 ? 1.5 : 1.0;
+
+    // 総合スコア計算
+    const overallScore = bezelScore * areaRatio * rectangularity * (0.5 + aspectScore * 0.5) * (0.7 + continuityScore * 0.3) * bezelEdgeBonus * 1000;
+
+    screenRegions.push({
+      bounds: regionBounds,
+      pixels,
+      mask: regionMask,
+      area: pixels.length,
+      rectangularity,
+      bezelScore,
+      overallScore,
+      bezelEdges,
+    });
+  }
+
+  // 最初の閾値でのみフィルタ後の数を記録
+  if (isFirstThreshold) {
+    log.stages.afterAreaFilter = afterAreaFilter;
+    log.stages.afterRectangularityFilter = afterRectangularityFilter;
+    log.stages.afterBezelScoreFilter = afterBezelScoreFilter;
+    log.stages.afterBezelEdgesFilter = afterBezelEdgesFilter;
+  }
+
+  return screenRegions;
 }
 
 /**

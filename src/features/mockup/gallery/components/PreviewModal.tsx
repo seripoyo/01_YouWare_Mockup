@@ -2069,15 +2069,8 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
     if (!frameImageData || !frameNatural) return;
 
     // 白エリアを検出（ログ付き）
-    // 傾いたデバイスや角丸画面に対応するため、閾値を緩和
-    const { regions, log } = detectDeviceScreensWithLog(frameImageData, {
-      luminanceThreshold: 0.90,
-      minAreaRatio: 0.005,
-      minRectangularity: 0.35,  // 0.65→0.35: 傾いたデバイス(sp_1x1_023_pink等)に対応
-      minBezelScore: 0.20,      // 0.4→0.20: 画像端のデバイスや傾いたベゼルに対応
-      bezelWidth: 15,
-      minBezelEdges: 1,         // 2→1: 片側のみベゼルが見えるケースに対応
-    });
+    // DEFAULT_OPTIONSを使用し、段階的輝度閾値と純白モードを適用
+    const { regions, log } = detectDeviceScreensWithLog(frameImageData);
 
     setDetectedScreenRegions(regions);
     setDetectionLog(log);
