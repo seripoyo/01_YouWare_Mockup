@@ -82,11 +82,6 @@ export function MockupGallery({ onSelectFrame, onClose }: GalleryProps) {
             </button>
           </div>
 
-          <div className="hidden md:block min-w-fit">
-            <button className="px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition-colors">
-              Get Full Access
-            </button>
-          </div>
         </div>
 
         {/* Mobile Search Bar */}
