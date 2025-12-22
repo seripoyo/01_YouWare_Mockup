@@ -179,7 +179,8 @@ export function MockupGallery({ onSelectFrame, onClose }: GalleryProps) {
 
           {/* Grid */}
           <MockupGrid
-            items={filteredItems}
+            items={mockupGalleryItems}
+            visibleItems={filteredItems}
             onSelect={(item) => {
               setActiveItem(item);
             }}

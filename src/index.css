@@ -85,3 +85,36 @@
 .animate-fadeIn {
   animation: fadeIn 0.3s ease-out forwards;
 }
+
+/* Filter animation - smooth enter with scale and opacity
+   Matches GSAP Flip style: duration 0.7s, scale, power1.inOut easing */
+@keyframes filterEnter {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes filterExit {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+
+.animate-filterEnter {
+  animation: filterEnter 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  /* cubic-bezier(0.4, 0, 0.2, 1) is similar to power1.inOut */
+}
+
+.animate-filterExit {
+  animation: filterExit 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
