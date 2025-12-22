@@ -1,43 +1,64 @@
 <!doctype html>
 <html lang="ja">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>モックアップギャラリー</title>
 
-    <!-- Preload critical fonts to prevent FOUT (Flash of Unstyled Text) -->
-    <link rel="preload" href="/assets/fonts/New-Atten-Round-regular.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="/assets/fonts/New-Atten-Round-Bold.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="/assets/device/fonts/GenJyuuGothicX-Regular.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="/assets/device/fonts/GenJyuuGothicX-Bold.woff2" as="font" type="font/woff2" crossorigin>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>モックアップギャラリー</title>
 
-    <!-- Material Icons -->
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <!-- Preload critical fonts to prevent FOUT (Flash of Unstyled Text) -->
+  <link rel="preload" href="/assets/fonts/New-Atten-Round-regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/New-Atten-Round-Bold.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/device/fonts/GenJyuuGothicX-Regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/device/fonts/GenJyuuGothicX-Bold.woff2" as="font" type="font/woff2" crossorigin>
 
-    <style>
-      /* Hide body until fonts are ready to prevent FOUT */
-      body {
-        font-family: 'New Atten Round', 'GenJyuuGothicX', system-ui, -apple-system, sans-serif;
-        background-color: #f8fafc;
-      }
-      ::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
-      }
-      ::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 3px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+  <!-- Material Icons -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+  <style>
+    /* Hide body until fonts are ready to prevent FOUT */
+    body {
+      font-family: 'New Atten Round', 'GenJyuuGothicX', system-ui, -apple-system, sans-serif;
+      background-color: #f8fafc;
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.1",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.1/",
+    "react/": "https://esm.sh/react@^19.2.1/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.559.0",
+    "gsap": "https://esm.sh/gsap@3.12.5",
+    "gsap/Flip": "https://esm.sh/gsap@3.12.5/Flip",
+    "gsap/": "https://esm.sh/gsap@^3.14.2/"
+  }
+}
+</script>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>
