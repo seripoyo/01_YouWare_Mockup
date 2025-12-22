@@ -1634,6 +1634,95 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
 
       const regionsWithImages = deviceRegions.filter(r => r.userImage);
 
+      // ========== スクリーン領域内の白ピクセルを黒に変換（ImageData操作） ==========
+      // Canvas 2Dのfill()はアンチエイリアシングを無効化できないため、
+      // ImageData操作でピクセル単位の正確な変換を行う
+      // これにより、フレームの元のアウトラインは完全に保持される
+      if (deviceRegions.length > 0) {
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const pixels = imageData.data;
+        const canvasWidth = canvas.width;
+
+        // スクリーン領域の四角形を構築（拡張なし - 元の検出境界を使用）
+        const screenQuads: Point[][] = deviceRegions.map(region => {
+          const corners = region.corners;
+          if (!corners) return [];
+
+          // コーナーを並べ替えて[左上, 右上, 右下, 左下]順にする
+          const rcenterX = corners.reduce((sum, c) => sum + c.x, 0) / 4;
+          const rcenterY = corners.reduce((sum, c) => sum + c.y, 0) / 4;
+          const cornersWithAngle = corners.map((c) => ({
+            point: c,
+            angle: Math.atan2(c.y - rcenterY, c.x - rcenterX)
+          }));
+          const topTwo = [...cornersWithAngle].sort((a, b) => a.point.y - b.point.y).slice(0, 2);
+          const bottomTwo = [...cornersWithAngle].sort((a, b) => a.point.y - b.point.y).slice(2, 4);
+          topTwo.sort((a, b) => a.point.x - b.point.x);
+          bottomTwo.sort((a, b) => a.point.x - b.point.x);
+
+          return [
+            topTwo[0].point,    // 左上
+            topTwo[1].point,    // 右上
+            bottomTwo[1].point, // 右下
+            bottomTwo[0].point  // 左下
+          ];
+        }).filter(quad => quad.length === 4);
+
+        // 点が四角形の内部にあるかチェック（クロス積による判定）
+        const isPointInScreenQuad = (px: number, py: number, quad: Point[]): boolean => {
+          const crossProduct = (p0: Point, p1: Point, p: Point): number => {
+            return (p1.x - p0.x) * (p.y - p0.y) - (p1.y - p0.y) * (p.x - p0.x);
+          };
+          const cross0 = crossProduct(quad[0], quad[1], { x: px, y: py });
+          const cross1 = crossProduct(quad[1], quad[2], { x: px, y: py });
+          const cross2 = crossProduct(quad[2], quad[3], { x: px, y: py });
+          const cross3 = crossProduct(quad[3], quad[0], { x: px, y: py });
+          const allPositive = cross0 >= 0 && cross1 >= 0 && cross2 >= 0 && cross3 >= 0;
+          const allNegative = cross0 <= 0 && cross1 <= 0 && cross2 <= 0 && cross3 <= 0;
+          return allPositive || allNegative;
+        };
+
+        // 白ピクセルの判定閾値
+        // 境界部分のグレーピクセルも確実に黒に変換するため、
+        // 元の白エリア検出（0.90）より低めに設定
+        const WHITE_LUMINANCE = 0.80;
+
+        // 各スクリーン領域を処理
+        screenQuads.forEach(quad => {
+          // バウンディングボックスを計算
+          const xs = quad.map(p => p.x);
+          const ys = quad.map(p => p.y);
+          const minX = Math.max(0, Math.floor(Math.min(...xs)));
+          const maxX = Math.min(canvasWidth - 1, Math.ceil(Math.max(...xs)));
+          const minY = Math.max(0, Math.floor(Math.min(...ys)));
+          const maxY = Math.min(canvas.height - 1, Math.ceil(Math.max(...ys)));
+
+          // バウンディングボックス内のピクセルを処理
+          for (let y = minY; y <= maxY; y++) {
+            for (let x = minX; x <= maxX; x++) {
+              // スクリーン領域の四角形内部にあるかチェック
+              if (!isPointInScreenQuad(x, y, quad)) continue;
+
+              const idx = (y * canvasWidth + x) * 4;
+              const r = pixels[idx];
+              const g = pixels[idx + 1];
+              const b = pixels[idx + 2];
+              const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+              // 白ピクセルのみを黒に変換
+              if (luminance >= WHITE_LUMINANCE) {
+                pixels[idx] = 0;     // R
+                pixels[idx + 1] = 0; // G
+                pixels[idx + 2] = 0; // B
+                // アルファは変更しない
+              }
+            }
+          }
+        });
+
+        ctx.putImageData(imageData, 0, 0);
+      }
+
       if (regionsWithImages.length === 0) {
         // No user images, frame already drawn above
         const dataUrl = canvas.toDataURL("image/png");
@@ -1748,17 +1837,6 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
             ctx.translate(centerX, centerY);
             ctx.drawImage(userImg, 0, 0, imgW, imgH, -drawW / 2, -drawH / 2, drawW, drawH);
           } else {
-            // For full quadrilateral regions, use corners path
-            // 重要: 編集後の頂点を使用（originalCornersではなくcorners）
-            ctx.beginPath();
-            const clipCorners = region.corners;
-            ctx.moveTo(clipCorners[0].x, clipCorners[0].y);
-            ctx.lineTo(clipCorners[1].x, clipCorners[1].y);
-            ctx.lineTo(clipCorners[2].x, clipCorners[2].y);
-            ctx.lineTo(clipCorners[3].x, clipCorners[3].y);
-            ctx.closePath();
-            ctx.clip();
-
             // ========== 透視変換による画像描画 ==========
             // 画像の4隅をガイドの4隅に正確にマッピング
             const corners = region.corners;
@@ -1774,7 +1852,6 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
 
             // ステップ1: cornersの順序を [左上, 右上, 右下, 左下] に並べ替え
             // 現在のcornersは検出順なので、座標に基づいて並べ替える必要がある
-            const sortedCorners = [...corners];
 
             // 中心座標を計算
             const centerX = corners.reduce((sum, c) => sum + c.x, 0) / 4;
@@ -1810,12 +1887,48 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
             const bottomRight = bottomTwo[1].point;
 
             // drawPerspectiveImage が期待する順序: [左上, 右上, 右下, 左下]
+            // 白エリア検出のboundsは実際のベゼル境界より1-2px内側になることがあるため、
+            // 各頂点を外側に拡張して白い隙間を防止する
+            // 黒塗り下地（EXPAND = 5）と同じか少し大きくして、ユーザー画像が黒塗りをカバー
+            const EXPAND_PIXELS = 5; // 拡張ピクセル数
+
+            // 単純な方法: 各頂点をその位置に応じて外側に移動
+            // 左上 → 左上方向に拡張 (-X, -Y)
+            // 右上 → 右上方向に拡張 (+X, -Y)
+            // 右下 → 右下方向に拡張 (+X, +Y)
+            // 左下 → 左下方向に拡張 (-X, +Y)
+            const expandedTopLeft: PerspectivePoint = {
+              x: topLeft.x - EXPAND_PIXELS,
+              y: topLeft.y - EXPAND_PIXELS
+            };
+            const expandedTopRight: PerspectivePoint = {
+              x: topRight.x + EXPAND_PIXELS,
+              y: topRight.y - EXPAND_PIXELS
+            };
+            const expandedBottomRight: PerspectivePoint = {
+              x: bottomRight.x + EXPAND_PIXELS,
+              y: bottomRight.y + EXPAND_PIXELS
+            };
+            const expandedBottomLeft: PerspectivePoint = {
+              x: bottomLeft.x - EXPAND_PIXELS,
+              y: bottomLeft.y + EXPAND_PIXELS
+            };
+
             const dstCorners: [PerspectivePoint, PerspectivePoint, PerspectivePoint, PerspectivePoint] = [
-              topLeft,
-              topRight,
-              bottomRight,
-              bottomLeft
+              expandedTopLeft,
+              expandedTopRight,
+              expandedBottomRight,
+              expandedBottomLeft
             ];
+
+            // クリッピングパスも拡張された頂点で設定
+            ctx.beginPath();
+            ctx.moveTo(expandedTopLeft.x, expandedTopLeft.y);
+            ctx.lineTo(expandedTopRight.x, expandedTopRight.y);
+            ctx.lineTo(expandedBottomRight.x, expandedBottomRight.y);
+            ctx.lineTo(expandedBottomLeft.x, expandedBottomLeft.y);
+            ctx.closePath();
+            ctx.clip();
 
             if (!forDownload) {
               console.log('並べ替え後のdstCorners:');
@@ -1912,6 +2025,9 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
             // プレビュー時は高速 (16分割 = 256セル × 2三角形 = 512回の描画)
             const meshSize = forDownload ? 64 : 16;
 
+            // 透視変換で画像を描画
+            // perspectiveTransform内で四角形内部を黒で初期化してから画像を描画するため、
+            // 境界付近の白い隙間は発生しない
             drawPerspectiveImage(ctx, userImg, srcCorners, dstCorners, meshSize);
           }
 
@@ -1930,7 +2046,58 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
             // これにより白いスキマ（境界のグレーピクセル露出）を防止
             const WHITE_LUMINANCE_THRESHOLD = 0.90;
 
+            // 点が四角形の内部にあるかチェックする関数
+            const isPointInQuad = (px: number, py: number, quad: Point[]): boolean => {
+              // クロス積の符号で判定
+              const crossProduct = (p0: Point, p1: Point, p: Point): number => {
+                return (p1.x - p0.x) * (p.y - p0.y) - (p1.y - p0.y) * (p.x - p0.x);
+              };
+              const cross0 = crossProduct(quad[0], quad[1], { x: px, y: py });
+              const cross1 = crossProduct(quad[1], quad[2], { x: px, y: py });
+              const cross2 = crossProduct(quad[2], quad[3], { x: px, y: py });
+              const cross3 = crossProduct(quad[3], quad[0], { x: px, y: py });
+              const allPositive = cross0 >= 0 && cross1 >= 0 && cross2 >= 0 && cross3 >= 0;
+              const allNegative = cross0 <= 0 && cross1 <= 0 && cross2 <= 0 && cross3 <= 0;
+              return allPositive || allNegative;
+            };
+
+            // 各リージョンのコーナーを並べ替えて拡張して保存
+            // 透視変換と同じ拡張を適用して、はみ出し判定の整合性を保つ
+            const REGION_EXPAND_PIXELS = 2;
+            const sortedRegionCorners: Point[][] = regionsWithImages.map((region) => {
+              const corners = region.corners;
+              const rcenterX = corners.reduce((sum, c) => sum + c.x, 0) / 4;
+              const rcenterY = corners.reduce((sum, c) => sum + c.y, 0) / 4;
+              const cornersWithAngle = corners.map((c) => ({
+                point: c,
+                angle: Math.atan2(c.y - rcenterY, c.x - rcenterX)
+              }));
+              const topTwo = [...cornersWithAngle].sort((a, b) => a.point.y - b.point.y).slice(0, 2);
+              const bottomTwo = [...cornersWithAngle].sort((a, b) => a.point.y - b.point.y).slice(2, 4);
+              topTwo.sort((a, b) => a.point.x - b.point.x);
+              bottomTwo.sort((a, b) => a.point.x - b.point.x);
+
+              // 並べ替え後: [左上, 右上, 右下, 左下]
+              const tl = topTwo[0].point;
+              const tr = topTwo[1].point;
+              const br = bottomTwo[1].point;
+              const bl = bottomTwo[0].point;
+
+              // 単純な方法で各頂点を外側に拡張
+              return [
+                { x: tl.x - REGION_EXPAND_PIXELS, y: tl.y - REGION_EXPAND_PIXELS }, // 左上
+                { x: tr.x + REGION_EXPAND_PIXELS, y: tr.y - REGION_EXPAND_PIXELS }, // 右上
+                { x: br.x + REGION_EXPAND_PIXELS, y: br.y + REGION_EXPAND_PIXELS }, // 右下
+                { x: bl.x - REGION_EXPAND_PIXELS, y: bl.y + REGION_EXPAND_PIXELS }  // 左下
+              ];
+            });
+
+            const canvasWidth = canvas.width;
             for (let i = 0; i < pixels.length; i += 4) {
+              const pixelIndex = i / 4;
+              const px = pixelIndex % canvasWidth;
+              const py = Math.floor(pixelIndex / canvasWidth);
+
               const frameR = frameData[i];
               const frameG = frameData[i + 1];
               const frameB = frameData[i + 2];
@@ -1949,6 +2116,18 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
                 pixels[i + 1] = frameG;
                 pixels[i + 2] = frameB;
                 pixels[i + 3] = frameA;
+              } else if (isOpaque && isWhite) {
+                // 白エリアの場合: このピクセルがいずれかのスクリーン領域内にあるかチェック
+                const isInsideAnyRegion = sortedRegionCorners.some((corners) =>
+                  isPointInQuad(px, py, corners)
+                );
+                if (!isInsideAnyRegion) {
+                  // スクリーン領域の外側 → 元のフレームに戻す（はみ出し防止）
+                  pixels[i] = frameR;
+                  pixels[i + 1] = frameG;
+                  pixels[i + 2] = frameB;
+                  pixels[i + 3] = frameA;
+                }
               }
             }
 

@@ -196,11 +196,38 @@ export function drawPerspectiveImage(
 
   if (outW <= 0 || outH <= 0) return;
 
+  // 一時キャンバスを作成（putImageDataの代わりにdrawImageを使用するため）
+  // putImageDataは元のキャンバスを完全に置き換えてしまい、
+  // 四角形外のピクセルが透過になる問題がある
+  const tempCanvas = document.createElement('canvas');
+  tempCanvas.width = outW;
+  tempCanvas.height = outH;
+  const tempCtx = tempCanvas.getContext('2d');
+  if (!tempCtx) return;
+
   // 出力用ImageDataを作成
-  const outImageData = ctx.createImageData(outW, outH);
+  const outImageData = tempCtx.createImageData(outW, outH);
   const outPixels = outImageData.data;
 
-  // 各出力ピクセルに対して逆変換を適用
+  // 第1パス: 四角形内部を黒で初期化（境界の白い隙間を防止）
+  // isPointInQuadの境界判定が厳密すぎて、第2パスで一部のピクセルが
+  // 描画されない可能性があるため、先に黒で塗りつぶしておく
+  for (let y = 0; y < outH; y++) {
+    for (let x = 0; x < outW; x++) {
+      const dstX = minX + x;
+      const dstY = minY + y;
+
+      if (isPointInQuad({ x: dstX, y: dstY }, dstCorners)) {
+        const outIdx = (y * outW + x) * 4;
+        outPixels[outIdx] = 0;     // R
+        outPixels[outIdx + 1] = 0; // G
+        outPixels[outIdx + 2] = 0; // B
+        outPixels[outIdx + 3] = 255; // A (不透明)
+      }
+    }
+  }
+
+  // 第2パス: ユーザー画像を透視変換で描画（黒の上に上書き）
   for (let y = 0; y < outH; y++) {
     for (let x = 0; x < outW; x++) {
       const dstX = minX + x;
@@ -208,7 +235,8 @@ export function drawPerspectiveImage(
 
       // ポイントがdstCorners四角形の内部かチェック
       if (!isPointInQuad({ x: dstX, y: dstY }, dstCorners)) {
-        continue; // 四角形外は描画しない
+        // 四角形外は透過のまま（元のキャンバスの内容が保持される）
+        continue;
       }
 
       // 逆変換でソース座標を取得
@@ -216,6 +244,7 @@ export function drawPerspectiveImage(
 
       // ソース画像の範囲内かチェック
       if (srcPoint.x < 0 || srcPoint.x >= srcW || srcPoint.y < 0 || srcPoint.y >= srcH) {
+        // ソース画像の範囲外は既に黒で初期化済みなのでスキップ
         continue;
       }
 
@@ -231,8 +260,12 @@ export function drawPerspectiveImage(
     }
   }
 
-  // 出力画像をCanvasに描画
-  ctx.putImageData(outImageData, minX, minY);
+  // 一時キャンバスにImageDataを描画
+  tempCtx.putImageData(outImageData, 0, 0);
+
+  // 元のキャンバスに合成（drawImageはαブレンディングを行うため、
+  // 透過部分は元のキャンバスの内容が保持される）
+  ctx.drawImage(tempCanvas, minX, minY);
 }
 
 /**
