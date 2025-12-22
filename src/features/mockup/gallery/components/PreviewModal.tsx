@@ -501,8 +501,12 @@ function calculateVertexAngle(prev: Point, curr: Point, next: Point): number {
   return Math.acos(cosAngle);
 }
 
-// Find the 4 corners of a shape by selecting one point from each quadrant
+// Find the 4 corners of a shape by selecting the OUTERMOST point from each quadrant
 // Uses the rotation angle from minAreaRect to handle tilted devices
+//
+// CRITICAL: This function selects the point that is furthest from center in each quadrant,
+// ensuring the guidelines cover the FULL white area including rounded corners.
+// Previous approach selected "sharpest angle" which landed on the curved edges.
 function findQuadrantCorners(hull: Point[], rotation: number): Point[] {
   if (hull.length <= 4) return hull;
 
@@ -515,15 +519,11 @@ function findQuadrantCorners(hull: Point[], rotation: number): Point[] {
   const cosR = Math.cos(-rotation);
   const sinR = Math.sin(-rotation);
 
-  // Calculate angle at each vertex and determine quadrant in rotated space
-  const vertexData: { point: Point; angle: number; quadrant: number; rotatedX: number; rotatedY: number }[] = [];
+  // Calculate rotated coordinates for each hull point
+  const vertexData: { point: Point; quadrant: number; rotatedX: number; rotatedY: number; diagonalDist: number }[] = [];
 
   for (let i = 0; i < hull.length; i++) {
-    const prev = hull[(i - 1 + hull.length) % hull.length];
     const curr = hull[i];
-    const next = hull[(i + 1) % hull.length];
-
-    const angle = calculateVertexAngle(prev, curr, next);
 
     // Transform point to rotated coordinate system (device-aligned)
     const dx = curr.x - cx;
@@ -538,23 +538,28 @@ function findQuadrantCorners(hull: Point[], rotation: number): Point[] {
     else if (rotatedX >= 0 && rotatedY >= 0) quadrant = 2; // bottom-right
     else quadrant = 3; // bottom-left
 
-    vertexData.push({ point: curr, angle, quadrant, rotatedX, rotatedY });
+    // Calculate diagonal distance from center (for selecting outermost point)
+    // For each quadrant, we want the point that extends furthest into that quadrant
+    // This is measured by the sum of absolute rotated coordinates (Manhattan-like distance to corner)
+    const diagonalDist = Math.abs(rotatedX) + Math.abs(rotatedY);
+
+    vertexData.push({ point: curr, quadrant, rotatedX, rotatedY, diagonalDist });
   }
 
-  // Select the sharpest corner from each quadrant
+  // Select the OUTERMOST point from each quadrant (furthest from center)
   const corners: Point[] = [];
   for (let q = 0; q < 4; q++) {
     const quadrantPoints = vertexData.filter(v => v.quadrant === q);
     if (quadrantPoints.length > 0) {
-      // Sort by angle (sharpest first)
-      quadrantPoints.sort((a, b) => a.angle - b.angle);
+      // Sort by diagonal distance (furthest first)
+      quadrantPoints.sort((a, b) => b.diagonalDist - a.diagonalDist);
       corners.push(quadrantPoints[0].point);
     }
   }
 
-  // If we didn't get 4 corners (some quadrants empty), fall back to sharpest 4
+  // If we didn't get 4 corners (some quadrants empty), fall back to furthest 4
   if (corners.length < 4) {
-    vertexData.sort((a, b) => a.angle - b.angle);
+    vertexData.sort((a, b) => b.diagonalDist - a.diagonalDist);
     return vertexData.slice(0, 4).map(v => v.point);
   }
 
@@ -656,19 +661,30 @@ function detectCorners(
     };
   }
 
-  // Use minimum area bounding rectangle for corner detection
-  // CRITICAL FIX: Use the minAreaRect corners directly instead of selecting from convex hull
-  //
-  // Problem: For rounded rectangle screens (smartphones), the convex hull vertices are located
-  // on the curved edges, NOT at the actual rectangle corners. This causes guidelines to be
-  // smaller than the white area.
-  //
-  // Solution: The minAreaRect computes the minimum bounding rectangle that encompasses
-  // the entire convex hull. Its 4 corners will be at the actual rectangle corners,
-  // ensuring the guidelines cover the full white area including rounded corners.
+  // Use minAreaRect to get the rotation angle (device orientation)
+  // This tells us how the device is tilted in the image
   const rectResult = minAreaRect(hull);
+  const rotation = rectResult.rotation;
 
-  return { corners: rectResult.corners, rotation: rectResult.rotation, isPartial };
+  // CRITICAL FIX: Select corners from convex hull using quadrant-based selection
+  //
+  // Problem with minAreaRect corners:
+  //   minAreaRect finds the minimum AREA bounding rectangle, which may be rotated
+  //   at a different angle than the actual device orientation. This causes
+  //   parallelogram-shaped guidelines that extend beyond the white area.
+  //
+  // Solution:
+  //   1. Use minAreaRect ONLY for calculating the device rotation angle
+  //   2. Select corners from the convex hull by finding the OUTERMOST point
+  //      in each quadrant (relative to device-aligned coordinates)
+  //   3. This ensures corners are on the actual white area boundary
+  //
+  // The findQuadrantCorners function selects the point furthest from center
+  // in each quadrant, ensuring full coverage of the white area including
+  // rounded corners.
+  const selectedCorners = selectCornersFromHull(hull, rotation);
+
+  return { corners: selectedCorners, rotation: rotation, isPartial };
 }
 
 export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }: PreviewModalProps) {
