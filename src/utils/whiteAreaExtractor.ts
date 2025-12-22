@@ -270,6 +270,131 @@ function extractConnectedRegions(
 }
 
 /**
+ * 近接した領域をマージする
+ * ノッチやカメラなどで分断された画面領域を1つに統合する
+ *
+ * マージ条件（すべて満たす必要がある）：
+ * 1. 2つの領域が近接している（バウンディングボックス間のギャップが小さい）
+ * 2. 2つの領域のサイズが類似している（面積比が0.2〜5.0倍）
+ * 3. 2つの領域のY座標が大きく重なっている（ノッチ分断の場合）
+ * 4. マージ後のアスペクト比がデバイス画面として妥当（0.4〜2.5）
+ *
+ * @param regions 連結成分抽出で得られた領域のリスト
+ * @param imageWidth 画像の幅
+ * @param imageHeight 画像の高さ
+ * @param maxGapRatio マージする最大ギャップ比率（領域サイズに対する割合）
+ */
+function mergeNearbyRegions(
+  regions: { pixels: number[]; bounds: { minX: number; minY: number; maxX: number; maxY: number } }[],
+  imageWidth: number,
+  imageHeight: number,
+  maxGapRatio: number = 0.1 // 領域の高さ/幅の10%以内のギャップはマージ
+): { pixels: number[]; bounds: { minX: number; minY: number; maxX: number; maxY: number } }[] {
+  if (regions.length <= 1) return regions;
+
+  // 領域を面積の大きい順にソート
+  const sortedRegions = [...regions].sort((a, b) => b.pixels.length - a.pixels.length);
+  const merged: boolean[] = new Array(sortedRegions.length).fill(false);
+  const result: { pixels: number[]; bounds: { minX: number; minY: number; maxX: number; maxY: number } }[] = [];
+
+  for (let i = 0; i < sortedRegions.length; i++) {
+    if (merged[i]) continue;
+
+    let currentRegion = sortedRegions[i];
+    let currentBounds = { ...currentRegion.bounds };
+    let currentPixels = [...currentRegion.pixels];
+    merged[i] = true;
+
+    // 他の領域とマージできるかチェック
+    let foundMerge = true;
+    while (foundMerge) {
+      foundMerge = false;
+
+      for (let j = 0; j < sortedRegions.length; j++) {
+        if (merged[j]) continue;
+
+        const otherRegion = sortedRegions[j];
+        const otherBounds = otherRegion.bounds;
+
+        // 2つの領域のバウンディングボックス間の距離を計算
+        const currentWidth = currentBounds.maxX - currentBounds.minX;
+        const currentHeight = currentBounds.maxY - currentBounds.minY;
+        const otherWidth = otherBounds.maxX - otherBounds.minX;
+        const otherHeight = otherBounds.maxY - otherBounds.minY;
+
+        // ========== マージ条件1: サイズ類似性 ==========
+        // 面積比が0.2〜5.0倍の範囲内かチェック（別デバイスは通常大きくサイズが異なる）
+        const currentArea = currentPixels.length;
+        const otherArea = otherRegion.pixels.length;
+        const areaRatio = currentArea > otherArea ? currentArea / otherArea : otherArea / currentArea;
+        if (areaRatio > 5.0) continue; // サイズが大きく異なる場合はマージしない
+
+        // ========== マージ条件2: Y座標の重なり ==========
+        // ノッチで分断された領域は同じY範囲にある
+        // Y座標の重なり率を計算（重なり部分 / 小さい方の高さ）
+        const yOverlapStart = Math.max(currentBounds.minY, otherBounds.minY);
+        const yOverlapEnd = Math.min(currentBounds.maxY, otherBounds.maxY);
+        const yOverlap = Math.max(0, yOverlapEnd - yOverlapStart);
+        const minHeight = Math.min(currentHeight, otherHeight);
+        const yOverlapRatio = minHeight > 0 ? yOverlap / minHeight : 0;
+
+        // Y座標の重なりが50%未満の場合はマージしない（別デバイスの可能性が高い）
+        if (yOverlapRatio < 0.5) continue;
+
+        // ========== マージ条件3: 近接性 ==========
+        const avgWidth = (currentWidth + otherWidth) / 2;
+        const avgHeight = (currentHeight + otherHeight) / 2;
+        const maxHorizontalGap = avgWidth * maxGapRatio;
+        const maxVerticalGap = avgHeight * maxGapRatio;
+
+        // 水平方向の重なりまたは近接チェック
+        const horizontalOverlap =
+          currentBounds.maxX >= otherBounds.minX - maxHorizontalGap &&
+          currentBounds.minX <= otherBounds.maxX + maxHorizontalGap;
+
+        // 垂直方向の重なりまたは近接チェック
+        const verticalOverlap =
+          currentBounds.maxY >= otherBounds.minY - maxVerticalGap &&
+          currentBounds.minY <= otherBounds.maxY + maxVerticalGap;
+
+        if (!horizontalOverlap || !verticalOverlap) continue;
+
+        // ========== マージ条件4: マージ後のアスペクト比 ==========
+        // マージ後のバウンディングボックスを計算
+        const mergedMinX = Math.min(currentBounds.minX, otherBounds.minX);
+        const mergedMinY = Math.min(currentBounds.minY, otherBounds.minY);
+        const mergedMaxX = Math.max(currentBounds.maxX, otherBounds.maxX);
+        const mergedMaxY = Math.max(currentBounds.maxY, otherBounds.maxY);
+        const mergedWidth = mergedMaxX - mergedMinX;
+        const mergedHeight = mergedMaxY - mergedMinY;
+        const mergedAspectRatio = Math.max(mergedWidth, mergedHeight) / Math.min(mergedWidth, mergedHeight);
+
+        // アスペクト比が0.4〜2.5の範囲外ならマージしない（デバイス画面として不自然）
+        if (mergedAspectRatio > 2.5) continue;
+
+        // すべての条件を満たした場合のみマージ
+        currentBounds = {
+          minX: mergedMinX,
+          minY: mergedMinY,
+          maxX: mergedMaxX,
+          maxY: mergedMaxY,
+        };
+        currentPixels = [...currentPixels, ...otherRegion.pixels];
+        merged[j] = true;
+        foundMerge = true;
+      }
+    }
+
+    result.push({
+      pixels: currentPixels,
+      bounds: currentBounds,
+    });
+  }
+
+  return result;
+}
+
+/**
  * 4辺それぞれのベゼル存在をチェック
  */
 function checkBezelEdges(
@@ -376,10 +501,15 @@ function detectDeviceScreensInternal(
   // ステップ2: BFS連結成分抽出
   const rawRegions = extractConnectedRegions(mask, width, height);
 
+  // ステップ2.5: 近接領域のマージ
+  // ノッチやカメラで分断された画面領域を1つに統合する
+  // maxGapRatioを0.15に設定（領域サイズの15%以内のギャップをマージ）
+  const mergedRegions = mergeNearbyRegions(rawRegions, width, height, 0.15);
+
   // ステップ3: フィルタリングとスコアリング
   const screenRegions: DetectedRegion[] = [];
 
-  for (const region of rawRegions) {
+  for (const region of mergedRegions) {
     const { bounds, pixels } = region;
     const { minX, minY, maxX, maxY } = bounds;
 
@@ -872,10 +1002,14 @@ function detectDeviceScreensInternalWithLog(
   // ステップ2: BFS連結成分抽出
   const rawRegions = extractConnectedRegions(mask, width, height);
 
-  // 最初の閾値でのみログに領域情報を記録
+  // ステップ2.5: 近接領域のマージ
+  // ノッチやカメラで分断された画面領域を1つに統合する
+  const mergedRegions = mergeNearbyRegions(rawRegions, width, height, 0.15);
+
+  // 最初の閾値でのみログに領域情報を記録（マージ後の領域を記録）
   if (isFirstThreshold) {
-    log.stages.rawRegionsCount = rawRegions.length;
-    rawRegions.forEach((region, index) => {
+    log.stages.rawRegionsCount = mergedRegions.length;
+    mergedRegions.forEach((region, index) => {
       const { bounds, pixels } = region;
       log.stages.rawRegions.push({
         index,
@@ -898,8 +1032,8 @@ function detectDeviceScreensInternalWithLog(
   let afterBezelScoreFilter = 0;
   let afterBezelEdgesFilter = 0;
 
-  for (let regionIdx = 0; regionIdx < rawRegions.length; regionIdx++) {
-    const region = rawRegions[regionIdx];
+  for (let regionIdx = 0; regionIdx < mergedRegions.length; regionIdx++) {
+    const region = mergedRegions[regionIdx];
     const { bounds, pixels } = region;
     const { minX, minY, maxX, maxY } = bounds;
 

@@ -2496,6 +2496,385 @@ export const mockupGalleryItems: MockupGalleryItem[] = [
     displayName: "Phone & Laptop 16:9 #108 • Red / Brown"
   },
   {
+    id: "16x9-SpAndLaptop_16x9_0110_blue",
+    originalFilename: "SpAndLaptop_16x9_0110_blue.webp",
+    publicPath: "/assets/mockup/16x9/SpAndLaptop_16x9_0110_blue.webp",
+    folder: "16x9",
+    aspectKey: "16x9",
+    aspectRatio: "16:9",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 110,
+    colors: [
+      "Blue"
+    ],
+    colorTokens: [
+      "blue"
+    ],
+    searchTokens: [
+      "spandlaptop_16x9_0110_blue",
+      "device set",
+      "phone & laptop",
+      "16:9",
+      "blue"
+    ],
+    displayName: "Phone & Laptop 16:9 #110 • Blue"
+  },
+  {
+    id: "16x9-SpAndLaptop_16x9_0110_blue_beige",
+    originalFilename: "SpAndLaptop_16x9_0110_blue_beige.webp",
+    publicPath: "/assets/mockup/16x9/SpAndLaptop_16x9_0110_blue_beige.webp",
+    folder: "16x9",
+    aspectKey: "16x9",
+    aspectRatio: "16:9",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 110,
+    colors: [
+      "Blue",
+      "Beige"
+    ],
+    colorTokens: [
+      "blue",
+      "beige"
+    ],
+    searchTokens: [
+      "spandlaptop_16x9_0110_blue_beige",
+      "device set",
+      "phone & laptop",
+      "16:9",
+      "blue",
+      "beige"
+    ],
+    displayName: "Phone & Laptop 16:9 #110 • Blue / Beige"
+  },
+  {
+    id: "16x9-2SpAndLaptop_16x9_0111_blue_gray",
+    originalFilename: "2SpAndLaptop_16x9_0111_blue_gray.webp",
+    publicPath: "/assets/mockup/16x9/2SpAndLaptop_16x9_0111_blue_gray.webp",
+    folder: "16x9",
+    aspectKey: "16x9",
+    aspectRatio: "16:9",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 111,
+    colors: [
+      "Blue",
+      "Gray"
+    ],
+    colorTokens: [
+      "blue",
+      "gray"
+    ],
+    searchTokens: [
+      "2spandlaptop_16x9_0111_blue_gray",
+      "device set",
+      "phone & laptop",
+      "16:9",
+      "blue",
+      "gray"
+    ],
+    displayName: "Phone & Laptop 16:9 #111 • Blue / Gray"
+  },
+  {
+    id: "16x9-SpAndLaptop_16x9_0111_blue",
+    originalFilename: "SpAndLaptop_16x9_0111_blue.webp",
+    publicPath: "/assets/mockup/16x9/SpAndLaptop_16x9_0111_blue.webp",
+    folder: "16x9",
+    aspectKey: "16x9",
+    aspectRatio: "16:9",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 111,
+    colors: [
+      "Blue"
+    ],
+    colorTokens: [
+      "blue"
+    ],
+    searchTokens: [
+      "spandlaptop_16x9_0111_blue",
+      "device set",
+      "phone & laptop",
+      "16:9",
+      "blue"
+    ],
+    displayName: "Phone & Laptop 16:9 #111 • Blue"
+  },
+  {
+    id: "16x9-SpAndLaptop_16x9_0112_blue",
+    originalFilename: "SpAndLaptop_16x9_0112_blue.webp",
+    publicPath: "/assets/mockup/16x9/SpAndLaptop_16x9_0112_blue.webp",
+    folder: "16x9",
+    aspectKey: "16x9",
+    aspectRatio: "16:9",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 112,
+    colors: [
+      "Blue"
+    ],
+    colorTokens: [
+      "blue"
+    ],
+    searchTokens: [
+      "spandlaptop_16x9_0112_blue",
+      "device set",
+      "phone & laptop",
+      "16:9",
+      "blue"
+    ],
+    displayName: "Phone & Laptop 16:9 #112 • Blue"
+  },
+  {
+    id: "16x9-SpAndLaptop_16x9_0113_blue",
+    originalFilename: "SpAndLaptop_16x9_0113_blue.webp",
+    publicPath: "/assets/mockup/16x9/SpAndLaptop_16x9_0113_blue.webp",
+    folder: "16x9",
+    aspectKey: "16x9",
+    aspectRatio: "16:9",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 113,
+    colors: [
+      "Blue"
+    ],
+    colorTokens: [
+      "blue"
+    ],
+    searchTokens: [
+      "spandlaptop_16x9_0113_blue",
+      "device set",
+      "phone & laptop",
+      "16:9",
+      "blue"
+    ],
+    displayName: "Phone & Laptop 16:9 #113 • Blue"
+  },
+  {
+    id: "16x9-SpAndLaptop_16x9_0114_blue",
+    originalFilename: "SpAndLaptop_16x9_0114_blue.webp",
+    publicPath: "/assets/mockup/16x9/SpAndLaptop_16x9_0114_blue.webp",
+    folder: "16x9",
+    aspectKey: "16x9",
+    aspectRatio: "16:9",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 114,
+    colors: [
+      "Blue"
+    ],
+    colorTokens: [
+      "blue"
+    ],
+    searchTokens: [
+      "spandlaptop_16x9_0114_blue",
+      "device set",
+      "phone & laptop",
+      "16:9",
+      "blue"
+    ],
+    displayName: "Phone & Laptop 16:9 #114 • Blue"
+  },
+  {
+    id: "16x9-SpAndLaptop_16x9_0114_blue_beige",
+    originalFilename: "SpAndLaptop_16x9_0114_blue_beige.webp",
+    publicPath: "/assets/mockup/16x9/SpAndLaptop_16x9_0114_blue_beige.webp",
+    folder: "16x9",
+    aspectKey: "16x9",
+    aspectRatio: "16:9",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 114,
+    colors: [
+      "Blue",
+      "Beige"
+    ],
+    colorTokens: [
+      "blue",
+      "beige"
+    ],
+    searchTokens: [
+      "spandlaptop_16x9_0114_blue_beige",
+      "device set",
+      "phone & laptop",
+      "16:9",
+      "blue",
+      "beige"
+    ],
+    displayName: "Phone & Laptop 16:9 #114 • Blue / Beige"
+  },
+  {
+    id: "16x9-SpAndLaptop_16x9_0115_blue",
+    originalFilename: "SpAndLaptop_16x9_0115_blue.webp",
+    publicPath: "/assets/mockup/16x9/SpAndLaptop_16x9_0115_blue.webp",
+    folder: "16x9",
+    aspectKey: "16x9",
+    aspectRatio: "16:9",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 115,
+    colors: [
+      "Blue"
+    ],
+    colorTokens: [
+      "blue"
+    ],
+    searchTokens: [
+      "spandlaptop_16x9_0115_blue",
+      "device set",
+      "phone & laptop",
+      "16:9",
+      "blue"
+    ],
+    displayName: "Phone & Laptop 16:9 #115 • Blue"
+  },
+  {
+    id: "16x9-SpAndLaptop_16x9_0116_blue",
+    originalFilename: "SpAndLaptop_16x9_0116_blue.webp",
+    publicPath: "/assets/mockup/16x9/SpAndLaptop_16x9_0116_blue.webp",
+    folder: "16x9",
+    aspectKey: "16x9",
+    aspectRatio: "16:9",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 116,
+    colors: [
+      "Blue"
+    ],
+    colorTokens: [
+      "blue"
+    ],
+    searchTokens: [
+      "spandlaptop_16x9_0116_blue",
+      "device set",
+      "phone & laptop",
+      "16:9",
+      "blue"
+    ],
+    displayName: "Phone & Laptop 16:9 #116 • Blue"
+  },
+  {
+    id: "16x9-SpAndLaptop_16x9_0117_blue",
+    originalFilename: "SpAndLaptop_16x9_0117_blue.webp",
+    publicPath: "/assets/mockup/16x9/SpAndLaptop_16x9_0117_blue.webp",
+    folder: "16x9",
+    aspectKey: "16x9",
+    aspectRatio: "16:9",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 117,
+    colors: [
+      "Blue"
+    ],
+    colorTokens: [
+      "blue"
+    ],
+    searchTokens: [
+      "spandlaptop_16x9_0117_blue",
+      "device set",
+      "phone & laptop",
+      "16:9",
+      "blue"
+    ],
+    displayName: "Phone & Laptop 16:9 #117 • Blue"
+  },
+  {
+    id: "16x9-SpAndLaptop_16x9_0117_blue_beige",
+    originalFilename: "SpAndLaptop_16x9_0117_blue_beige.webp",
+    publicPath: "/assets/mockup/16x9/SpAndLaptop_16x9_0117_blue_beige.webp",
+    folder: "16x9",
+    aspectKey: "16x9",
+    aspectRatio: "16:9",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 117,
+    colors: [
+      "Blue",
+      "Beige"
+    ],
+    colorTokens: [
+      "blue",
+      "beige"
+    ],
+    searchTokens: [
+      "spandlaptop_16x9_0117_blue_beige",
+      "device set",
+      "phone & laptop",
+      "16:9",
+      "blue",
+      "beige"
+    ],
+    displayName: "Phone & Laptop 16:9 #117 • Blue / Beige"
+  },
+  {
+    id: "16x9-SpAndLaptop_16x9_0118_blue",
+    originalFilename: "SpAndLaptop_16x9_0118_blue.webp",
+    publicPath: "/assets/mockup/16x9/SpAndLaptop_16x9_0118_blue.webp",
+    folder: "16x9",
+    aspectKey: "16x9",
+    aspectRatio: "16:9",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 118,
+    colors: [
+      "Blue"
+    ],
+    colorTokens: [
+      "blue"
+    ],
+    searchTokens: [
+      "spandlaptop_16x9_0118_blue",
+      "device set",
+      "phone & laptop",
+      "16:9",
+      "blue"
+    ],
+    displayName: "Phone & Laptop 16:9 #118 • Blue"
+  },
+  {
+    id: "16x9-SpAndLaptop_16x9_0118_blue_beige",
+    originalFilename: "SpAndLaptop_16x9_0118_blue_beige.webp",
+    publicPath: "/assets/mockup/16x9/SpAndLaptop_16x9_0118_blue_beige.webp",
+    folder: "16x9",
+    aspectKey: "16x9",
+    aspectRatio: "16:9",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 118,
+    colors: [
+      "Blue",
+      "Beige"
+    ],
+    colorTokens: [
+      "blue",
+      "beige"
+    ],
+    searchTokens: [
+      "spandlaptop_16x9_0118_blue_beige",
+      "device set",
+      "phone & laptop",
+      "16:9",
+      "blue",
+      "beige"
+    ],
+    displayName: "Phone & Laptop 16:9 #118 • Blue / Beige"
+  },
+  {
     id: "16x9-SpAndLaptop_16x9_137_beige_white",
     originalFilename: "SpAndLaptop_16x9_137_beige_white.webp",
     publicPath: "/assets/mockup/16x9/SpAndLaptop_16x9_137_beige_white.webp",
@@ -3810,9 +4189,9 @@ export const mockupGalleryItems: MockupGalleryItem[] = [
     displayName: "Phone & Laptop 16:9 #197 • Blue / Beige"
   },
   {
-    id: "16x9-SpAndLaptop_16x9_198_blue",
-    originalFilename: "SpAndLaptop_16x9_198_blue.webp",
-    publicPath: "/assets/mockup/16x9/SpAndLaptop_16x9_198_blue.webp",
+    id: "16x9-SpAndLaptop_16x9_198_blue_green",
+    originalFilename: "SpAndLaptop_16x9_198_blue_green.webp",
+    publicPath: "/assets/mockup/16x9/SpAndLaptop_16x9_198_blue_green.webp",
     folder: "16x9",
     aspectKey: "16x9",
     aspectRatio: "16:9",
@@ -3821,19 +4200,100 @@ export const mockupGalleryItems: MockupGalleryItem[] = [
     priority: 0,
     sequence: 198,
     colors: [
+      "Blue",
+      "Green"
+    ],
+    colorTokens: [
+      "blue",
+      "green"
+    ],
+    searchTokens: [
+      "spandlaptop_16x9_198_blue_green",
+      "device set",
+      "phone & laptop",
+      "16:9",
+      "blue",
+      "green"
+    ],
+    displayName: "Phone & Laptop 16:9 #198 • Blue / Green"
+  },
+  {
+    id: "16x9-SpAndLaptop_16x9_0210_blue",
+    originalFilename: "SpAndLaptop_16x9_0210_blue.webp",
+    publicPath: "/assets/mockup/16x9/SpAndLaptop_16x9_0210_blue.webp",
+    folder: "16x9",
+    aspectKey: "16x9",
+    aspectRatio: "16:9",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 210,
+    colors: [
       "Blue"
     ],
     colorTokens: [
       "blue"
     ],
     searchTokens: [
-      "spandlaptop_16x9_198_blue",
+      "spandlaptop_16x9_0210_blue",
       "device set",
       "phone & laptop",
       "16:9",
       "blue"
     ],
-    displayName: "Phone & Laptop 16:9 #198 • Blue"
+    displayName: "Phone & Laptop 16:9 #210 • Blue"
+  },
+  {
+    id: "16x9-SpAndLaptop_16x9_0211_blue",
+    originalFilename: "SpAndLaptop_16x9_0211_blue.webp",
+    publicPath: "/assets/mockup/16x9/SpAndLaptop_16x9_0211_blue.webp",
+    folder: "16x9",
+    aspectKey: "16x9",
+    aspectRatio: "16:9",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 211,
+    colors: [
+      "Blue"
+    ],
+    colorTokens: [
+      "blue"
+    ],
+    searchTokens: [
+      "spandlaptop_16x9_0211_blue",
+      "device set",
+      "phone & laptop",
+      "16:9",
+      "blue"
+    ],
+    displayName: "Phone & Laptop 16:9 #211 • Blue"
+  },
+  {
+    id: "16x9-SpAndLaptop_16x9_0212_blue",
+    originalFilename: "SpAndLaptop_16x9_0212_blue.webp",
+    publicPath: "/assets/mockup/16x9/SpAndLaptop_16x9_0212_blue.webp",
+    folder: "16x9",
+    aspectKey: "16x9",
+    aspectRatio: "16:9",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 212,
+    colors: [
+      "Blue"
+    ],
+    colorTokens: [
+      "blue"
+    ],
+    searchTokens: [
+      "spandlaptop_16x9_0212_blue",
+      "device set",
+      "phone & laptop",
+      "16:9",
+      "blue"
+    ],
+    displayName: "Phone & Laptop 16:9 #212 • Blue"
   },
   {
     id: "16x9-2sp_16x9_213_white",
@@ -3860,6 +4320,32 @@ export const mockupGalleryItems: MockupGalleryItem[] = [
       "white"
     ],
     displayName: "Dual Phones 16:9 #213 • White"
+  },
+  {
+    id: "16x9-SpAndLaptop_16x9_0213_blue",
+    originalFilename: "SpAndLaptop_16x9_0213_blue.webp",
+    publicPath: "/assets/mockup/16x9/SpAndLaptop_16x9_0213_blue.webp",
+    folder: "16x9",
+    aspectKey: "16x9",
+    aspectRatio: "16:9",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 213,
+    colors: [
+      "Blue"
+    ],
+    colorTokens: [
+      "blue"
+    ],
+    searchTokens: [
+      "spandlaptop_16x9_0213_blue",
+      "device set",
+      "phone & laptop",
+      "16:9",
+      "blue"
+    ],
+    displayName: "Phone & Laptop 16:9 #213 • Blue"
   },
   {
     id: "16x9-2sp_16x9_214_white_pink_blue",
@@ -3894,6 +4380,32 @@ export const mockupGalleryItems: MockupGalleryItem[] = [
     displayName: "Dual Phones 16:9 #214 • White / Pink / Blue"
   },
   {
+    id: "16x9-SpAndLaptop_16x9_0214_blue",
+    originalFilename: "SpAndLaptop_16x9_0214_blue.webp",
+    publicPath: "/assets/mockup/16x9/SpAndLaptop_16x9_0214_blue.webp",
+    folder: "16x9",
+    aspectKey: "16x9",
+    aspectRatio: "16:9",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 214,
+    colors: [
+      "Blue"
+    ],
+    colorTokens: [
+      "blue"
+    ],
+    searchTokens: [
+      "spandlaptop_16x9_0214_blue",
+      "device set",
+      "phone & laptop",
+      "16:9",
+      "blue"
+    ],
+    displayName: "Phone & Laptop 16:9 #214 • Blue"
+  },
+  {
     id: "16x9-2sp_16x9_215_pink",
     originalFilename: "2sp_16x9_215_pink.webp",
     publicPath: "/assets/mockup/16x9/2sp_16x9_215_pink.webp",
@@ -3918,6 +4430,110 @@ export const mockupGalleryItems: MockupGalleryItem[] = [
       "pink"
     ],
     displayName: "Dual Phones 16:9 #215 • Pink"
+  },
+  {
+    id: "16x9-SpAndLaptop_16x9_0215_blue",
+    originalFilename: "SpAndLaptop_16x9_0215_blue.webp",
+    publicPath: "/assets/mockup/16x9/SpAndLaptop_16x9_0215_blue.webp",
+    folder: "16x9",
+    aspectKey: "16x9",
+    aspectRatio: "16:9",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 215,
+    colors: [
+      "Blue"
+    ],
+    colorTokens: [
+      "blue"
+    ],
+    searchTokens: [
+      "spandlaptop_16x9_0215_blue",
+      "device set",
+      "phone & laptop",
+      "16:9",
+      "blue"
+    ],
+    displayName: "Phone & Laptop 16:9 #215 • Blue"
+  },
+  {
+    id: "16x9-SpAndLaptop_16x9_0216_blue",
+    originalFilename: "SpAndLaptop_16x9_0216_blue.webp",
+    publicPath: "/assets/mockup/16x9/SpAndLaptop_16x9_0216_blue.webp",
+    folder: "16x9",
+    aspectKey: "16x9",
+    aspectRatio: "16:9",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 216,
+    colors: [
+      "Blue"
+    ],
+    colorTokens: [
+      "blue"
+    ],
+    searchTokens: [
+      "spandlaptop_16x9_0216_blue",
+      "device set",
+      "phone & laptop",
+      "16:9",
+      "blue"
+    ],
+    displayName: "Phone & Laptop 16:9 #216 • Blue"
+  },
+  {
+    id: "16x9-SpAndLaptop_16x9_0217_blue",
+    originalFilename: "SpAndLaptop_16x9_0217_blue.webp",
+    publicPath: "/assets/mockup/16x9/SpAndLaptop_16x9_0217_blue.webp",
+    folder: "16x9",
+    aspectKey: "16x9",
+    aspectRatio: "16:9",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 217,
+    colors: [
+      "Blue"
+    ],
+    colorTokens: [
+      "blue"
+    ],
+    searchTokens: [
+      "spandlaptop_16x9_0217_blue",
+      "device set",
+      "phone & laptop",
+      "16:9",
+      "blue"
+    ],
+    displayName: "Phone & Laptop 16:9 #217 • Blue"
+  },
+  {
+    id: "16x9-SpAndLaptop_16x9_0218_blue",
+    originalFilename: "SpAndLaptop_16x9_0218_blue.webp",
+    publicPath: "/assets/mockup/16x9/SpAndLaptop_16x9_0218_blue.webp",
+    folder: "16x9",
+    aspectKey: "16x9",
+    aspectRatio: "16:9",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 218,
+    colors: [
+      "Blue"
+    ],
+    colorTokens: [
+      "blue"
+    ],
+    searchTokens: [
+      "spandlaptop_16x9_0218_blue",
+      "device set",
+      "phone & laptop",
+      "16:9",
+      "blue"
+    ],
+    displayName: "Phone & Laptop 16:9 #218 • Blue"
   },
   {
     id: "16x9-SpAndLaptop_16x9_218_gray_white",
@@ -4112,6 +4728,93 @@ export const mockupGalleryItems: MockupGalleryItem[] = [
       "gray"
     ],
     displayName: "Phone & Laptop 16:9 #224 • Beige / Gray"
+  },
+  {
+    id: "16x9-SpAndLaptop_16x9_0450_white_brown",
+    originalFilename: "SpAndLaptop_16x9_0450_white_brown.webp",
+    publicPath: "/assets/mockup/16x9/SpAndLaptop_16x9_0450_white_brown.webp",
+    folder: "16x9",
+    aspectKey: "16x9",
+    aspectRatio: "16:9",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 450,
+    colors: [
+      "White",
+      "Brown"
+    ],
+    colorTokens: [
+      "white",
+      "brown"
+    ],
+    searchTokens: [
+      "spandlaptop_16x9_0450_white_brown",
+      "device set",
+      "phone & laptop",
+      "16:9",
+      "white",
+      "brown"
+    ],
+    displayName: "Phone & Laptop 16:9 #450 • White / Brown"
+  },
+  {
+    id: "16x9-SpAndLaptop_16x9_0451_white_brown",
+    originalFilename: "SpAndLaptop_16x9_0451_white_brown.webp",
+    publicPath: "/assets/mockup/16x9/SpAndLaptop_16x9_0451_white_brown.webp",
+    folder: "16x9",
+    aspectKey: "16x9",
+    aspectRatio: "16:9",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 451,
+    colors: [
+      "White",
+      "Brown"
+    ],
+    colorTokens: [
+      "white",
+      "brown"
+    ],
+    searchTokens: [
+      "spandlaptop_16x9_0451_white_brown",
+      "device set",
+      "phone & laptop",
+      "16:9",
+      "white",
+      "brown"
+    ],
+    displayName: "Phone & Laptop 16:9 #451 • White / Brown"
+  },
+  {
+    id: "16x9-SpAndLaptop_16x9_0452_white_brown",
+    originalFilename: "SpAndLaptop_16x9_0452_white_brown.webp",
+    publicPath: "/assets/mockup/16x9/SpAndLaptop_16x9_0452_white_brown.webp",
+    folder: "16x9",
+    aspectKey: "16x9",
+    aspectRatio: "16:9",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 452,
+    colors: [
+      "White",
+      "Brown"
+    ],
+    colorTokens: [
+      "white",
+      "brown"
+    ],
+    searchTokens: [
+      "spandlaptop_16x9_0452_white_brown",
+      "device set",
+      "phone & laptop",
+      "16:9",
+      "white",
+      "brown"
+    ],
+    displayName: "Phone & Laptop 16:9 #452 • White / Brown"
   },
   {
     id: "4x5-2SpAndLaptop_4x5_001_blue",
@@ -5417,6 +6120,194 @@ export const mockupGalleryItems: MockupGalleryItem[] = [
     displayName: "Phone & Laptop 4:5 #038 • White / Gray"
   },
   {
+    id: "4x5-SpAndLaptop_4x5_0210_blue",
+    originalFilename: "SpAndLaptop_4x5_0210_blue.webp",
+    publicPath: "/assets/mockup/4x5/SpAndLaptop_4x5_0210_blue.webp",
+    folder: "4x5",
+    aspectKey: "4x5",
+    aspectRatio: "4:5",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 210,
+    colors: [
+      "Blue"
+    ],
+    colorTokens: [
+      "blue"
+    ],
+    searchTokens: [
+      "spandlaptop_4x5_0210_blue",
+      "device set",
+      "phone & laptop",
+      "4:5",
+      "blue"
+    ],
+    displayName: "Phone & Laptop 4:5 #210 • Blue"
+  },
+  {
+    id: "4x5-SpAndLaptop_4x5_0211_blue",
+    originalFilename: "SpAndLaptop_4x5_0211_blue.webp",
+    publicPath: "/assets/mockup/4x5/SpAndLaptop_4x5_0211_blue.webp",
+    folder: "4x5",
+    aspectKey: "4x5",
+    aspectRatio: "4:5",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 211,
+    colors: [
+      "Blue"
+    ],
+    colorTokens: [
+      "blue"
+    ],
+    searchTokens: [
+      "spandlaptop_4x5_0211_blue",
+      "device set",
+      "phone & laptop",
+      "4:5",
+      "blue"
+    ],
+    displayName: "Phone & Laptop 4:5 #211 • Blue"
+  },
+  {
+    id: "4x5-SpAndLaptop_4x5_0212_blue",
+    originalFilename: "SpAndLaptop_4x5_0212_blue.webp",
+    publicPath: "/assets/mockup/4x5/SpAndLaptop_4x5_0212_blue.webp",
+    folder: "4x5",
+    aspectKey: "4x5",
+    aspectRatio: "4:5",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 212,
+    colors: [
+      "Blue"
+    ],
+    colorTokens: [
+      "blue"
+    ],
+    searchTokens: [
+      "spandlaptop_4x5_0212_blue",
+      "device set",
+      "phone & laptop",
+      "4:5",
+      "blue"
+    ],
+    displayName: "Phone & Laptop 4:5 #212 • Blue"
+  },
+  {
+    id: "4x5-SpAndLaptop_4x5_0213_blue",
+    originalFilename: "SpAndLaptop_4x5_0213_blue.webp",
+    publicPath: "/assets/mockup/4x5/SpAndLaptop_4x5_0213_blue.webp",
+    folder: "4x5",
+    aspectKey: "4x5",
+    aspectRatio: "4:5",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 213,
+    colors: [
+      "Blue"
+    ],
+    colorTokens: [
+      "blue"
+    ],
+    searchTokens: [
+      "spandlaptop_4x5_0213_blue",
+      "device set",
+      "phone & laptop",
+      "4:5",
+      "blue"
+    ],
+    displayName: "Phone & Laptop 4:5 #213 • Blue"
+  },
+  {
+    id: "4x5-SpAndLaptop_4x5_00220_blue",
+    originalFilename: "SpAndLaptop_4x5_00220_blue.webp",
+    publicPath: "/assets/mockup/4x5/SpAndLaptop_4x5_00220_blue.webp",
+    folder: "4x5",
+    aspectKey: "4x5",
+    aspectRatio: "4:5",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 220,
+    colors: [
+      "Blue"
+    ],
+    colorTokens: [
+      "blue"
+    ],
+    searchTokens: [
+      "spandlaptop_4x5_00220_blue",
+      "device set",
+      "phone & laptop",
+      "4:5",
+      "blue"
+    ],
+    displayName: "Phone & Laptop 4:5 #220 • Blue"
+  },
+  {
+    id: "4x5-SpAndLaptop_4x5_0300_blue",
+    originalFilename: "SpAndLaptop_4x5_0300_blue.webp",
+    publicPath: "/assets/mockup/4x5/SpAndLaptop_4x5_0300_blue.webp",
+    folder: "4x5",
+    aspectKey: "4x5",
+    aspectRatio: "4:5",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 300,
+    colors: [
+      "Blue"
+    ],
+    colorTokens: [
+      "blue"
+    ],
+    searchTokens: [
+      "spandlaptop_4x5_0300_blue",
+      "device set",
+      "phone & laptop",
+      "4:5",
+      "blue"
+    ],
+    displayName: "Phone & Laptop 4:5 #300 • Blue"
+  },
+  {
+    id: "4x5-SpAndLaptop_4x5_0650_white_gray_blue",
+    originalFilename: "SpAndLaptop_4x5_0650_white_gray_blue.webp",
+    publicPath: "/assets/mockup/4x5/SpAndLaptop_4x5_0650_white_gray_blue.webp",
+    folder: "4x5",
+    aspectKey: "4x5",
+    aspectRatio: "4:5",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 650,
+    colors: [
+      "White",
+      "Gray",
+      "Blue"
+    ],
+    colorTokens: [
+      "white",
+      "gray",
+      "blue"
+    ],
+    searchTokens: [
+      "spandlaptop_4x5_0650_white_gray_blue",
+      "device set",
+      "phone & laptop",
+      "4:5",
+      "white",
+      "gray",
+      "blue"
+    ],
+    displayName: "Phone & Laptop 4:5 #650 • White / Gray / Blue"
+  },
+  {
     id: "9x16-SpAndLaptop_9x16_001_red_brown",
     originalFilename: "SpAndLaptop_9x16_001_red_brown.webp",
     publicPath: "/assets/mockup/9x16/SpAndLaptop_9x16_001_red_brown.webp",
@@ -6323,32 +7214,6 @@ export const mockupGalleryItems: MockupGalleryItem[] = [
     displayName: "Phone & Laptop 9:16 #039 • Blue"
   },
   {
-    id: "9x16-SpAndLaptop_9x16_040_brown",
-    originalFilename: "SpAndLaptop_9x16_040_brown.webp",
-    publicPath: "/assets/mockup/9x16/SpAndLaptop_9x16_040_brown.webp",
-    folder: "9x16",
-    aspectKey: "9x16",
-    aspectRatio: "9:16",
-    deviceType: "Device Set",
-    deviceLabel: "Phone & Laptop",
-    priority: 0,
-    sequence: 40,
-    colors: [
-      "Brown"
-    ],
-    colorTokens: [
-      "brown"
-    ],
-    searchTokens: [
-      "spandlaptop_9x16_040_brown",
-      "device set",
-      "phone & laptop",
-      "9:16",
-      "brown"
-    ],
-    displayName: "Phone & Laptop 9:16 #040 • Brown"
-  },
-  {
     id: "9x16-SpAndLaptop_9x16_042_pink_beige",
     originalFilename: "SpAndLaptop_9x16_042_pink_beige.webp",
     publicPath: "/assets/mockup/9x16/SpAndLaptop_9x16_042_pink_beige.webp",
@@ -6822,6 +7687,688 @@ export const mockupGalleryItems: MockupGalleryItem[] = [
       "brown"
     ],
     displayName: "Dual Phones 9:16 #134 • Orange / Brown"
+  },
+  {
+    id: "9x16-SpAndLaptop_9x16_0210_blue",
+    originalFilename: "SpAndLaptop_9x16_0210_blue.webp",
+    publicPath: "/assets/mockup/9x16/SpAndLaptop_9x16_0210_blue.webp",
+    folder: "9x16",
+    aspectKey: "9x16",
+    aspectRatio: "9:16",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 210,
+    colors: [
+      "Blue"
+    ],
+    colorTokens: [
+      "blue"
+    ],
+    searchTokens: [
+      "spandlaptop_9x16_0210_blue",
+      "device set",
+      "phone & laptop",
+      "9:16",
+      "blue"
+    ],
+    displayName: "Phone & Laptop 9:16 #210 • Blue"
+  },
+  {
+    id: "9x16-SpAndLaptop_9x16_0211_blue",
+    originalFilename: "SpAndLaptop_9x16_0211_blue.webp",
+    publicPath: "/assets/mockup/9x16/SpAndLaptop_9x16_0211_blue.webp",
+    folder: "9x16",
+    aspectKey: "9x16",
+    aspectRatio: "9:16",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 211,
+    colors: [
+      "Blue"
+    ],
+    colorTokens: [
+      "blue"
+    ],
+    searchTokens: [
+      "spandlaptop_9x16_0211_blue",
+      "device set",
+      "phone & laptop",
+      "9:16",
+      "blue"
+    ],
+    displayName: "Phone & Laptop 9:16 #211 • Blue"
+  },
+  {
+    id: "9x16-SpAndLaptop_9x16_0212_blue",
+    originalFilename: "SpAndLaptop_9x16_0212_blue.webp",
+    publicPath: "/assets/mockup/9x16/SpAndLaptop_9x16_0212_blue.webp",
+    folder: "9x16",
+    aspectKey: "9x16",
+    aspectRatio: "9:16",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 212,
+    colors: [
+      "Blue"
+    ],
+    colorTokens: [
+      "blue"
+    ],
+    searchTokens: [
+      "spandlaptop_9x16_0212_blue",
+      "device set",
+      "phone & laptop",
+      "9:16",
+      "blue"
+    ],
+    displayName: "Phone & Laptop 9:16 #212 • Blue"
+  },
+  {
+    id: "9x16-SpAndLaptop_9x16_0213_blue",
+    originalFilename: "SpAndLaptop_9x16_0213_blue.webp",
+    publicPath: "/assets/mockup/9x16/SpAndLaptop_9x16_0213_blue.webp",
+    folder: "9x16",
+    aspectKey: "9x16",
+    aspectRatio: "9:16",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 213,
+    colors: [
+      "Blue"
+    ],
+    colorTokens: [
+      "blue"
+    ],
+    searchTokens: [
+      "spandlaptop_9x16_0213_blue",
+      "device set",
+      "phone & laptop",
+      "9:16",
+      "blue"
+    ],
+    displayName: "Phone & Laptop 9:16 #213 • Blue"
+  },
+  {
+    id: "9x16-SpAndLaptop_9x16_0214_blue",
+    originalFilename: "SpAndLaptop_9x16_0214_blue.webp",
+    publicPath: "/assets/mockup/9x16/SpAndLaptop_9x16_0214_blue.webp",
+    folder: "9x16",
+    aspectKey: "9x16",
+    aspectRatio: "9:16",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 214,
+    colors: [
+      "Blue"
+    ],
+    colorTokens: [
+      "blue"
+    ],
+    searchTokens: [
+      "spandlaptop_9x16_0214_blue",
+      "device set",
+      "phone & laptop",
+      "9:16",
+      "blue"
+    ],
+    displayName: "Phone & Laptop 9:16 #214 • Blue"
+  },
+  {
+    id: "9x16-SpAndLaptop_9x16_0215_blue",
+    originalFilename: "SpAndLaptop_9x16_0215_blue.webp",
+    publicPath: "/assets/mockup/9x16/SpAndLaptop_9x16_0215_blue.webp",
+    folder: "9x16",
+    aspectKey: "9x16",
+    aspectRatio: "9:16",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 215,
+    colors: [
+      "Blue"
+    ],
+    colorTokens: [
+      "blue"
+    ],
+    searchTokens: [
+      "spandlaptop_9x16_0215_blue",
+      "device set",
+      "phone & laptop",
+      "9:16",
+      "blue"
+    ],
+    displayName: "Phone & Laptop 9:16 #215 • Blue"
+  },
+  {
+    id: "9x16-SpAndLaptop_9x16_0216_blue",
+    originalFilename: "SpAndLaptop_9x16_0216_blue.webp",
+    publicPath: "/assets/mockup/9x16/SpAndLaptop_9x16_0216_blue.webp",
+    folder: "9x16",
+    aspectKey: "9x16",
+    aspectRatio: "9:16",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 216,
+    colors: [
+      "Blue"
+    ],
+    colorTokens: [
+      "blue"
+    ],
+    searchTokens: [
+      "spandlaptop_9x16_0216_blue",
+      "device set",
+      "phone & laptop",
+      "9:16",
+      "blue"
+    ],
+    displayName: "Phone & Laptop 9:16 #216 • Blue"
+  },
+  {
+    id: "9x16-SpAndLaptop_9x16_0217_blue",
+    originalFilename: "SpAndLaptop_9x16_0217_blue.webp",
+    publicPath: "/assets/mockup/9x16/SpAndLaptop_9x16_0217_blue.webp",
+    folder: "9x16",
+    aspectKey: "9x16",
+    aspectRatio: "9:16",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 217,
+    colors: [
+      "Blue"
+    ],
+    colorTokens: [
+      "blue"
+    ],
+    searchTokens: [
+      "spandlaptop_9x16_0217_blue",
+      "device set",
+      "phone & laptop",
+      "9:16",
+      "blue"
+    ],
+    displayName: "Phone & Laptop 9:16 #217 • Blue"
+  },
+  {
+    id: "9x16-SpAndLaptop_9x16_0218_blue",
+    originalFilename: "SpAndLaptop_9x16_0218_blue.webp",
+    publicPath: "/assets/mockup/9x16/SpAndLaptop_9x16_0218_blue.webp",
+    folder: "9x16",
+    aspectKey: "9x16",
+    aspectRatio: "9:16",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 218,
+    colors: [
+      "Blue"
+    ],
+    colorTokens: [
+      "blue"
+    ],
+    searchTokens: [
+      "spandlaptop_9x16_0218_blue",
+      "device set",
+      "phone & laptop",
+      "9:16",
+      "blue"
+    ],
+    displayName: "Phone & Laptop 9:16 #218 • Blue"
+  },
+  {
+    id: "9x16-SpAndLaptop_9x16_0650_white_brown_beige",
+    originalFilename: "SpAndLaptop_9x16_0650_white_brown_beige.webp",
+    publicPath: "/assets/mockup/9x16/SpAndLaptop_9x16_0650_white_brown_beige.webp",
+    folder: "9x16",
+    aspectKey: "9x16",
+    aspectRatio: "9:16",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 650,
+    colors: [
+      "White",
+      "Brown",
+      "Beige"
+    ],
+    colorTokens: [
+      "white",
+      "brown",
+      "beige"
+    ],
+    searchTokens: [
+      "spandlaptop_9x16_0650_white_brown_beige",
+      "device set",
+      "phone & laptop",
+      "9:16",
+      "white",
+      "brown",
+      "beige"
+    ],
+    displayName: "Phone & Laptop 9:16 #650 • White / Brown / Beige"
+  },
+  {
+    id: "9x16-SpAndLaptop_9x16_0651_white_brown_beige",
+    originalFilename: "SpAndLaptop_9x16_0651_white_brown_beige.webp",
+    publicPath: "/assets/mockup/9x16/SpAndLaptop_9x16_0651_white_brown_beige.webp",
+    folder: "9x16",
+    aspectKey: "9x16",
+    aspectRatio: "9:16",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 651,
+    colors: [
+      "White",
+      "Brown",
+      "Beige"
+    ],
+    colorTokens: [
+      "white",
+      "brown",
+      "beige"
+    ],
+    searchTokens: [
+      "spandlaptop_9x16_0651_white_brown_beige",
+      "device set",
+      "phone & laptop",
+      "9:16",
+      "white",
+      "brown",
+      "beige"
+    ],
+    displayName: "Phone & Laptop 9:16 #651 • White / Brown / Beige"
+  },
+  {
+    id: "9x16-SpAndLaptop_9x16_0652_white_brown_beige",
+    originalFilename: "SpAndLaptop_9x16_0652_white_brown_beige.webp",
+    publicPath: "/assets/mockup/9x16/SpAndLaptop_9x16_0652_white_brown_beige.webp",
+    folder: "9x16",
+    aspectKey: "9x16",
+    aspectRatio: "9:16",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 652,
+    colors: [
+      "White",
+      "Brown",
+      "Beige"
+    ],
+    colorTokens: [
+      "white",
+      "brown",
+      "beige"
+    ],
+    searchTokens: [
+      "spandlaptop_9x16_0652_white_brown_beige",
+      "device set",
+      "phone & laptop",
+      "9:16",
+      "white",
+      "brown",
+      "beige"
+    ],
+    displayName: "Phone & Laptop 9:16 #652 • White / Brown / Beige"
+  },
+  {
+    id: "9x16-SpAndLaptop_9x16_0653_white_brown_beige",
+    originalFilename: "SpAndLaptop_9x16_0653_white_brown_beige.webp",
+    publicPath: "/assets/mockup/9x16/SpAndLaptop_9x16_0653_white_brown_beige.webp",
+    folder: "9x16",
+    aspectKey: "9x16",
+    aspectRatio: "9:16",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 653,
+    colors: [
+      "White",
+      "Brown",
+      "Beige"
+    ],
+    colorTokens: [
+      "white",
+      "brown",
+      "beige"
+    ],
+    searchTokens: [
+      "spandlaptop_9x16_0653_white_brown_beige",
+      "device set",
+      "phone & laptop",
+      "9:16",
+      "white",
+      "brown",
+      "beige"
+    ],
+    displayName: "Phone & Laptop 9:16 #653 • White / Brown / Beige"
+  },
+  {
+    id: "9x16-SpAndLaptop_9x16_0654_white_brown_beige",
+    originalFilename: "SpAndLaptop_9x16_0654_white_brown_beige.webp",
+    publicPath: "/assets/mockup/9x16/SpAndLaptop_9x16_0654_white_brown_beige.webp",
+    folder: "9x16",
+    aspectKey: "9x16",
+    aspectRatio: "9:16",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 654,
+    colors: [
+      "White",
+      "Brown",
+      "Beige"
+    ],
+    colorTokens: [
+      "white",
+      "brown",
+      "beige"
+    ],
+    searchTokens: [
+      "spandlaptop_9x16_0654_white_brown_beige",
+      "device set",
+      "phone & laptop",
+      "9:16",
+      "white",
+      "brown",
+      "beige"
+    ],
+    displayName: "Phone & Laptop 9:16 #654 • White / Brown / Beige"
+  },
+  {
+    id: "9x16-SpAndLaptop_9x16_0655_white_brown_beige",
+    originalFilename: "SpAndLaptop_9x16_0655_white_brown_beige.webp",
+    publicPath: "/assets/mockup/9x16/SpAndLaptop_9x16_0655_white_brown_beige.webp",
+    folder: "9x16",
+    aspectKey: "9x16",
+    aspectRatio: "9:16",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 655,
+    colors: [
+      "White",
+      "Brown",
+      "Beige"
+    ],
+    colorTokens: [
+      "white",
+      "brown",
+      "beige"
+    ],
+    searchTokens: [
+      "spandlaptop_9x16_0655_white_brown_beige",
+      "device set",
+      "phone & laptop",
+      "9:16",
+      "white",
+      "brown",
+      "beige"
+    ],
+    displayName: "Phone & Laptop 9:16 #655 • White / Brown / Beige"
+  },
+  {
+    id: "9x16-SpAndLaptop_9x16_0656_white_brown_beige",
+    originalFilename: "SpAndLaptop_9x16_0656_white_brown_beige.webp",
+    publicPath: "/assets/mockup/9x16/SpAndLaptop_9x16_0656_white_brown_beige.webp",
+    folder: "9x16",
+    aspectKey: "9x16",
+    aspectRatio: "9:16",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 656,
+    colors: [
+      "White",
+      "Brown",
+      "Beige"
+    ],
+    colorTokens: [
+      "white",
+      "brown",
+      "beige"
+    ],
+    searchTokens: [
+      "spandlaptop_9x16_0656_white_brown_beige",
+      "device set",
+      "phone & laptop",
+      "9:16",
+      "white",
+      "brown",
+      "beige"
+    ],
+    displayName: "Phone & Laptop 9:16 #656 • White / Brown / Beige"
+  },
+  {
+    id: "9x16-SpAndLaptop_9x16_0657_white_brown_beige",
+    originalFilename: "SpAndLaptop_9x16_0657_white_brown_beige.webp",
+    publicPath: "/assets/mockup/9x16/SpAndLaptop_9x16_0657_white_brown_beige.webp",
+    folder: "9x16",
+    aspectKey: "9x16",
+    aspectRatio: "9:16",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 657,
+    colors: [
+      "White",
+      "Brown",
+      "Beige"
+    ],
+    colorTokens: [
+      "white",
+      "brown",
+      "beige"
+    ],
+    searchTokens: [
+      "spandlaptop_9x16_0657_white_brown_beige",
+      "device set",
+      "phone & laptop",
+      "9:16",
+      "white",
+      "brown",
+      "beige"
+    ],
+    displayName: "Phone & Laptop 9:16 #657 • White / Brown / Beige"
+  },
+  {
+    id: "9x16-SpAndLaptop_9x16_0658_white_brown_beige",
+    originalFilename: "SpAndLaptop_9x16_0658_white_brown_beige.webp",
+    publicPath: "/assets/mockup/9x16/SpAndLaptop_9x16_0658_white_brown_beige.webp",
+    folder: "9x16",
+    aspectKey: "9x16",
+    aspectRatio: "9:16",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 658,
+    colors: [
+      "White",
+      "Brown",
+      "Beige"
+    ],
+    colorTokens: [
+      "white",
+      "brown",
+      "beige"
+    ],
+    searchTokens: [
+      "spandlaptop_9x16_0658_white_brown_beige",
+      "device set",
+      "phone & laptop",
+      "9:16",
+      "white",
+      "brown",
+      "beige"
+    ],
+    displayName: "Phone & Laptop 9:16 #658 • White / Brown / Beige"
+  },
+  {
+    id: "9x16-SpAndLaptop_9x16_0659_white_brown_beige",
+    originalFilename: "SpAndLaptop_9x16_0659_white_brown_beige.webp",
+    publicPath: "/assets/mockup/9x16/SpAndLaptop_9x16_0659_white_brown_beige.webp",
+    folder: "9x16",
+    aspectKey: "9x16",
+    aspectRatio: "9:16",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 659,
+    colors: [
+      "White",
+      "Brown",
+      "Beige"
+    ],
+    colorTokens: [
+      "white",
+      "brown",
+      "beige"
+    ],
+    searchTokens: [
+      "spandlaptop_9x16_0659_white_brown_beige",
+      "device set",
+      "phone & laptop",
+      "9:16",
+      "white",
+      "brown",
+      "beige"
+    ],
+    displayName: "Phone & Laptop 9:16 #659 • White / Brown / Beige"
+  },
+  {
+    id: "9x16-SpAndLaptop_9x16_0660_white_brown_beige",
+    originalFilename: "SpAndLaptop_9x16_0660_white_brown_beige.webp",
+    publicPath: "/assets/mockup/9x16/SpAndLaptop_9x16_0660_white_brown_beige.webp",
+    folder: "9x16",
+    aspectKey: "9x16",
+    aspectRatio: "9:16",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 660,
+    colors: [
+      "White",
+      "Brown",
+      "Beige"
+    ],
+    colorTokens: [
+      "white",
+      "brown",
+      "beige"
+    ],
+    searchTokens: [
+      "spandlaptop_9x16_0660_white_brown_beige",
+      "device set",
+      "phone & laptop",
+      "9:16",
+      "white",
+      "brown",
+      "beige"
+    ],
+    displayName: "Phone & Laptop 9:16 #660 • White / Brown / Beige"
+  },
+  {
+    id: "9x16-SpAndLaptop_9x16_0661_white_brown_beige",
+    originalFilename: "SpAndLaptop_9x16_0661_white_brown_beige.webp",
+    publicPath: "/assets/mockup/9x16/SpAndLaptop_9x16_0661_white_brown_beige.webp",
+    folder: "9x16",
+    aspectKey: "9x16",
+    aspectRatio: "9:16",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 661,
+    colors: [
+      "White",
+      "Brown",
+      "Beige"
+    ],
+    colorTokens: [
+      "white",
+      "brown",
+      "beige"
+    ],
+    searchTokens: [
+      "spandlaptop_9x16_0661_white_brown_beige",
+      "device set",
+      "phone & laptop",
+      "9:16",
+      "white",
+      "brown",
+      "beige"
+    ],
+    displayName: "Phone & Laptop 9:16 #661 • White / Brown / Beige"
+  },
+  {
+    id: "9x16-SpAndLaptop_9x16_0662_white_brown_beige",
+    originalFilename: "SpAndLaptop_9x16_0662_white_brown_beige.webp",
+    publicPath: "/assets/mockup/9x16/SpAndLaptop_9x16_0662_white_brown_beige.webp",
+    folder: "9x16",
+    aspectKey: "9x16",
+    aspectRatio: "9:16",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 662,
+    colors: [
+      "White",
+      "Brown",
+      "Beige"
+    ],
+    colorTokens: [
+      "white",
+      "brown",
+      "beige"
+    ],
+    searchTokens: [
+      "spandlaptop_9x16_0662_white_brown_beige",
+      "device set",
+      "phone & laptop",
+      "9:16",
+      "white",
+      "brown",
+      "beige"
+    ],
+    displayName: "Phone & Laptop 9:16 #662 • White / Brown / Beige"
+  },
+  {
+    id: "9x16-SpAndLaptop_9x16_0663_white_brown_beige",
+    originalFilename: "SpAndLaptop_9x16_0663_white_brown_beige.webp",
+    publicPath: "/assets/mockup/9x16/SpAndLaptop_9x16_0663_white_brown_beige.webp",
+    folder: "9x16",
+    aspectKey: "9x16",
+    aspectRatio: "9:16",
+    deviceType: "Device Set",
+    deviceLabel: "Phone & Laptop",
+    priority: 0,
+    sequence: 663,
+    colors: [
+      "White",
+      "Brown",
+      "Beige"
+    ],
+    colorTokens: [
+      "white",
+      "brown",
+      "beige"
+    ],
+    searchTokens: [
+      "spandlaptop_9x16_0663_white_brown_beige",
+      "device set",
+      "phone & laptop",
+      "9:16",
+      "white",
+      "brown",
+      "beige"
+    ],
+    displayName: "Phone & Laptop 9:16 #663 • White / Brown / Beige"
   },
   {
     id: "1x1-laptop_1x1_006_white_beige",
@@ -8856,9 +10403,9 @@ export const mockupGalleryItems: MockupGalleryItem[] = [
     displayName: "Laptop 16:9 #030 • Blue"
   },
   {
-    id: "16x9-laptop_16x9_031_blue",
-    originalFilename: "laptop_16x9_031_blue.webp",
-    publicPath: "/assets/mockup/16x9/laptop_16x9_031_blue.webp",
+    id: "16x9-laptop_16x9_031_blue_gray",
+    originalFilename: "laptop_16x9_031_blue_gray.webp",
+    publicPath: "/assets/mockup/16x9/laptop_16x9_031_blue_gray.webp",
     folder: "16x9",
     aspectKey: "16x9",
     aspectRatio: "16:9",
@@ -8867,24 +10414,27 @@ export const mockupGalleryItems: MockupGalleryItem[] = [
     priority: 1,
     sequence: 31,
     colors: [
-      "Blue"
+      "Blue",
+      "Gray"
     ],
     colorTokens: [
-      "blue"
+      "blue",
+      "gray"
     ],
     searchTokens: [
-      "laptop_16x9_031_blue",
+      "laptop_16x9_031_blue_gray",
       "laptop",
       "laptop",
       "16:9",
-      "blue"
+      "blue",
+      "gray"
     ],
-    displayName: "Laptop 16:9 #031 • Blue"
+    displayName: "Laptop 16:9 #031 • Blue / Gray"
   },
   {
-    id: "16x9-laptop_16x9_032_blue",
-    originalFilename: "laptop_16x9_032_blue.webp",
-    publicPath: "/assets/mockup/16x9/laptop_16x9_032_blue.webp",
+    id: "16x9-laptop_16x9_032_blue_gray",
+    originalFilename: "laptop_16x9_032_blue_gray.webp",
+    publicPath: "/assets/mockup/16x9/laptop_16x9_032_blue_gray.webp",
     folder: "16x9",
     aspectKey: "16x9",
     aspectRatio: "16:9",
@@ -8893,24 +10443,27 @@ export const mockupGalleryItems: MockupGalleryItem[] = [
     priority: 1,
     sequence: 32,
     colors: [
-      "Blue"
+      "Blue",
+      "Gray"
     ],
     colorTokens: [
-      "blue"
+      "blue",
+      "gray"
     ],
     searchTokens: [
-      "laptop_16x9_032_blue",
+      "laptop_16x9_032_blue_gray",
       "laptop",
       "laptop",
       "16:9",
-      "blue"
+      "blue",
+      "gray"
     ],
-    displayName: "Laptop 16:9 #032 • Blue"
+    displayName: "Laptop 16:9 #032 • Blue / Gray"
   },
   {
-    id: "16x9-laptop_16x9_033_blue",
-    originalFilename: "laptop_16x9_033_blue.webp",
-    publicPath: "/assets/mockup/16x9/laptop_16x9_033_blue.webp",
+    id: "16x9-laptop_16x9_033_blue_gray",
+    originalFilename: "laptop_16x9_033_blue_gray.webp",
+    publicPath: "/assets/mockup/16x9/laptop_16x9_033_blue_gray.webp",
     folder: "16x9",
     aspectKey: "16x9",
     aspectRatio: "16:9",
@@ -8919,19 +10472,22 @@ export const mockupGalleryItems: MockupGalleryItem[] = [
     priority: 1,
     sequence: 33,
     colors: [
-      "Blue"
+      "Blue",
+      "Gray"
     ],
     colorTokens: [
-      "blue"
+      "blue",
+      "gray"
     ],
     searchTokens: [
-      "laptop_16x9_033_blue",
+      "laptop_16x9_033_blue_gray",
       "laptop",
       "laptop",
       "16:9",
-      "blue"
+      "blue",
+      "gray"
     ],
-    displayName: "Laptop 16:9 #033 • Blue"
+    displayName: "Laptop 16:9 #033 • Blue / Gray"
   },
   {
     id: "16x9-laptop_16x9_034_gray_white",
@@ -16314,6 +17870,128 @@ export const mockupGalleryItems: MockupGalleryItem[] = [
       "red"
     ],
     displayName: "Tablet 4:5 #059 • Red"
+  },
+  {
+    id: "4x5-SpAndTablet_4x5_0650_white_beige",
+    originalFilename: "SpAndTablet_4x5_0650_white_beige.webp",
+    publicPath: "/assets/mockup/4x5/SpAndTablet_4x5_0650_white_beige.webp",
+    folder: "4x5",
+    aspectKey: "4x5",
+    aspectRatio: "4:5",
+    deviceType: "Tablet",
+    deviceLabel: "Tablet",
+    priority: 2,
+    sequence: 650,
+    colors: [
+      "White",
+      "Beige"
+    ],
+    colorTokens: [
+      "white",
+      "beige"
+    ],
+    searchTokens: [
+      "spandtablet_4x5_0650_white_beige",
+      "tablet",
+      "tablet",
+      "4:5",
+      "white",
+      "beige"
+    ],
+    displayName: "Tablet 4:5 #650 • White / Beige"
+  },
+  {
+    id: "4x5-SpAndTablet_4x5_0651_white_beige",
+    originalFilename: "SpAndTablet_4x5_0651_white_beige.webp",
+    publicPath: "/assets/mockup/4x5/SpAndTablet_4x5_0651_white_beige.webp",
+    folder: "4x5",
+    aspectKey: "4x5",
+    aspectRatio: "4:5",
+    deviceType: "Tablet",
+    deviceLabel: "Tablet",
+    priority: 2,
+    sequence: 651,
+    colors: [
+      "White",
+      "Beige"
+    ],
+    colorTokens: [
+      "white",
+      "beige"
+    ],
+    searchTokens: [
+      "spandtablet_4x5_0651_white_beige",
+      "tablet",
+      "tablet",
+      "4:5",
+      "white",
+      "beige"
+    ],
+    displayName: "Tablet 4:5 #651 • White / Beige"
+  },
+  {
+    id: "4x5-SpAndTablet_4x5_0652_white_beige_brown",
+    originalFilename: "SpAndTablet_4x5_0652_white_beige_brown.webp",
+    publicPath: "/assets/mockup/4x5/SpAndTablet_4x5_0652_white_beige_brown.webp",
+    folder: "4x5",
+    aspectKey: "4x5",
+    aspectRatio: "4:5",
+    deviceType: "Tablet",
+    deviceLabel: "Tablet",
+    priority: 2,
+    sequence: 652,
+    colors: [
+      "White",
+      "Beige",
+      "Brown"
+    ],
+    colorTokens: [
+      "white",
+      "beige",
+      "brown"
+    ],
+    searchTokens: [
+      "spandtablet_4x5_0652_white_beige_brown",
+      "tablet",
+      "tablet",
+      "4:5",
+      "white",
+      "beige",
+      "brown"
+    ],
+    displayName: "Tablet 4:5 #652 • White / Beige / Brown"
+  },
+  {
+    id: "4x5-SpAndTablet_4x5_0653_white_beige_gray",
+    originalFilename: "SpAndTablet_4x5_0653_white_beige_gray.webp",
+    publicPath: "/assets/mockup/4x5/SpAndTablet_4x5_0653_white_beige_gray.webp",
+    folder: "4x5",
+    aspectKey: "4x5",
+    aspectRatio: "4:5",
+    deviceType: "Tablet",
+    deviceLabel: "Tablet",
+    priority: 2,
+    sequence: 653,
+    colors: [
+      "White",
+      "Beige",
+      "Gray"
+    ],
+    colorTokens: [
+      "white",
+      "beige",
+      "gray"
+    ],
+    searchTokens: [
+      "spandtablet_4x5_0653_white_beige_gray",
+      "tablet",
+      "tablet",
+      "4:5",
+      "white",
+      "beige",
+      "gray"
+    ],
+    displayName: "Tablet 4:5 #653 • White / Beige / Gray"
   },
   {
     id: "9x16-SpAndTablet_9x16_0001_gray_red",

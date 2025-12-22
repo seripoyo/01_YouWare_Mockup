@@ -483,6 +483,129 @@ function checkPartialRegion(
   return minX <= margin || minY <= margin || maxX >= imageW - margin || maxY >= imageH - margin;
 }
 
+// Calculate the angle at a vertex in a polygon (in radians)
+// Smaller angle = sharper corner
+function calculateVertexAngle(prev: Point, curr: Point, next: Point): number {
+  const v1x = prev.x - curr.x;
+  const v1y = prev.y - curr.y;
+  const v2x = next.x - curr.x;
+  const v2y = next.y - curr.y;
+
+  const dot = v1x * v2x + v1y * v2y;
+  const len1 = Math.sqrt(v1x * v1x + v1y * v1y);
+  const len2 = Math.sqrt(v2x * v2x + v2y * v2y);
+
+  if (len1 === 0 || len2 === 0) return Math.PI; // Straight line
+
+  const cosAngle = Math.max(-1, Math.min(1, dot / (len1 * len2)));
+  return Math.acos(cosAngle);
+}
+
+// Find the 4 corners of a shape by selecting one point from each quadrant
+// Uses the rotation angle from minAreaRect to handle tilted devices
+function findQuadrantCorners(hull: Point[], rotation: number): Point[] {
+  if (hull.length <= 4) return hull;
+
+  // Find centroid
+  const cx = hull.reduce((sum, p) => sum + p.x, 0) / hull.length;
+  const cy = hull.reduce((sum, p) => sum + p.y, 0) / hull.length;
+
+  // Use rotation angle to transform points into device-aligned coordinate system
+  // This handles tilted devices correctly
+  const cosR = Math.cos(-rotation);
+  const sinR = Math.sin(-rotation);
+
+  // Calculate angle at each vertex and determine quadrant in rotated space
+  const vertexData: { point: Point; angle: number; quadrant: number; rotatedX: number; rotatedY: number }[] = [];
+
+  for (let i = 0; i < hull.length; i++) {
+    const prev = hull[(i - 1 + hull.length) % hull.length];
+    const curr = hull[i];
+    const next = hull[(i + 1) % hull.length];
+
+    const angle = calculateVertexAngle(prev, curr, next);
+
+    // Transform point to rotated coordinate system (device-aligned)
+    const dx = curr.x - cx;
+    const dy = curr.y - cy;
+    const rotatedX = dx * cosR - dy * sinR;
+    const rotatedY = dx * sinR + dy * cosR;
+
+    // Determine quadrant in rotated space (0=top-left, 1=top-right, 2=bottom-right, 3=bottom-left)
+    let quadrant: number;
+    if (rotatedX < 0 && rotatedY < 0) quadrant = 0; // top-left
+    else if (rotatedX >= 0 && rotatedY < 0) quadrant = 1; // top-right
+    else if (rotatedX >= 0 && rotatedY >= 0) quadrant = 2; // bottom-right
+    else quadrant = 3; // bottom-left
+
+    vertexData.push({ point: curr, angle, quadrant, rotatedX, rotatedY });
+  }
+
+  // Select the sharpest corner from each quadrant
+  const corners: Point[] = [];
+  for (let q = 0; q < 4; q++) {
+    const quadrantPoints = vertexData.filter(v => v.quadrant === q);
+    if (quadrantPoints.length > 0) {
+      // Sort by angle (sharpest first)
+      quadrantPoints.sort((a, b) => a.angle - b.angle);
+      corners.push(quadrantPoints[0].point);
+    }
+  }
+
+  // If we didn't get 4 corners (some quadrants empty), fall back to sharpest 4
+  if (corners.length < 4) {
+    vertexData.sort((a, b) => a.angle - b.angle);
+    return vertexData.slice(0, 4).map(v => v.point);
+  }
+
+  return corners;
+}
+
+// Order 4 corners in clockwise order: top-left, top-right, bottom-right, bottom-left
+// Uses rotation angle to handle tilted devices
+function orderCornersClockwise(corners: Point[], rotation: number): Point[] {
+  if (corners.length !== 4) return corners;
+
+  // Find centroid
+  const cx = corners.reduce((sum, p) => sum + p.x, 0) / 4;
+  const cy = corners.reduce((sum, p) => sum + p.y, 0) / 4;
+
+  // Use rotation angle to transform points into device-aligned coordinate system
+  const cosR = Math.cos(-rotation);
+  const sinR = Math.sin(-rotation);
+
+  // Classify each corner by quadrant in rotated space
+  const classified: { point: Point; quadrant: number }[] = corners.map(p => {
+    const dx = p.x - cx;
+    const dy = p.y - cy;
+    const rotatedX = dx * cosR - dy * sinR;
+    const rotatedY = dx * sinR + dy * cosR;
+
+    let quadrant: number;
+    if (rotatedX < 0 && rotatedY < 0) quadrant = 0; // top-left
+    else if (rotatedX >= 0 && rotatedY < 0) quadrant = 1; // top-right
+    else if (rotatedX >= 0 && rotatedY >= 0) quadrant = 2; // bottom-right
+    else quadrant = 3; // bottom-left
+    return { point: p, quadrant };
+  });
+
+  // Sort by quadrant (0, 1, 2, 3 = top-left, top-right, bottom-right, bottom-left)
+  classified.sort((a, b) => a.quadrant - b.quadrant);
+
+  return classified.map(c => c.point);
+}
+
+// Select 4 corner points from convex hull
+// Selects one point from each quadrant to ensure proper corner distribution
+// Uses rotation from minAreaRect to handle tilted devices
+function selectCornersFromHull(hull: Point[], rotation: number): Point[] {
+  // Find corners from each quadrant (using rotation for tilted devices)
+  const quadrantCorners = findQuadrantCorners(hull, rotation);
+
+  // Order them clockwise from top-left (using rotation for tilted devices)
+  return orderCornersClockwise(quadrantCorners, rotation);
+}
+
 // Detect 4 corners of the white region from the visited mask
 function detectCorners(
   visited: Uint8Array,
@@ -495,10 +618,10 @@ function detectCorners(
 ): { corners: Point[]; rotation: number; isPartial: boolean } {
   // Check if this is a partial region (touches image boundary)
   const isPartial = checkPartialRegion(minX, minY, maxX, maxY, w, h);
-  
+
   // Extract contour points
   const contour = extractContourPoints(visited, w, h, minX, minY, maxX, maxY);
-  
+
   if (contour.length < 4) {
     // Fallback to bounding box corners
     return {
@@ -512,14 +635,14 @@ function detectCorners(
       isPartial,
     };
   }
-  
+
   // Sample contour points for performance (use every Nth point)
   const sampleRate = Math.max(1, Math.floor(contour.length / 500));
   const sampledContour = contour.filter((_, i) => i % sampleRate === 0);
-  
+
   // Get convex hull
   const hull = convexHull(sampledContour);
-  
+
   if (hull.length < 4) {
     return {
       corners: [
@@ -532,10 +655,20 @@ function detectCorners(
       isPartial,
     };
   }
-  
-  // Use minimum area bounding rectangle for accurate corner detection
-  const result = minAreaRect(hull);
-  return { ...result, isPartial };
+
+  // Use minimum area bounding rectangle for corner detection
+  // CRITICAL FIX: Use the minAreaRect corners directly instead of selecting from convex hull
+  //
+  // Problem: For rounded rectangle screens (smartphones), the convex hull vertices are located
+  // on the curved edges, NOT at the actual rectangle corners. This causes guidelines to be
+  // smaller than the white area.
+  //
+  // Solution: The minAreaRect computes the minimum bounding rectangle that encompasses
+  // the entire convex hull. Its 4 corners will be at the actual rectangle corners,
+  // ensuring the guidelines cover the full white area including rounded corners.
+  const rectResult = minAreaRect(hull);
+
+  return { corners: rectResult.corners, rotation: rectResult.rotation, isPartial };
 }
 
 export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }: PreviewModalProps) {
@@ -2542,12 +2675,15 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
                     {region.userImage ? "check_circle" : "crop_free"}
                   </span>
                   デバイス {idx + 1}
-                  <button
+                  <span
+                    role="button"
+                    tabIndex={0}
                     onClick={(e) => { e.stopPropagation(); clearRegion(idx); }}
-                    className="ml-1 text-current opacity-60 hover:opacity-100"
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); clearRegion(idx); } }}
+                    className="ml-1 text-current opacity-60 hover:opacity-100 cursor-pointer"
                   >
                     <span className="material-icons text-base">close</span>
-                  </button>
+                  </span>
                 </button>
               ))}
             </div>

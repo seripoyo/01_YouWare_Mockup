@@ -1,12 +1,25 @@
-import { memo } from "react";
+import { memo, useState, useCallback } from "react";
 import type { MockupGalleryItem } from "../types";
 
 interface MockupCardProps {
   item: MockupGalleryItem;
   onSelect: (item: MockupGalleryItem) => void;
+  onImageError?: (itemId: string) => void;
 }
 
-function MockupCardComponent({ item, onSelect }: MockupCardProps) {
+function MockupCardComponent({ item, onSelect, onImageError }: MockupCardProps) {
+  const [hasError, setHasError] = useState(false);
+
+  const handleImageError = useCallback(() => {
+    setHasError(true);
+    onImageError?.(item.id);
+  }, [item.id, onImageError]);
+
+  // Don't render if image failed to load
+  if (hasError) {
+    return null;
+  }
+
   return (
     <button
       onClick={() => onSelect(item)}
@@ -17,6 +30,7 @@ function MockupCardComponent({ item, onSelect }: MockupCardProps) {
           src={item.publicPath}
           alt={item.originalFilename}
           loading="lazy"
+          onError={handleImageError}
           className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-black/20 opacity-0 transition group-hover:opacity-100" />
