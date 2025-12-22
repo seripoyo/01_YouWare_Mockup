@@ -4,13 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>モックアップギャラリー</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Preload critical fonts to prevent FOUT (Flash of Unstyled Text) -->
+    <link rel="preload" href="/assets/fonts/New-Atten-Round-regular.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/assets/fonts/New-Atten-Round-Bold.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/assets/device/fonts/GenJyuuGothicX-Regular.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/assets/device/fonts/GenJyuuGothicX-Bold.woff2" as="font" type="font/woff2" crossorigin>
+
+    <!-- Material Icons -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
     <style>
+      /* Hide body until fonts are ready to prevent FOUT */
       body {
-        font-family: 'Inter', sans-serif;
+        font-family: 'New Atten Round', 'GenJyuuGothicX', system-ui, -apple-system, sans-serif;
         background-color: #f8fafc;
       }
       ::-webkit-scrollbar {

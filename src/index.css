@@ -1,3 +1,72 @@
+/* ==========================================================================
+   Custom Fonts - New Atten Round (English) & GenJyuuGothicX (Japanese)
+   ========================================================================== */
+
+/* New Atten Round - English font */
+@font-face {
+  font-family: 'New Atten Round';
+  src: url('/assets/fonts/New-Atten-Round-regular.woff2') format('woff2'),
+       url('/assets/fonts/New-Atten-Round-regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'New Atten Round';
+  src: url('/assets/fonts/New-Atten-Round-Bold.woff2') format('woff2'),
+       url('/assets/fonts/New-Atten-Round-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'New Atten Round';
+  src: url('/assets/fonts/New-Atten-Round-ExtraBold.woff2') format('woff2'),
+       url('/assets/fonts/New-Atten-Round-ExtraBold.woff') format('woff');
+  font-weight: 900;
+  font-style: bold;
+  font-display: swap;
+}
+
+/* GenJyuuGothicX - Japanese font */
+@font-face {
+  font-family: 'GenJyuuGothicX';
+  src: url('/assets/device/fonts/GenJyuuGothicX-Regular.woff2') format('woff2'),
+       url('/assets/device/fonts/GenJyuuGothicX-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'GenJyuuGothicX';
+  src: url('/assets/device/fonts/GenJyuuGothicX-Medium.woff2') format('woff2'),
+       url('/assets/device/fonts/GenJyuuGothicX-Medium.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'GenJyuuGothicX';
+  src: url('/assets/device/fonts/GenJyuuGothicX-Bold.woff2') format('woff2'),
+       url('/assets/device/fonts/GenJyuuGothicX-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: bold;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'GenJyuuGothicX';
+  src: url('/assets/device/fonts/GenJyuuGothicX-Heavy.woff2') format('woff2'),
+       url('/assets/device/fonts/GenJyuuGothicX-Heavy.woff') format('woff');
+  font-weight: 900;
+  font-style: black;
+  font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
