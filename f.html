@@ -30,3 +30,158 @@
     <div class="item gradient-purple"></div>
   </div>
 </div>
+
+<style>
+  html,
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+
+  .container {
+    position: relative;
+    width: 100vw;
+    height: 90vh;
+    max-width: 900px;
+    max-height: 700px;
+    border-radius: 9px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: solid: 2px white;
+  }
+
+  .checkboxes {
+    width: 100%;
+    padding: 2rem 0;
+    display: flex;
+    text-align: left;
+    flex-wrap: wrap;
+    justify-content: center
+  }
+
+  label {
+    display: block;
+  }
+
+
+  .box-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-content: flex-start;
+    flex-wrap: wrap;
+    height: 300px;
+  }
+
+  .item {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--color-just-black);
+    width: 200px;
+    height: 150px;
+    margin: 5px;
+    border-radius: 10px;
+  }
+
+  .logo {
+    position: absolute;
+    width: 60px;
+    bottom: 20px;
+    right: 30px;
+  }
+
+  .purple {
+    background-color: rgb(125, 70, 150);
+  }
+
+  @media screen and (max-width: 300px) {
+    .tag-button {
+      width: 100%
+    }
+  }
+
+  .tag-button {
+    align-items: center;
+    border: 1.5px solid var(--color-surface-white);
+    border-radius: 99px;
+    cursor: pointer;
+    display: flex;
+    flex: 0 0 auto;
+    font-size: 13px;
+    gap: 8px;
+    justify-content: center;
+    margin: 5px;
+    max-width: 130px;
+    padding: 0.3rem 2rem;
+    position: relative;
+    white-space: nowrap;
+  }
+
+  .tag-button input {
+    opacity: 0;
+    position: absolute;
+  }
+
+  .tag-button .checked {
+    opacity: 0;
+    border: 1.5px solid var(--color-surface-white);
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: var(--color-surface-white);
+    border-radius: 99px;
+    color: var(--color-just-black);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .tag-button input:checked+.checked {
+    opacity: 1;
+  }
+
+  .tag-button input:checked {}
+</style>
+
+
+<script>
+  const allCheckbox = document.querySelector('#all'),
+    filters = gsap.utils.toArray('.filter'),
+    items = gsap.utils.toArray('.item');
+
+  function updateFilters() {
+    const state = Flip.getState(items), // get the current state
+      classes = filters.filter(checkbox => checkbox.checked).map(checkbox => "." + checkbox.id),
+      matches = classes.length ? gsap.utils.toArray(classes.join(",")) : classes;
+
+    // adjust the display property of each item ("none" for filtered ones, "inline-flex" for matching ones)
+    items.forEach(item => item.style.display = matches.indexOf(item) === -1 ? "none" : "inline-flex");
+
+    // animate from the previous state
+    Flip.from(state, {
+      duration: 0.7,
+      scale: true,
+      ease: "power1.inOut",
+      stagger: 0.08,
+      absolute: true,
+      onEnter: elements => gsap.fromTo(elements, { opacity: 0, scale: 0 }, { opacity: 1, scale: 1, duration: 1 }),
+      onLeave: elements => gsap.to(elements, { opacity: 0, scale: 0, duration: 1 })
+    });
+
+    // Update the all checkbox:
+    allCheckbox.checked = matches.length === items.length;
+  }
+
+  filters.forEach(btn => btn.addEventListener('click', updateFilters));
+  allCheckbox.addEventListener('click', () => {
+    filters.forEach(checkbox => checkbox.checked = allCheckbox.checked);
+    updateFilters();
+  });
+
+</script>
