@@ -928,6 +928,30 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
     const h = frameImageData.height;
     const data = frameImageData.data;
 
+    // Check if clicking on a corner handle of ANY device region
+    // If so, select that device and enter corner edit mode directly
+    // This allows users to click on any device's corner to start editing
+    const cornerThreshold = 40; // Same as findNearCorner threshold
+    for (let regionIdx = 0; regionIdx < deviceRegions.length; regionIdx++) {
+      const region = deviceRegions[regionIdx];
+      const corners = region.corners;
+      for (let cornerIdx = 0; cornerIdx < corners.length; cornerIdx++) {
+        const dx = x - corners[cornerIdx].x;
+        const dy = y - corners[cornerIdx].y;
+        if (Math.sqrt(dx * dx + dy * dy) <= cornerThreshold) {
+          // Clicked on a corner - select this device and enter edit mode
+          setSelectedRegionIndex(regionIdx);
+          const cornersCopy = corners.map(c => ({ x: c.x, y: c.y }));
+          setOriginalCorners(cornersCopy);
+          setEditingCorners(cornersCopy);
+          setIsCornerEditMode(true);
+          // Start dragging this corner immediately
+          setDraggingCornerIndex(cornerIdx);
+          return;
+        }
+      }
+    }
+
     // Check if clicking on existing region
     for (let i = 0; i < deviceRegions.length; i++) {
       const region = deviceRegions[i];
@@ -1128,8 +1152,9 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
       ctx.stroke();
 
       // Always draw corner handles for selected region (not just in edit mode)
-      // Use larger radius to be visible when canvas is scaled down
-      const handleRadius = isCornerEditMode ? 28 : 20;
+      // Use larger radius to be visible when canvas is scaled down and easier to tap on mobile
+      // Increased size: normal 20→32px, edit mode 28→40px (two sizes larger for better usability)
+      const handleRadius = isCornerEditMode ? 40 : 32;
 
       // Different colors for each corner for better visibility
       const cornerColors = [
@@ -1164,9 +1189,9 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
         ctx.fill();
         ctx.stroke();
 
-        // Draw corner number
+        // Draw corner number (increased font size for larger handles)
         ctx.fillStyle = "white";
-        ctx.font = `bold ${isCornerEditMode ? 14 : 12}px sans-serif`;
+        ctx.font = `bold ${isCornerEditMode ? 18 : 16}px sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText(`${cornerIdx + 1}`, corner.x, corner.y);
@@ -1576,7 +1601,7 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
 
   // Find which corner is near the given point
   const findNearCorner = useCallback((point: Point, corners: Point[]): number | null => {
-    const threshold = 20; // pixels in canvas coordinates
+    const threshold = 40; // pixels in canvas coordinates (increased from 20 for larger handles)
     for (let i = 0; i < corners.length; i++) {
       const dx = point.x - corners[i].x;
       const dy = point.y - corners[i].y;
@@ -1639,11 +1664,49 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
 
   // Touch event handlers
   const handleTouchStart = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
-    if (isCornerEditMode && e.touches.length === 1) {
-      const touch = e.touches[0];
+    if (e.touches.length !== 1) return;
+    const touch = e.touches[0];
+
+    if (isCornerEditMode) {
+      // Already in edit mode - start dragging
       handleCornerDragStart(touch.clientX, touch.clientY);
+      return;
     }
-  }, [isCornerEditMode, handleCornerDragStart]);
+
+    // Not in edit mode - check if touching a corner of ANY device region
+    // If so, select that device and enter edit mode (same as mouse click behavior)
+    if (frameNatural) {
+      const canvas = overlayCanvasRef.current;
+      if (canvas) {
+        const rect = canvas.getBoundingClientRect();
+        const sx = frameNatural.w / rect.width;
+        const sy = frameNatural.h / rect.height;
+        const x = Math.floor((touch.clientX - rect.left) * sx);
+        const y = Math.floor((touch.clientY - rect.top) * sy);
+
+        const cornerThreshold = 40;
+        for (let regionIdx = 0; regionIdx < deviceRegions.length; regionIdx++) {
+          const region = deviceRegions[regionIdx];
+          const corners = region.corners;
+          for (let cornerIdx = 0; cornerIdx < corners.length; cornerIdx++) {
+            const dx = x - corners[cornerIdx].x;
+            const dy = y - corners[cornerIdx].y;
+            if (Math.sqrt(dx * dx + dy * dy) <= cornerThreshold) {
+              // Touched a corner - select this device and enter edit mode
+              e.preventDefault(); // Prevent default touch behavior
+              setSelectedRegionIndex(regionIdx);
+              const cornersCopy = corners.map(c => ({ x: c.x, y: c.y }));
+              setOriginalCorners(cornersCopy);
+              setEditingCorners(cornersCopy);
+              setIsCornerEditMode(true);
+              setDraggingCornerIndex(cornerIdx);
+              return;
+            }
+          }
+        }
+      }
+    }
+  }, [isCornerEditMode, handleCornerDragStart, frameNatural, deviceRegions]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
     if (isCornerEditMode && draggingCornerIndex !== null && e.touches.length === 1) {
