@@ -1662,22 +1662,23 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
     }
   }, [isCornerEditMode, handleCornerDragEnd]);
 
-  // Touch event handlers
-  const handleTouchStart = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
-    if (e.touches.length !== 1) return;
-    const touch = e.touches[0];
+  // Register non-passive touch event listeners to allow preventDefault()
+  // React's synthetic events are passive by default in modern browsers
+  useEffect(() => {
+    const canvas = overlayCanvasRef.current;
+    if (!canvas) return;
 
-    if (isCornerEditMode) {
-      // Already in edit mode - start dragging
-      handleCornerDragStart(touch.clientX, touch.clientY);
-      return;
-    }
+    // Create native event handlers that wrap our React-style handlers
+    const nativeTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      const touch = e.touches[0];
 
-    // Not in edit mode - check if touching a corner of ANY device region
-    // If so, select that device and enter edit mode (same as mouse click behavior)
-    if (frameNatural) {
-      const canvas = overlayCanvasRef.current;
-      if (canvas) {
+      if (isCornerEditMode) {
+        handleCornerDragStart(touch.clientX, touch.clientY);
+        return;
+      }
+
+      if (frameNatural) {
         const rect = canvas.getBoundingClientRect();
         const sx = frameNatural.w / rect.width;
         const sy = frameNatural.h / rect.height;
@@ -1692,8 +1693,7 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
             const dx = x - corners[cornerIdx].x;
             const dy = y - corners[cornerIdx].y;
             if (Math.sqrt(dx * dx + dy * dy) <= cornerThreshold) {
-              // Touched a corner - select this device and enter edit mode
-              e.preventDefault(); // Prevent default touch behavior
+              e.preventDefault(); // Now works with passive: false
               setSelectedRegionIndex(regionIdx);
               const cornersCopy = corners.map(c => ({ x: c.x, y: c.y }));
               setOriginalCorners(cornersCopy);
@@ -1705,22 +1705,41 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
           }
         }
       }
-    }
-  }, [isCornerEditMode, handleCornerDragStart, frameNatural, deviceRegions]);
+    };
 
-  const handleTouchMove = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
-    if (isCornerEditMode && draggingCornerIndex !== null && e.touches.length === 1) {
-      e.preventDefault(); // Prevent scrolling
-      const touch = e.touches[0];
-      handleCornerDragMove(touch.clientX, touch.clientY);
-    }
-  }, [isCornerEditMode, draggingCornerIndex, handleCornerDragMove]);
+    const nativeTouchMove = (e: TouchEvent) => {
+      if (isCornerEditMode && draggingCornerIndex !== null && e.touches.length === 1) {
+        e.preventDefault(); // Now works with passive: false
+        const touch = e.touches[0];
+        handleCornerDragMove(touch.clientX, touch.clientY);
+      }
+    };
 
-  const handleTouchEnd = useCallback(() => {
-    if (isCornerEditMode) {
-      handleCornerDragEnd();
-    }
-  }, [isCornerEditMode, handleCornerDragEnd]);
+    const nativeTouchEnd = () => {
+      if (isCornerEditMode) {
+        handleCornerDragEnd();
+      }
+    };
+
+    // Add event listeners with passive: false to allow preventDefault()
+    canvas.addEventListener('touchstart', nativeTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', nativeTouchMove, { passive: false });
+    canvas.addEventListener('touchend', nativeTouchEnd, { passive: false });
+
+    return () => {
+      canvas.removeEventListener('touchstart', nativeTouchStart);
+      canvas.removeEventListener('touchmove', nativeTouchMove);
+      canvas.removeEventListener('touchend', nativeTouchEnd);
+    };
+  }, [
+    isCornerEditMode,
+    draggingCornerIndex,
+    frameNatural,
+    deviceRegions,
+    handleCornerDragStart,
+    handleCornerDragMove,
+    handleCornerDragEnd
+  ]);
 
   // Process image file and apply to region
   const processImageForRegion = useCallback((file: File, regionIndex: number) => {
@@ -2656,6 +2675,8 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
             />
             
             {/* Interactive overlay */}
+            {/* Touch events are handled via native addEventListener with { passive: false } */}
+            {/* to allow preventDefault() for corner dragging */}
             <canvas
               ref={overlayCanvasRef}
               className="absolute inset-0 h-full w-full object-contain rounded-xl z-10"
@@ -2664,9 +2685,6 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseUp}
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
               style={{
                 cursor: isCornerEditMode
                   ? (draggingCornerIndex !== null ? "grabbing" : "grab")
@@ -2900,16 +2918,6 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
               </div>
             )}
 
-            {/* Filename */}
-            <div className="bg-slate-50 rounded-lg p-4">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                FILENAME
-              </p>
-              <p className="text-sm text-slate-700 font-medium break-all leading-relaxed">
-                {item.originalFilename}
-              </p>
-            </div>
-
             {/* Aspect Ratio & Device */}
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -3015,14 +3023,24 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
 
           {/* Action Buttons */}
           <div className="p-6 pt-4 space-y-3 sticky bottom-0 bg-white">
+            {/* Primary Download Button - uses template's default aspect ratio */}
             <button
               onClick={handleDownload}
               className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-sm transition-colors"
             >
               <span className="material-icons text-lg">download</span>
-              {compositeUrl ? "編集済み画像をダウンロード" : "テンプレートをダウンロード"}
+              {item.aspectRatio} でダウンロード
             </button>
-            
+
+            {/* Secondary Download Button - change aspect ratio */}
+            <button
+              onClick={() => {/* TODO: アスペクト比変更モーダルを開く */}}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#da3700] hover:bg-[#c53200] text-white rounded-xl font-medium text-sm transition-colors"
+            >
+              <span className="material-icons text-lg">aspect_ratio</span>
+              画像サイズを変えてダウンロード
+            </button>
+
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={handleCopy}
