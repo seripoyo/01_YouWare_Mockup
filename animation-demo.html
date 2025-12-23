@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>モックアップギャラリー</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f8fafc;
+      overflow-x: hidden;
+    }
+    /* カスタムスクロールバー */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    /* Masonryレイアウト調整 */
+    .mockup-grid {
+      position: relative;
+      width: 100%;
+    }
+    .mockup-item {
+      break-inside: avoid;
+      transition: transform 0.3s ease;
+    }
+    /* ボタンのアクティブ状態 */
+    .filter-btn.active {
+      background-color: #4f46e5 !important;
+      color: white !important;
+      border-color: #4f46e5 !important;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+    }
+  </style>
+
+  <script type="importmap">
+{
+  "imports": {
+    "gsap": "https://esm.sh/gsap@3.12.5",
+    "gsap/Flip": "https://esm.sh/gsap@3.12.5/Flip",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "gsap/": "https://esm.sh/gsap@^3.14.2/"
+  }
+}
+</script>
+</head>
+<body>
+
+<div class="flex flex-col lg:flex-row min-h-screen">
+  <!-- Sidebar -->
+  <aside class="w-full lg:w-72 bg-white border-r border-slate-200 lg:sticky lg:top-0 lg:h-screen z-50">
+    <div class="p-6 h-full overflow-y-auto">
+      <div class="flex items-center justify-between mb-8">
+        <h1 class="text-xl font-bold text-slate-900">Mockup Gallery</h1>
+      </div>
+      
+      <div class="mb-8">
+        <h3 class="text-xs font-bold uppercase text-slate-400 tracking-widest mb-4">Device Type</h3>
+        <div class="space-y-2" id="device-filters">
+          <button data-filter="device" data-value="Laptop" class="filter-btn w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 border border-transparent transition-all">Laptop</button>
+          <button data-filter="device" data-value="Smartphone" class="filter-btn w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 border border-transparent transition-all">Smartphone</button>
+          <button data-filter="device" data-value="Tablet" class="filter-btn w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 border border-transparent transition-all">Tablet</button>
+        </div>
+      </div>
+
+      <div class="mb-8">
+        <h3 class="text-xs font-bold uppercase text-slate-400 tracking-widest mb-4">Aspect Ratio</h3>
+        <div class="grid grid-cols-2 gap-2" id="ratio-filters">
+          <button data-filter="ratio" data-value="1:1" class="filter-btn px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all">1:1</button>
+          <button data-filter="ratio" data-value="4:5" class="filter-btn px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all">4:5</button>
+          <button data-filter="ratio" data-value="16:9" class="filter-btn px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all">16:9</button>
+          <button data-filter="ratio" data-value="9:16" class="filter-btn px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all">9:16</button>
+        </div>
+      </div>
+
+      <button id="reset-filters" class="w-full py-3 text-xs font-bold text-indigo-600 border border-indigo-100 rounded-xl hover:bg-indigo-50 transition-colors">フィルターをリセット</button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 p-6 lg:p-10">
+    <div class="mb-8">
+      <h2 class="text-3xl font-black text-slate-900 tracking-tight" id="gallery-title">All Templates</h2>
+      <p class="text-slate-400 font-medium mt-1" id="item-count">読み込み中...</p>
+    </div>
+
+    <!-- Mockup Grid -->
+    <div class="mockup-grid columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6" id="grid">
+      <!-- Item 1 -->
+      <div class="mockup-item mb-6" data-device="Laptop" data-ratio="1:1" data-colors="Green">
+        <div class="group relative rounded-3xl overflow-hidden bg-slate-200 cursor-pointer shadow-sm hover:shadow-xl transition-all duration-500">
+          <div class="aspect-square relative w-full">
+            <img src="https://picsum.photos/1080/1080?random=1" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Laptop 1:1">
+            <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Item 2 -->
+      <div class="mockup-item mb-6" data-device="Smartphone" data-ratio="9:16" data-colors="Red">
+        <div class="group relative rounded-3xl overflow-hidden bg-slate-200 cursor-pointer shadow-sm hover:shadow-xl transition-all duration-500">
+          <div style="aspect-ratio: 9/16;" class="relative w-full">
+            <img src="https://picsum.photos/1080/1920?random=2" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Smartphone 9:16">
+            <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Item 3 -->
+      <div class="mockup-item mb-6" data-device="Tablet" data-ratio="4:5" data-colors="Blue">
+        <div class="group relative rounded-3xl overflow-hidden bg-slate-200 cursor-pointer shadow-sm hover:shadow-xl transition-all duration-500">
+          <div style="aspect-ratio: 4/5;" class="relative w-full">
+            <img src="https://picsum.photos/1080/1350?random=3" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Tablet 4:5">
+            <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Item 4 -->
+      <div class="mockup-item mb-6" data-device="Laptop" data-ratio="16:9" data-colors="Gray">
+        <div class="group relative rounded-3xl overflow-hidden bg-slate-200 cursor-pointer shadow-sm hover:shadow-xl transition-all duration-500">
+          <div style="aspect-ratio: 16/9;" class="relative w-full">
+            <img src="https://picsum.photos/1200/675?random=4" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Laptop 16:9">
+            <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Item 5 (Repeated for more grid items) -->
+      <div class="mockup-item mb-6" data-device="Smartphone" data-ratio="1:1" data-colors="Pink">
+        <div class="group relative rounded-3xl overflow-hidden bg-slate-200 cursor-pointer shadow-sm hover:shadow-xl transition-all duration-500">
+          <div class="aspect-square relative w-full">
+            <img src="https://picsum.photos/1080/1080?random=5" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Smartphone 1:1">
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script type="module">
+  import gsap from "gsap";
+  import { Flip } from "gsap/Flip";
+
+  gsap.registerPlugin(Flip);
+
+  // 1. State Management
+  let activeFilters = {
+    device: null,
+    ratio: null
+  };
+
+  const grid = document.querySelector('#grid');
+  const items = gsap.utils.toArray('.mockup-item');
+  const filterBtns = gsap.utils.toArray('.filter-btn');
+  const resetBtn = document.querySelector('#reset-filters');
+  const itemCountEl = document.querySelector('#item-count');
+
+  // 2. Filter Function
+  function updateGallery() {
+    // A. Capture current state (position and size of all items)
+    const state = Flip.getState(items);
+
+    // B. Logic: Which items should be visible?
+    let visibleCount = 0;
+    items.forEach(item => {
+      const matchesDevice = !activeFilters.device || item.dataset.device === activeFilters.device;
+      const matchesRatio = !activeFilters.ratio || item.dataset.ratio === activeFilters.ratio;
+      
+      const shouldShow = matchesDevice && matchesRatio;
+      
+      if (shouldShow) {
+        item.style.display = "block";
+        visibleCount++;
+      } else {
+        item.style.display = "none";
+      }
+    });
+
+    // C. Update UI Text
+    itemCountEl.textContent = `${visibleCount} 個のアセットが見つかりました`;
+
+    // D. Animate the transition
+    Flip.from(state, {
+      duration: 0.6,
+      scale: true,
+      ease: "power2.inOut",
+      stagger: {
+        amount: 0.15,
+        grid: "auto",
+        from: "start"
+      },
+      absolute: true, // IMPORTANT: Allows smooth reordering in CSS columns
+      onEnter: elements => gsap.fromTo(elements, 
+        { opacity: 0, scale: 0.8 }, 
+        { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.4)", delay: 0.1 }
+      ),
+      onLeave: elements => gsap.to(elements, 
+        { opacity: 0, scale: 0.5, duration: 0.3, ease: "power2.in" }
+      )
+    });
+  }
+
+  // 3. Event Listeners
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const category = btn.dataset.filter;
+      const value = btn.dataset.value;
+
+      // Toggle logic
+      if (activeFilters[category] === value) {
+        activeFilters[category] = null;
+        btn.classList.remove('active');
+      } else {
+        // Clear other actives in same category
+        document.querySelectorAll(`[data-filter="${category}"]`).forEach(b => b.classList.remove('active'));
+        activeFilters[category] = value;
+        btn.classList.add('active');
+      }
+
+      updateGallery();
+    });
+  });
+
+  resetBtn.addEventListener('click', () => {
+    activeFilters = { device: null, ratio: null };
+    filterBtns.forEach(btn => btn.classList.remove('active'));
+    updateGallery();
+  });
+
+  // Initial call to set count
+  updateGallery();
+</script>
+</body>
+</html>

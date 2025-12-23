@@ -288,7 +288,7 @@ function mergeNearbyRegions(
   regions: { pixels: number[]; bounds: { minX: number; minY: number; maxX: number; maxY: number } }[],
   imageWidth: number,
   imageHeight: number,
-  maxGapRatio: number = 0.1 // 領域の高さ/幅の10%以内のギャップはマージ
+  maxGapRatio: number = 0.05 // 領域の高さ/幅の5%以内のギャップはマージ（厳格化: 10%→5%）
 ): { pixels: number[]; bounds: { minX: number; minY: number; maxX: number; maxY: number } }[] {
   if (regions.length <= 1) return regions;
 
@@ -322,15 +322,16 @@ function mergeNearbyRegions(
         const otherWidth = otherBounds.maxX - otherBounds.minX;
         const otherHeight = otherBounds.maxY - otherBounds.minY;
 
-        // ========== マージ条件1: サイズ類似性 ==========
-        // 面積比が0.2〜5.0倍の範囲内かチェック（別デバイスは通常大きくサイズが異なる）
+        // ========== マージ条件1: サイズ類似性（厳格化） ==========
+        // 面積比が2.0倍以内のみマージ（別デバイスは通常2倍以上のサイズ差がある）
+        // 5.0→2.0に厳格化: タブレットとスマートフォンの誤マージを防止
         const currentArea = currentPixels.length;
         const otherArea = otherRegion.pixels.length;
         const areaRatio = currentArea > otherArea ? currentArea / otherArea : otherArea / currentArea;
-        if (areaRatio > 5.0) continue; // サイズが大きく異なる場合はマージしない
+        if (areaRatio > 2.0) continue;
 
-        // ========== マージ条件2: Y座標の重なり ==========
-        // ノッチで分断された領域は同じY範囲にある
+        // ========== マージ条件2: Y座標の重なり（厳格化） ==========
+        // ノッチで分断された領域は非常に高いY座標重なり率を持つはず
         // Y座標の重なり率を計算（重なり部分 / 小さい方の高さ）
         const yOverlapStart = Math.max(currentBounds.minY, otherBounds.minY);
         const yOverlapEnd = Math.min(currentBounds.maxY, otherBounds.maxY);
@@ -338,8 +339,22 @@ function mergeNearbyRegions(
         const minHeight = Math.min(currentHeight, otherHeight);
         const yOverlapRatio = minHeight > 0 ? yOverlap / minHeight : 0;
 
-        // Y座標の重なりが50%未満の場合はマージしない（別デバイスの可能性が高い）
-        if (yOverlapRatio < 0.5) continue;
+        // Y座標の重なりが80%未満の場合はマージしない（50%→80%に厳格化）
+        // ノッチ分断は通常90%以上の重なりがある
+        if (yOverlapRatio < 0.8) continue;
+
+        // ========== マージ条件2.5: X座標の重なり（新規追加） ==========
+        // 横に並んだ別デバイス（タブレット+スマートフォン）をマージしないために
+        // X座標の重なりも高い必要がある（ノッチ分断は垂直分断なのでX重なりが高い）
+        const xOverlapStart = Math.max(currentBounds.minX, otherBounds.minX);
+        const xOverlapEnd = Math.min(currentBounds.maxX, otherBounds.maxX);
+        const xOverlap = Math.max(0, xOverlapEnd - xOverlapStart);
+        const minWidth = Math.min(currentWidth, otherWidth);
+        const xOverlapRatio = minWidth > 0 ? xOverlap / minWidth : 0;
+
+        // X座標の重なりが50%未満の場合はマージしない
+        // ノッチ分断は垂直分断なので、X座標は高い重なりを持つはず
+        if (xOverlapRatio < 0.5) continue;
 
         // ========== マージ条件3: 近接性 ==========
         const avgWidth = (currentWidth + otherWidth) / 2;
@@ -504,7 +519,7 @@ function detectDeviceScreensInternal(
   // ステップ2.5: 近接領域のマージ
   // ノッチやカメラで分断された画面領域を1つに統合する
   // maxGapRatioを0.15に設定（領域サイズの15%以内のギャップをマージ）
-  const mergedRegions = mergeNearbyRegions(rawRegions, width, height, 0.15);
+  const mergedRegions = mergeNearbyRegions(rawRegions, width, height, 0.05);
 
   // ステップ3: フィルタリングとスコアリング
   const screenRegions: DetectedRegion[] = [];
@@ -1004,7 +1019,7 @@ function detectDeviceScreensInternalWithLog(
 
   // ステップ2.5: 近接領域のマージ
   // ノッチやカメラで分断された画面領域を1つに統合する
-  const mergedRegions = mergeNearbyRegions(rawRegions, width, height, 0.15);
+  const mergedRegions = mergeNearbyRegions(rawRegions, width, height, 0.05);
 
   // 最初の閾値でのみログに領域情報を記録（マージ後の領域を記録）
   if (isFirstThreshold) {

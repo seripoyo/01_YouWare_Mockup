@@ -501,63 +501,88 @@ function calculateVertexAngle(prev: Point, curr: Point, next: Point): number {
   return Math.acos(cosAngle);
 }
 
-// Find the 4 corners of a shape by selecting the OUTERMOST point from each quadrant
-// Uses the rotation angle from minAreaRect to handle tilted devices
+// Find the 4 corners of a shape by selecting the closest hull point to each minAreaRect corner
+// This approach ensures:
+// 1. The selected corners form a proper quadrilateral (not parallelogram)
+// 2. The corners stay within the white area boundary (on the convex hull)
+// 3. Works correctly for all device orientations and aspect ratios
 //
-// CRITICAL: This function selects the point that is furthest from center in each quadrant,
-// ensuring the guidelines cover the FULL white area including rounded corners.
-// Previous approach selected "sharpest angle" which landed on the curved edges.
-function findQuadrantCorners(hull: Point[], rotation: number): Point[] {
+// Algorithm:
+// 1. Get the 4 corners from minAreaRect (perfect rectangle but may exceed white area)
+// 2. For each minAreaRect corner, find the closest point on the convex hull
+// 3. This gives us 4 corners that follow the actual white area shape
+function findQuadrantCorners(hull: Point[], rotation: number, rectCorners?: Point[]): Point[] {
   if (hull.length <= 4) return hull;
 
-  // Find centroid
+  // If we have minAreaRect corners, use them as reference to find closest hull points
+  if (rectCorners && rectCorners.length === 4) {
+    const selectedCorners: Point[] = [];
+    const usedIndices = new Set<number>();
+
+    for (const rectCorner of rectCorners) {
+      let minDist = Infinity;
+      let closestIdx = -1;
+
+      for (let i = 0; i < hull.length; i++) {
+        // Skip already used points to ensure we get 4 different corners
+        if (usedIndices.has(i)) continue;
+
+        const dx = hull[i].x - rectCorner.x;
+        const dy = hull[i].y - rectCorner.y;
+        const dist = dx * dx + dy * dy;
+
+        if (dist < minDist) {
+          minDist = dist;
+          closestIdx = i;
+        }
+      }
+
+      if (closestIdx >= 0) {
+        selectedCorners.push(hull[closestIdx]);
+        usedIndices.add(closestIdx);
+      }
+    }
+
+    if (selectedCorners.length === 4) {
+      return selectedCorners;
+    }
+  }
+
+  // Fallback: quadrant-based selection using rotation angle
   const cx = hull.reduce((sum, p) => sum + p.x, 0) / hull.length;
   const cy = hull.reduce((sum, p) => sum + p.y, 0) / hull.length;
 
-  // Use rotation angle to transform points into device-aligned coordinate system
-  // This handles tilted devices correctly
   const cosR = Math.cos(-rotation);
   const sinR = Math.sin(-rotation);
 
-  // Calculate rotated coordinates for each hull point
-  const vertexData: { point: Point; quadrant: number; rotatedX: number; rotatedY: number; diagonalDist: number }[] = [];
+  const vertexData: { point: Point; quadrant: number; diagonalDist: number }[] = [];
 
   for (let i = 0; i < hull.length; i++) {
     const curr = hull[i];
-
-    // Transform point to rotated coordinate system (device-aligned)
     const dx = curr.x - cx;
     const dy = curr.y - cy;
     const rotatedX = dx * cosR - dy * sinR;
     const rotatedY = dx * sinR + dy * cosR;
 
-    // Determine quadrant in rotated space (0=top-left, 1=top-right, 2=bottom-right, 3=bottom-left)
     let quadrant: number;
-    if (rotatedX < 0 && rotatedY < 0) quadrant = 0; // top-left
-    else if (rotatedX >= 0 && rotatedY < 0) quadrant = 1; // top-right
-    else if (rotatedX >= 0 && rotatedY >= 0) quadrant = 2; // bottom-right
-    else quadrant = 3; // bottom-left
+    if (rotatedX < 0 && rotatedY < 0) quadrant = 0;
+    else if (rotatedX >= 0 && rotatedY < 0) quadrant = 1;
+    else if (rotatedX >= 0 && rotatedY >= 0) quadrant = 2;
+    else quadrant = 3;
 
-    // Calculate diagonal distance from center (for selecting outermost point)
-    // For each quadrant, we want the point that extends furthest into that quadrant
-    // This is measured by the sum of absolute rotated coordinates (Manhattan-like distance to corner)
     const diagonalDist = Math.abs(rotatedX) + Math.abs(rotatedY);
-
-    vertexData.push({ point: curr, quadrant, rotatedX, rotatedY, diagonalDist });
+    vertexData.push({ point: curr, quadrant, diagonalDist });
   }
 
-  // Select the OUTERMOST point from each quadrant (furthest from center)
   const corners: Point[] = [];
   for (let q = 0; q < 4; q++) {
     const quadrantPoints = vertexData.filter(v => v.quadrant === q);
     if (quadrantPoints.length > 0) {
-      // Sort by diagonal distance (furthest first)
       quadrantPoints.sort((a, b) => b.diagonalDist - a.diagonalDist);
       corners.push(quadrantPoints[0].point);
     }
   }
 
-  // If we didn't get 4 corners (some quadrants empty), fall back to furthest 4
   if (corners.length < 4) {
     vertexData.sort((a, b) => b.diagonalDist - a.diagonalDist);
     return vertexData.slice(0, 4).map(v => v.point);
@@ -601,11 +626,11 @@ function orderCornersClockwise(corners: Point[], rotation: number): Point[] {
 }
 
 // Select 4 corner points from convex hull
-// Selects one point from each quadrant to ensure proper corner distribution
-// Uses rotation from minAreaRect to handle tilted devices
-function selectCornersFromHull(hull: Point[], rotation: number): Point[] {
-  // Find corners from each quadrant (using rotation for tilted devices)
-  const quadrantCorners = findQuadrantCorners(hull, rotation);
+// Uses minAreaRect corners as reference to find the closest hull points
+// This ensures proper corner distribution even for tilted tablets
+function selectCornersFromHull(hull: Point[], rotation: number, rectCorners?: Point[]): Point[] {
+  // Find corners by matching to minAreaRect corners (preferred) or quadrant-based selection (fallback)
+  const quadrantCorners = findQuadrantCorners(hull, rotation, rectCorners);
 
   // Order them clockwise from top-left (using rotation for tilted devices)
   return orderCornersClockwise(quadrantCorners, rotation);
@@ -661,30 +686,22 @@ function detectCorners(
     };
   }
 
-  // Use minAreaRect to get the rotation angle (device orientation)
-  // This tells us how the device is tilted in the image
+  // Use minAreaRect to get the rotation angle and corner reference points
+  // minAreaRect uses rotating calipers algorithm to find the minimum area bounding rectangle
   const rectResult = minAreaRect(hull);
   const rotation = rectResult.rotation;
 
-  // CRITICAL FIX: Select corners from convex hull using quadrant-based selection
+  // Use selectCornersFromHull to find corners on the actual white area boundary
+  // This approach:
+  // 1. Uses minAreaRect corners as reference to find the closest hull points
+  // 2. Ensures selected corners are ON the convex hull (actual white area boundary)
+  // 3. Handles rounded corners by finding hull points closest to ideal rectangle corners
   //
-  // Problem with minAreaRect corners:
-  //   minAreaRect finds the minimum AREA bounding rectangle, which may be rotated
-  //   at a different angle than the actual device orientation. This causes
-  //   parallelogram-shaped guidelines that extend beyond the white area.
-  //
-  // Solution:
-  //   1. Use minAreaRect ONLY for calculating the device rotation angle
-  //   2. Select corners from the convex hull by finding the OUTERMOST point
-  //      in each quadrant (relative to device-aligned coordinates)
-  //   3. This ensures corners are on the actual white area boundary
-  //
-  // The findQuadrantCorners function selects the point furthest from center
-  // in each quadrant, ensuring full coverage of the white area including
-  // rounded corners.
-  const selectedCorners = selectCornersFromHull(hull, rotation);
+  // The key fix for tablet detection is in whiteAreaExtractor.ts:
+  // mergeNearbyRegions now has stricter conditions to prevent merging separate devices
+  const selectedCorners = selectCornersFromHull(hull, rotation, rectResult.corners);
 
-  return { corners: selectedCorners, rotation: rotation, isPartial };
+  return { corners: selectedCorners as [Point, Point, Point, Point], rotation: rotation, isPartial };
 }
 
 export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }: PreviewModalProps) {
