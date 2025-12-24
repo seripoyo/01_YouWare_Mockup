@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import type { MockupGalleryItem } from "../types";
 import type { DeviceCategory } from "../../types/frame";
+import { getTranslations } from "../../../../i18n/translations";
 import { detectDeviceScreensWithLog, formatDetectionLogForCopy } from "../../../../utils/whiteAreaExtractor";
 import type { DetectionLog } from "../../../../utils/whiteAreaExtractor";
 import { drawPerspectiveImage, type Point as PerspectivePoint } from "../../../../utils/perspectiveTransform";
@@ -713,6 +714,7 @@ function detectCorners(
 }
 
 export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }: PreviewModalProps) {
+  const t = getTranslations();
   const [deviceRegions, setDeviceRegions] = useState<DeviceRegion[]>([]);
   const [selectedRegionIndex, setSelectedRegionIndex] = useState<number | null>(null);
   const [frameImageData, setFrameImageData] = useState<ImageData | null>(null);
@@ -748,6 +750,10 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
   const [dragStartPos, setDragStartPos] = useState<Point | null>(null);
   const [dragStartCropRect, setDragStartCropRect] = useState<CropRect | null>(null);
   const [resizeCorner, setResizeCorner] = useState<'tl' | 'tr' | 'bl' | 'br' | null>(null);
+
+  // 切り抜き後の画像URL（プレビュー・コピー用）
+  const [croppedImageUrl, setCroppedImageUrl] = useState<string | null>(null);
+  const [croppedAspectRatio, setCroppedAspectRatio] = useState<string | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -796,6 +802,12 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
     setDragStartPos(null);
     setDragStartCropRect(null);
     setResizeCorner(null);
+    // 切り抜き画像のリセット
+    if (croppedImageUrl) {
+      URL.revokeObjectURL(croppedImageUrl);
+    }
+    setCroppedImageUrl(null);
+    setCroppedAspectRatio(null);
   }, [item]);
 
   useEffect(() => {
@@ -1138,32 +1150,25 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
     // ガイドラインが非表示の場合は何も描画しない
     if (!guidelinesVisible) return;
 
-    // First pass: Draw non-selected regions with dimmed appearance
-    regions.forEach((region, idx) => {
-      if (idx === selectedIdx) return; // Skip selected region in first pass
+    // ============================================
+    // 表示スケールを計算してハンドルサイズを画面上で35pxに統一
+    // ============================================
+    const rect = overlay.getBoundingClientRect();
+    const displayScale = Math.min(rect.width / frameNatural.w, rect.height / frameNatural.h);
 
-      const corners = region.corners;
+    // 画面上で35px（直径）= 半径17.5px に統一
+    // 画像座標系でのサイズ = 画面上のサイズ / 表示スケール
+    const targetScreenRadius = 17.5; // 35px / 2
+    const baseHandleRadius = targetScreenRadius / displayScale;
 
-      // Draw semi-transparent overlay for non-selected regions
-      ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
-      ctx.beginPath();
-      ctx.moveTo(corners[0].x, corners[0].y);
-      ctx.lineTo(corners[1].x, corners[1].y);
-      ctx.lineTo(corners[2].x, corners[2].y);
-      ctx.lineTo(corners[3].x, corners[3].y);
-      ctx.closePath();
-      ctx.fill();
+    // フォントサイズも同様にスケール調整（画面上で固定サイズになるように）
+    const targetFontSize = 12; // 画面上で12px
+    const baseFontSize = targetFontSize / displayScale;
+    const labelFontSize = targetFontSize / displayScale;
+    const lineWidthScale = 1 / displayScale;
 
-      // Draw region border
-      ctx.strokeStyle = "#94a3b8";
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      // Draw region number
-      ctx.fillStyle = "#64748b";
-      ctx.font = "bold 20px sans-serif";
-      ctx.fillText(`${idx + 1}`, corners[0].x + 8, corners[0].y + 24);
-    });
+    // 複数デバイスがある場合は選択デバイスのみ表示
+    // 非選択デバイスはガイドラインを表示しない
 
     // Second pass: Draw selected region with highlight
     if (selectedIdx !== null && selectedIdx < regions.length) {
@@ -1184,18 +1189,17 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
 
       // Draw prominent border for selected region
       ctx.strokeStyle = "#6366f1";
-      ctx.lineWidth = 4;
+      ctx.lineWidth = 4 * lineWidthScale;
       ctx.stroke();
 
       // Draw outer glow effect
       ctx.strokeStyle = "rgba(99, 102, 241, 0.3)";
-      ctx.lineWidth = 8;
+      ctx.lineWidth = 8 * lineWidthScale;
       ctx.stroke();
 
       // Always draw corner handles for selected region (not just in edit mode)
-      // Use larger radius to be visible when canvas is scaled down and easier to tap on mobile
-      // Increased size: normal 20→32px, edit mode 28→40px (two sizes larger for better usability)
-      const handleRadius = isCornerEditMode ? 40 : 32;
+      // Use consistent 35px screen size for all handles
+      const handleRadius = baseHandleRadius; // 35px統一（編集モードでも同じサイズ）
 
       // Different colors for each corner for better visibility
       const cornerColors = [
@@ -1219,20 +1223,20 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
             ctx.fillStyle = colors.fill;
             ctx.strokeStyle = colors.stroke;
           }
-          ctx.lineWidth = 4;
+          ctx.lineWidth = 4 * lineWidthScale;
         } else {
           // Normal mode: different color for each corner
           const colors = cornerColors[cornerIdx % 4];
           ctx.fillStyle = colors.fill;
           ctx.strokeStyle = colors.stroke;
-          ctx.lineWidth = 4;
+          ctx.lineWidth = 4 * lineWidthScale;
         }
         ctx.fill();
         ctx.stroke();
 
-        // Draw corner number (increased font size for larger handles)
+        // Draw corner number (scaled font size - 12px on screen)
         ctx.fillStyle = "white";
-        ctx.font = `bold ${isCornerEditMode ? 18 : 16}px sans-serif`;
+        ctx.font = `bold ${baseFontSize}px sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText(`${cornerIdx + 1}`, corner.x, corner.y);
@@ -1243,17 +1247,17 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
       ctx.textBaseline = "alphabetic";
 
       // Draw "selected" label with device number
-      const labelText = `デバイス ${selectedIdx + 1}`;
+      const labelText = t.deviceLabel(selectedIdx + 1);
       const labelX = corners[0].x;
-      const labelY = corners[0].y - 12;
+      const labelY = corners[0].y - 12 * lineWidthScale;
 
-      // Label background
-      ctx.font = "bold 14px sans-serif";
+      // Label background (scaled)
+      ctx.font = `bold ${labelFontSize}px sans-serif`;
       const textMetrics = ctx.measureText(labelText);
-      const padding = 6;
+      const padding = 6 * lineWidthScale;
       ctx.fillStyle = "#6366f1";
       ctx.beginPath();
-      ctx.roundRect(labelX - padding, labelY - 14, textMetrics.width + padding * 2, 20, 4);
+      ctx.roundRect(labelX - padding, labelY - 14 * lineWidthScale, textMetrics.width + padding * 2, 20 * lineWidthScale, 4);
       ctx.fill();
 
       // Label text
@@ -1520,33 +1524,20 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
         ctx.stroke();
 
         // ============================================
-        // TEXT - area.jsx style
-        // title: fontSize: 18px, fontWeight: 600, lineHeight: 1.5
-        // subtitle: fontSize: 14px, fontWeight: 400
+        // TEXT - Simplified for mobile readability
         // ============================================
-        const textStartY = iconContainerY + iconContainerH + 24 * iconScale; // marginBottom: 24px
-        const titleFontSize = Math.max(11, 18 * iconScale);
-        const subtitleFontSize = Math.max(9, 14 * iconScale);
+        const textStartY = iconContainerY + iconContainerH + 20 * iconScale;
+        // Larger minimum font size for mobile readability
+        const titleFontSize = Math.max(16, 20 * iconScale);
 
         ctx.fillStyle = mainColor;
         ctx.textAlign = "center";
         ctx.textBaseline = "top";
         ctx.font = `600 ${titleFontSize}px -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif`;
 
-        if (isNarrow) {
-          // Compact text for narrow regions
-          ctx.fillText("Drag & drop", centerX, textStartY);
-          ctx.fillText("or click", centerX, textStartY + titleFontSize * 1.5);
-        } else {
-          // Full text as in area.jsx: "Drag & drop an image here, or click to select file"
-          ctx.fillText("Drag & drop an image here,", centerX, textStartY);
-          ctx.fillText("or click to select file", centerX, textStartY + titleFontSize * 1.5);
-        }
-
-        // Subtitle: "JPG, PNG, WebP (最大 5MB)"
-        ctx.fillStyle = mainColorLight;
-        ctx.font = `400 ${subtitleFontSize}px -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif`;
-        ctx.fillText("JPG, PNG, WebP", centerX, textStartY + titleFontSize * 3.2);
+        // Text: "Please" on first line, "Drag or Click !" on second line
+        ctx.fillText("Please", centerX, textStartY);
+        ctx.fillText("Drag or Click !", centerX, textStartY + titleFontSize * 1.4);
 
         ctx.restore();
       }
@@ -2524,12 +2515,49 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
     if (!canvas || !frameNatural) return null;
 
     const rect = canvas.getBoundingClientRect();
-    const scaleX = frameNatural.w / rect.width;
-    const scaleY = frameNatural.h / rect.height;
+    const { w: imageW, h: imageH } = frameNatural;
+
+    // object-contain を考慮した座標変換
+    // キャンバスはコンテナ内でアスペクト比を維持してセンタリングされる
+    const containerW = rect.width;
+    const containerH = rect.height;
+
+    // 実際の描画領域のサイズを計算
+    const containerRatio = containerW / containerH;
+    const imageRatio = imageW / imageH;
+
+    let displayW: number, displayH: number, offsetX: number, offsetY: number;
+
+    if (imageRatio > containerRatio) {
+      // 画像が横長 → 幅に合わせる
+      displayW = containerW;
+      displayH = containerW / imageRatio;
+      offsetX = 0;
+      offsetY = (containerH - displayH) / 2;
+    } else {
+      // 画像が縦長 → 高さに合わせる
+      displayH = containerH;
+      displayW = containerH * imageRatio;
+      offsetX = (containerW - displayW) / 2;
+      offsetY = 0;
+    }
+
+    // クライアント座標から描画領域内の座標を計算
+    const relativeX = clientX - rect.left - offsetX;
+    const relativeY = clientY - rect.top - offsetY;
+
+    // 描画領域外の場合はnullを返す
+    if (relativeX < 0 || relativeX > displayW || relativeY < 0 || relativeY > displayH) {
+      return null;
+    }
+
+    // 画像座標に変換
+    const scaleX = imageW / displayW;
+    const scaleY = imageH / displayH;
 
     return {
-      x: (clientX - rect.left) * scaleX,
-      y: (clientY - rect.top) * scaleY
+      x: relativeX * scaleX,
+      y: relativeY * scaleY
     };
   }, [frameNatural]);
 
@@ -2766,6 +2794,22 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
     let url: string;
     const baseName = item.originalFilename.replace(/\.[^/.]+$/, '');
 
+    // 切り抜き画像がある場合はそれをダウンロード
+    if (croppedImageUrl) {
+      url = croppedImageUrl;
+      const link = document.createElement("a");
+      link.href = url;
+      // ファイル名: アスペクト比_日付_時刻.png
+      const now = new Date();
+      const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+      const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, '');
+      link.download = `${(croppedAspectRatio || "cropped").replace(":", "x")}_${dateStr}_${timeStr}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      return;
+    }
+
     // ユーザー画像がある場合は高画質コンポジットを生成
     if (deviceRegions.some(r => r.userImage)) {
       // forDownload=true で高画質・デバッグなしのコンポジットを生成
@@ -2870,6 +2914,22 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
       img.src = sourceUrl;
     });
 
+    // 切り抜き画像をBlobに変換してステートに保存
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob((b) => resolve(b), "image/png");
+    });
+
+    if (blob) {
+      // 古いURLがあれば解放
+      if (croppedImageUrl) {
+        URL.revokeObjectURL(croppedImageUrl);
+      }
+      // 新しいBlobURLを作成
+      const newCroppedUrl = URL.createObjectURL(blob);
+      setCroppedImageUrl(newCroppedUrl);
+      setCroppedAspectRatio(selectedAspectRatio.label);
+    }
+
     // ダウンロード
     const dataUrl = canvas.toDataURL("image/png");
     const link = document.createElement("a");
@@ -2891,8 +2951,17 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
 
   const handleCopy = async () => {
     try {
-      // 編集済み画像がある場合は画像をクリップボードにコピー
-      if (compositeUrl) {
+      // 切り抜き画像がある場合は切り抜き画像をコピー
+      if (croppedImageUrl) {
+        const response = await fetch(croppedImageUrl);
+        const blob = await response.blob();
+        const pngBlob = new Blob([blob], { type: 'image/png' });
+        await navigator.clipboard.write([
+          new ClipboardItem({ 'image/png': pngBlob })
+        ]);
+        console.log('切り抜き画像をクリップボードにコピーしました');
+      } else if (compositeUrl) {
+        // 編集済み画像がある場合は画像をクリップボードにコピー
         const response = await fetch(compositeUrl);
         const blob = await response.blob();
         // PNG形式でコピー
@@ -2937,12 +3006,12 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
   };
 
   return (
-    <div className="fixed inset-0 z-[140] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 pt-8">
+    <div className="fixed inset-0 z-[140] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-2 md:p-4 pt-safe-top pb-safe-bottom">
       {/* Backdrop */}
       <div className="absolute inset-0" onClick={onClose} />
 
-      {/* Modal Container */}
-      <div className="relative z-10 flex w-full max-w-5xl max-h-[calc(100vh-3rem)] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl md:flex-row">
+      {/* Modal Container - モバイルでは画面いっぱいに表示 */}
+      <div className="relative z-10 flex w-full max-w-5xl h-[calc(100dvh-1rem)] md:max-h-[calc(100vh-2rem)] md:h-auto flex-col overflow-hidden rounded-xl md:rounded-2xl bg-white shadow-2xl md:flex-row">
         {/* Hidden file input */}
         <input
           ref={fileInputRef}
@@ -2952,8 +3021,8 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
           onChange={handleFileUpload}
         />
 
-        {/* Left: Interactive Canvas Area */}
-        <div className="flex-1 bg-gradient-to-br from-slate-100 to-slate-200 p-4 md:p-6 flex flex-col items-center justify-center min-h-[200px] relative overflow-auto">
+        {/* Left: Interactive Canvas Area - モバイルでは画面の55%を確保 */}
+        <div className="flex-1 bg-gradient-to-br from-slate-100 to-slate-200 p-2 md:p-6 flex flex-col items-center justify-center min-h-[40vh] md:min-h-[200px] relative overflow-auto">
           {/* Instructions */}
           {showInstructions && deviceRegions.length === 0 && !isCornerEditMode && (
             <div className="absolute top-4 left-4 right-4 bg-indigo-600 text-white px-4 py-3 rounded-xl text-sm font-medium shadow-lg z-20 flex items-center gap-3">
@@ -2968,7 +3037,9 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
               isDraggingOver ? 'scale-[1.02]' : ''
             }`}
             style={{
-              aspectRatio: item.aspectRatio.replace(":", "/"),
+              aspectRatio: croppedAspectRatio
+                ? croppedAspectRatio.replace(":", "/")
+                : item.aspectRatio.replace(":", "/"),
               maxHeight: 'calc(100% - 4rem)'
             }}
             onDragOver={handleDragOver}
@@ -2977,10 +3048,16 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
           >
             {/* Hidden canvas for image data */}
             <canvas ref={canvasRef} className="hidden" />
-            
-            {/* Display image or composite (or color fill preview) */}
+
+            {/* Display image or composite (or color fill preview or cropped image) */}
             <img
-              src={showColorFill && colorFilledUrl ? colorFilledUrl : (compositeUrl || item.publicPath)}
+              src={
+                croppedImageUrl
+                  ? croppedImageUrl
+                  : showColorFill && colorFilledUrl
+                    ? colorFilledUrl
+                    : (compositeUrl || item.publicPath)
+              }
               alt={item.originalFilename}
               className="absolute inset-0 h-full w-full object-contain rounded-xl shadow-lg"
             />
@@ -3014,7 +3091,7 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
                   <div>
                     <p className="font-semibold text-slate-900">
                       {dragOverRegionIndex !== null
-                        ? `デバイス ${dragOverRegionIndex + 1} にドロップ`
+                        ? t.dropToDevice(dragOverRegionIndex + 1)
                         : deviceRegions.length > 0
                           ? '画像をドロップ'
                           : '先にマスクを検出してください'
@@ -3045,12 +3122,12 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
             )}
           </div>
 
-          {/* ガイドライン表示切替ボタン */}
+          {/* ガイドライン表示切替ボタン & 頂点調整ボタン */}
           {deviceRegions.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-2 justify-center">
+            <div className="mt-2 md:mt-4 flex flex-wrap gap-1.5 md:gap-2 justify-center px-2">
               <button
                 onClick={() => setShowGuidelines(prev => !prev)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-md hover:shadow-lg ${
+                className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-all shadow-md hover:shadow-lg min-h-[40px] ${
                   showGuidelines
                     ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white"
                     : "bg-slate-200 text-slate-700 hover:bg-slate-300"
@@ -3059,67 +3136,79 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
                 <span className="material-icons text-base">
                   {showGuidelines ? "visibility" : "visibility_off"}
                 </span>
-                {showGuidelines ? "ガイドラインを非表示" : "ガイドラインを表示"}
+                <span className="text-xs sm:text-sm">{showGuidelines ? t.hideGuidelines : t.showGuidelines}</span>
               </button>
+
+              {/* 頂点調整ボタン / 確定・キャンセルボタン */}
+              {selectedRegionIndex !== null && (
+                isCornerEditMode ? (
+                  <>
+                    <button
+                      onClick={confirmCornerEdit}
+                      className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium text-xs md:text-sm transition-all shadow-md hover:shadow-lg min-h-[40px]"
+                    >
+                      <span className="material-icons text-base">check</span>
+                      {t.confirm}
+                    </button>
+                    <button
+                      onClick={cancelCornerEditMode}
+                      className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-slate-500 hover:bg-slate-600 text-white rounded-lg font-medium text-xs md:text-sm transition-all shadow-md hover:shadow-lg min-h-[40px]"
+                    >
+                      <span className="material-icons text-base">close</span>
+                      <span className="text-xs sm:text-sm">{t.cancel}</span>
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={startCornerEditMode}
+                    className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-300 hover:border-indigo-400 text-slate-700 rounded-lg font-medium text-xs md:text-sm transition-all shadow-md hover:shadow-lg min-h-[40px]"
+                  >
+                    <span className="material-icons text-base">edit</span>
+                    <span className="text-xs sm:text-sm">{t.adjustVertices}</span>
+                  </button>
+                )
+              )}
             </div>
           )}
         </div>
 
-        {/* Right: Info Panel */}
-        <div className="w-full md:w-80 flex flex-col bg-white border-t md:border-t-0 md:border-l border-slate-200 max-h-[50vh] md:max-h-none overflow-y-auto">
+        {/* Right: Info Panel - モバイルでは残りの高さを使用 */}
+        <div className="w-full md:w-80 flex flex-col bg-white border-t md:border-t-0 md:border-l border-slate-200 flex-shrink-0 max-h-[45vh] md:max-h-none overflow-y-auto">
           {/* Header */}
-          <div className="flex items-start justify-between p-6 pb-4 sticky top-0 bg-white z-10">
-            <h2 className="text-2xl font-bold text-slate-900 leading-tight">
+          <div className="flex items-start justify-between p-4 md:p-6 pb-2 md:pb-4 sticky top-0 bg-white z-10">
+            <h2 className="text-lg md:text-2xl font-bold text-slate-900 leading-tight">
               {displayTitle}
             </h2>
             <button
               onClick={onClose}
-              className="text-slate-400 hover:text-slate-600 transition-colors p-1 -mr-1 -mt-1"
+              className="text-slate-400 hover:text-slate-600 transition-colors p-1 -mr-1 -mt-1 min-w-[44px] min-h-[44px] flex items-center justify-center"
             >
               <span className="material-icons text-xl">close</span>
             </button>
           </div>
 
           {/* Content */}
-          <div className="flex-1 px-6 space-y-5">
+          <div className="flex-1 px-4 md:px-6 space-y-3 md:space-y-5">
             {/* Selected Region Actions */}
             {selectedRegion !== null && (
               <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-100">
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-sm font-semibold text-indigo-900">
-                    デバイス {selectedRegionIndex! + 1} を選択中
+                    {t.selectingDevice(selectedRegionIndex! + 1)}
                   </p>
                   {selectedRegion.userImage && (
                     <span className="text-xs text-indigo-600 font-medium flex items-center gap-1">
                       <span className="material-icons text-sm">check</span>
-                      画像設定済み
+                      {t.imageUploaded}
                     </span>
                   )}
                 </div>
                 
-                {/* Corner Edit Mode Controls */}
+                {/* Corner Edit Mode Hint */}
                 {isCornerEditMode ? (
-                  <div className="space-y-2">
-                    <div className="bg-orange-500 text-white px-4 py-3 rounded-xl text-sm font-medium shadow-lg flex items-center gap-3">
-                      <span className="material-icons text-xl">touch_app</span>
-                      <span>頂点をドラッグして位置を微調整できます</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        onClick={confirmCornerEdit}
-                        className="flex items-center justify-center gap-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold text-sm transition-colors"
-                      >
-                        <span className="material-icons text-base">check</span>
-                        確定
-                      </button>
-                      <button
-                        onClick={cancelCornerEditMode}
-                        className="flex items-center justify-center gap-1 px-3 py-2 bg-slate-500 hover:bg-slate-600 text-white rounded-lg font-semibold text-sm transition-colors"
-                      >
-                        <span className="material-icons text-base">close</span>
-                        キャンセル
-                      </button>
-                    </div>
+                  <div className="bg-orange-500 text-white px-4 py-3 rounded-xl text-sm font-medium shadow-lg flex items-center gap-3">
+                    <span className="material-icons text-xl">touch_app</span>
+                    <span>頂点をドラッグして位置を微調整できます</span>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -3128,15 +3217,15 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
                       className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-sm transition-colors"
                     >
                       <span className="material-icons text-lg">add_photo_alternate</span>
-                      {selectedRegion.userImage ? "画像を変更" : "画像をアップロード"}
+                      {selectedRegion.userImage ? t.changeImage : t.uploadImage}
                     </button>
-                    
+
                     {/* Fit Mode Selector */}
                     {selectedRegion.userImage && (
                       <div className="flex gap-2">
                         <button
                           onClick={() => {
-                            setDeviceRegions(prev => prev.map((r, idx) => 
+                            setDeviceRegions(prev => prev.map((r, idx) =>
                               idx === selectedRegionIndex ? { ...r, fitMode: 'cover' } : r
                             ));
                           }}
@@ -3147,11 +3236,11 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
                           }`}
                         >
                           <span className="material-icons text-base">crop</span>
-                          Cover
+                          {t.cover}
                         </button>
                         <button
                           onClick={() => {
-                            setDeviceRegions(prev => prev.map((r, idx) => 
+                            setDeviceRegions(prev => prev.map((r, idx) =>
                               idx === selectedRegionIndex ? { ...r, fitMode: 'contain' } : r
                             ));
                           }}
@@ -3162,25 +3251,17 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
                           }`}
                         >
                           <span className="material-icons text-base">fit_screen</span>
-                          Contain
+                          {t.contain}
                         </button>
                       </div>
                     )}
-                    
-                    <button
-                      onClick={startCornerEditMode}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-200 hover:border-indigo-300 text-slate-700 rounded-xl font-medium text-sm transition-colors"
-                    >
-                      <span className="material-icons text-lg">edit</span>
-                      頂点を調整
-                    </button>
                   </div>
                 )}
               </div>
             )}
 
-            {/* Aspect Ratio & Device */}
-            <div className="grid grid-cols-2 gap-4">
+            {/* Aspect Ratio & Device - モバイルでは非表示 */}
+            <div className="hidden md:grid grid-cols-2 gap-4">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
                   ASPECT RATIO
@@ -3195,8 +3276,8 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
               </div>
             </div>
 
-            {/* Attributes */}
-            <div>
+            {/* Attributes - モバイルでは非表示 */}
+            <div className="hidden md:block">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">
                 ATTRIBUTES
               </p>
@@ -3213,9 +3294,9 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
               </div>
             </div>
 
-            {/* 検出ログ表示 */}
+            {/* 検出ログ表示 - モバイルでは非表示 */}
             {detectionLog && (
-              <div className="mt-4">
+              <div className="hidden md:block mt-4">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
                     検出ログ
@@ -3284,6 +3365,31 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
 
           {/* Action Buttons */}
           <div className="p-6 pt-4 space-y-3 sticky bottom-0 bg-white">
+            {/* Cropped Image Info & Reset Button */}
+            {croppedImageUrl && croppedAspectRatio && !isCropMode && (
+              <div className="flex items-center justify-between bg-orange-50 border border-orange-200 rounded-xl px-4 py-2">
+                <div className="flex items-center gap-2">
+                  <span className="material-icons text-orange-600 text-base">crop</span>
+                  <span className="text-sm text-orange-700 font-medium">
+                    {t.cropInfo(croppedAspectRatio)}
+                  </span>
+                </div>
+                <button
+                  onClick={() => {
+                    if (croppedImageUrl) {
+                      URL.revokeObjectURL(croppedImageUrl);
+                    }
+                    setCroppedImageUrl(null);
+                    setCroppedAspectRatio(null);
+                  }}
+                  className="text-xs text-orange-600 hover:text-orange-800 font-medium flex items-center gap-1"
+                >
+                  <span className="material-icons text-sm">refresh</span>
+                  {t.resetCrop}
+                </button>
+              </div>
+            )}
+
             {/* Primary Download Button - uses template's default aspect ratio (hidden in crop mode) */}
             {!isCropMode && (
               <button
@@ -3291,7 +3397,7 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-sm transition-colors"
               >
                 <span className="material-icons text-lg">download</span>
-                {item.aspectRatio} でダウンロード
+                {t.downloadInRatio(croppedAspectRatio || item.aspectRatio)}
               </button>
             )}
 
@@ -3308,8 +3414,8 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
                 {isCropMode ? "download" : "aspect_ratio"}
               </span>
               {isCropMode
-                ? `${selectedAspectRatio?.label || ""} でダウンロード`
-                : "画像サイズを変えてダウンロード"
+                ? t.downloadInRatio(selectedAspectRatio?.label || "")
+                : t.downloadWithResizedImage
               }
             </button>
 
@@ -3349,14 +3455,14 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
                 className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium text-sm transition-colors"
               >
                 <span className="material-icons text-lg">close</span>
-                キャンセル
+                {t.cancel}
               </button>
             )}
 
-            {/* 画像コピー・共有ボタン - compositeUrlがある場合のみスライドインで表示（切り抜きモード中は非表示） */}
+            {/* 画像コピー・共有ボタン - compositeUrlまたはcroppedImageUrlがある場合にスライドインで表示（切り抜きモード中は非表示） */}
             <div
               className={`grid grid-cols-2 gap-3 transition-all duration-300 ease-out ${
-                compositeUrl && !isCropMode
+                (compositeUrl || croppedImageUrl) && !isCropMode
                   ? "opacity-100 translate-y-0"
                   : "opacity-0 translate-y-4 pointer-events-none h-0 overflow-hidden"
               }`}
@@ -3366,14 +3472,14 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
                 className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 rounded-xl font-medium text-sm transition-colors"
               >
                 <span className="material-icons text-lg">content_copy</span>
-                画像をコピー
+                {t.copyImage}
               </button>
               <button
                 onClick={handleShare}
                 className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 rounded-xl font-medium text-sm transition-colors"
               >
                 <span className="material-icons text-lg">share</span>
-                共有
+                {t.share}
               </button>
             </div>
           </div>

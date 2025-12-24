@@ -6,7 +6,7 @@
 @font-face {
   font-family: 'New Atten Round';
   src: url('/assets/fonts/New-Atten-Round-regular.woff2') format('woff2'),
-       url('/assets/fonts/New-Atten-Round-regular.woff') format('woff');
+    url('/assets/fonts/New-Atten-Round-regular.woff') format('woff');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -15,7 +15,7 @@
 @font-face {
   font-family: 'New Atten Round';
   src: url('/assets/fonts/New-Atten-Round-Bold.woff2') format('woff2'),
-       url('/assets/fonts/New-Atten-Round-Bold.woff') format('woff');
+    url('/assets/fonts/New-Atten-Round-Bold.woff') format('woff');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
@@ -24,7 +24,7 @@
 @font-face {
   font-family: 'New Atten Round';
   src: url('/assets/fonts/New-Atten-Round-ExtraBold.woff2') format('woff2'),
-       url('/assets/fonts/New-Atten-Round-ExtraBold.woff') format('woff');
+    url('/assets/fonts/New-Atten-Round-ExtraBold.woff') format('woff');
   font-weight: 900;
   font-style: bold;
   font-display: swap;
@@ -34,7 +34,7 @@
 @font-face {
   font-family: 'GenJyuuGothicX';
   src: url('/assets/fonts/GenJyuuGothicX-Regular.woff2') format('woff2'),
-       url('/assets/fonts/GenJyuuGothicX-Regular.woff') format('woff');
+    url('/assets/fonts/GenJyuuGothicX-Regular.woff') format('woff');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -43,7 +43,7 @@
 @font-face {
   font-family: 'GenJyuuGothicX';
   src: url('/assets/fonts/GenJyuuGothicX-Medium.woff2') format('woff2'),
-       url('/assets/fonts/GenJyuuGothicX-Medium.woff') format('woff');
+    url('/assets/fonts/GenJyuuGothicX-Medium.woff') format('woff');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
@@ -52,7 +52,7 @@
 @font-face {
   font-family: 'GenJyuuGothicX';
   src: url('/assets/fonts/GenJyuuGothicX-Bold.woff2') format('woff2'),
-       url('/assets/fonts/GenJyuuGothicX-Bold.woff') format('woff');
+    url('/assets/fonts/GenJyuuGothicX-Bold.woff') format('woff');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
@@ -61,7 +61,7 @@
 @font-face {
   font-family: 'GenJyuuGothicX';
   src: url('/assets/fonts/GenJyuuGothicX-Heavy.woff2') format('woff2'),
-       url('/assets/fonts/GenJyuuGothicX-Heavy.woff') format('woff');
+    url('/assets/fonts/GenJyuuGothicX-Heavy.woff') format('woff');
   font-weight: 900;
   font-style: normal;
   font-display: swap;
@@ -87,6 +87,7 @@
     opacity: 0;
     transform: scale(0.95) translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
@@ -104,6 +105,7 @@
     opacity: 0;
     transform: scale(0.8);
   }
+
   100% {
     opacity: 1;
     transform: scale(1);
@@ -115,6 +117,7 @@
     opacity: 1;
     transform: scale(1);
   }
+
   100% {
     opacity: 0;
     transform: scale(0.8);
@@ -129,12 +132,44 @@
 .animate-filterExit {
   animation: filterExit 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
-aside .material-icons{
+
+aside .material-icons {
   color: #2C30FF;
 }
+
 .font-semibold {
-    font-weight: 900;
+  font-weight: 900;
 }
+
 .bg-indigo-50 {
-    background-color: rgb(190 226 247);
+  background-color: rgb(190 226 247);
+}
+
+.flex.items-center.justify-between.mb-3 p {
+  font-weight: 600;
+}
+
+.lg\:hidden.mb-6.space-y-3 .border-t.border-slate-200.pt-3 {
+  margin-top: 1.5rem;
+}
+
+@media (max-width: 960px) {
+  .relative.w-full.columns-1.sm\:columns-2.lg\:columns-3.xl\:columns-4.gap-6.pb-20 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    /* grid-template-rows: repeat(5, 1fr); */
+    grid-column-gap: 15px;
+    grid-row-gap: 4px;
+    border-radius: 0 !important;
+  }
+}
+
+.relative.rounded-3xl.overflow-hidden.hover\:shadow-\[0_20px_50px_-12px_rgba\(0\,0\,0\,0\.2\)\].transition-all.duration-700.cursor-pointer.transform.hover\:-translate-y-2.bg-slate-200 {
+  border-radius: 5px !important;
+}
+
+button.px-3.py-1\.5.rounded-full.text-xs.font-medium.border.transition-all.duration-200.bg-indigo-100.text-indigo-800.border-indigo-200,
+button.px-3.py-2.rounded-md.text-sm.border.transition-all.duration-200.text-center.bg-slate-900.text-white.border-slate-900.shadow-md {
+  background-color: #2A3EDB;
+  color: white;
 }

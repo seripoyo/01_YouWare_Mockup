@@ -1,4 +1,6 @@
+import { useState, useCallback, useMemo } from "react";
 import type { MockupGalleryItem } from "../types";
+import { getTranslations } from "../../../../i18n/translations";
 
 interface MockupGridProps {
   items: MockupGalleryItem[];         // All items (for DOM persistence)
@@ -13,8 +15,27 @@ export function MockupGrid({
   onSelect,
   hideAspectRatioBadge = false,
 }: MockupGridProps) {
+  const t = getTranslations();
+
+  // Track broken image IDs
+  const [brokenImageIds, setBrokenImageIds] = useState<Set<string>>(new Set());
+
+  // Handle image load error - add to broken list
+  const handleImageError = useCallback((itemId: string) => {
+    setBrokenImageIds(prev => {
+      const next = new Set(prev);
+      next.add(itemId);
+      return next;
+    });
+  }, []);
+
   // Use visibleItems if provided, otherwise use items
-  const displayItems = visibleItemsProp ?? items;
+  // Filter out broken images
+  const baseItems = visibleItemsProp ?? items;
+  const displayItems = useMemo(() =>
+    baseItems.filter(item => !brokenImageIds.has(item.id)),
+    [baseItems, brokenImageIds]
+  );
 
   if (displayItems.length === 0) {
     return (
@@ -22,7 +43,7 @@ export function MockupGrid({
         <span className="material-icons text-5xl mb-4 opacity-50">
           local_offer
         </span>
-        <p className="text-lg font-medium">テンプレートが見つかりませんでした</p>
+        <p className="text-lg font-medium">{t.noTemplatesFound}</p>
       </div>
     );
   }
@@ -50,6 +71,7 @@ export function MockupGrid({
                   alt={item.displayName}
                   loading="lazy"
                   className="w-full h-full object-cover absolute inset-0 transition-transform duration-700 group-hover:scale-105"
+                  onError={() => handleImageError(item.id)}
                 />
 
                 {/* Dark Overlay for better text contrast */}
@@ -87,7 +109,7 @@ export function MockupGrid({
                       flex items-center gap-2
                     "
                   >
-                    このテンプレートを使う
+                    {t.useThisTemplate}
                   </button>
                 </div>
               </div>

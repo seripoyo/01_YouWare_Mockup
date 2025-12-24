@@ -1,0 +1,1562 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SNS Post Size Guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #f8fafc;
+      --bg-white: #ffffff;
+      --bg-subtle: #f1f5f9;
+      --text-primary: #1e293b;
+      --text-secondary: #64748b;
+      --text-muted: #94a3b8;
+      --border-light: #e2e8f0;
+      --border-medium: #cbd5e1;
+      
+      /* SNS Colors */
+      --instagram-primary: #E1306C;
+      --instagram-gradient: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+      --instagram-bg: #fdf2f8;
+      --instagram-border: #fbcfe8;
+      
+      --x-primary: #000000;
+      --x-bg: #f8fafc;
+      --x-border: #e2e8f0;
+      
+      --tiktok-primary: #000000;
+      --tiktok-accent: #00F2EA;
+      --tiktok-bg: #f0fdfa;
+      --tiktok-border: #ccfbf1;
+      
+      --threads-primary: #000000;
+      --threads-bg: #f8fafc;
+      --threads-border: #e2e8f0;
+      
+      --facebook-primary: #1877F2;
+      --facebook-bg: #eff6ff;
+      --facebook-border: #bfdbfe;
+      
+      --linkedin-primary: #0A66C2;
+      --linkedin-bg: #eff6ff;
+      --linkedin-border: #bfdbfe;
+      
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+      --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Noto Sans JP', 'Inter', -apple-system, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .header h1 {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 12px;
+      letter-spacing: -0.5px;
+    }
+
+    .header p {
+      font-size: 15px;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* Tab Navigation */
+    .tab-nav {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 40px;
+      flex-wrap: wrap;
+      padding: 0 16px;
+    }
+
+    .tab-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      background: var(--bg-white);
+      border: 1px solid var(--border-light);
+      border-radius: 10px;
+      color: var(--text-secondary);
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .tab-btn:hover {
+      background: var(--bg-subtle);
+      border-color: var(--border-medium);
+    }
+
+    .tab-btn.active {
+      color: var(--bg-white);
+      border-color: transparent;
+      box-shadow: var(--shadow-md);
+    }
+
+    .tab-btn[data-tab="instagram"].active { background: var(--instagram-primary); }
+    .tab-btn[data-tab="x"].active { background: var(--x-primary); }
+    .tab-btn[data-tab="tiktok"].active { background: var(--tiktok-primary); }
+    .tab-btn[data-tab="threads"].active { background: var(--threads-primary); }
+    .tab-btn[data-tab="facebook"].active { background: var(--facebook-primary); }
+    .tab-btn[data-tab="linkedin"].active { background: var(--linkedin-primary); }
+    .tab-btn[data-tab="reference"].active { background: #6366f1; }
+
+    .tab-btn .icon {
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Tab Content */
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Platform Section */
+    .platform-section {
+      background: var(--bg-white);
+      border-radius: 20px;
+      padding: 32px;
+      box-shadow: var(--shadow-card);
+      border: 1px solid var(--border-light);
+    }
+
+    .platform-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .platform-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .platform-icon.instagram { background: var(--instagram-gradient); }
+    .platform-icon.x { background: var(--x-primary); }
+    .platform-icon.tiktok { background: var(--tiktok-primary); }
+    .platform-icon.threads { background: var(--threads-primary); }
+    .platform-icon.facebook { background: var(--facebook-primary); }
+    .platform-icon.linkedin { background: var(--linkedin-primary); }
+
+    .platform-info h2 {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .platform-info p {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    /* Section Divider */
+    .section-divider {
+      text-align: center;
+      margin: 32px 0 24px;
+      position: relative;
+    }
+
+    .section-divider::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      height: 1px;
+      background: var(--border-light);
+    }
+
+    .section-divider span {
+      background: var(--bg-white);
+      padding: 0 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      position: relative;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Size Grid */
+    .size-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+    }
+
+    .size-card {
+      background: var(--bg-subtle);
+      border-radius: 14px;
+      overflow: hidden;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+    }
+
+    .size-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--border-light);
+    }
+
+    .size-card.instagram:hover { border-color: var(--instagram-border); background: var(--instagram-bg); }
+    .size-card.x:hover { border-color: var(--x-border); }
+    .size-card.tiktok:hover { border-color: var(--tiktok-border); background: var(--tiktok-bg); }
+    .size-card.threads:hover { border-color: var(--threads-border); }
+    .size-card.facebook:hover { border-color: var(--facebook-border); background: var(--facebook-bg); }
+    .size-card.linkedin:hover { border-color: var(--linkedin-border); background: var(--linkedin-bg); }
+
+    .card-preview {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      min-height: 160px;
+      background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 50%, #a5b4fc 100%);
+    }
+
+    .card-preview.instagram-gradient {
+      background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 50%, #f9a8d4 100%);
+    }
+
+    .card-preview.tiktok-gradient {
+      background: linear-gradient(135deg, #ccfbf1 0%, #99f6e4 50%, #5eead4 100%);
+    }
+
+    .card-preview.x-gradient {
+      background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 50%, #94a3b8 100%);
+    }
+
+    .aspect-box {
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      box-shadow: var(--shadow-md);
+      backdrop-filter: blur(4px);
+    }
+
+    /* Aspect box sizes */
+    .aspect-box.square { width: 80px; height: 80px; }
+    .aspect-box.portrait-4-5 { width: 64px; height: 80px; }
+    .aspect-box.portrait-3-4 { width: 60px; height: 80px; }
+    .aspect-box.portrait-9-16 { width: 45px; height: 80px; }
+    .aspect-box.portrait-8-9 { width: 71px; height: 80px; }
+    .aspect-box.portrait-1-2 { width: 40px; height: 80px; }
+    .aspect-box.portrait-2-3 { width: 53px; height: 80px; }
+    .aspect-box.landscape-16-9 { width: 100px; height: 56px; }
+    .aspect-box.landscape-5-4 { width: 100px; height: 80px; }
+    .aspect-box.landscape-4-3 { width: 100px; height: 75px; }
+    .aspect-box.landscape-2-1 { width: 100px; height: 50px; }
+    .aspect-box.landscape-3-2 { width: 100px; height: 67px; }
+
+    .size-badge {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+    }
+
+    .card-info {
+      padding: 14px 16px;
+      text-align: center;
+    }
+
+    .card-info .label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 2px;
+    }
+
+    .card-info .ratio {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    /* Multi-image cards */
+    .multi-grid {
+      display: grid;
+      gap: 4px;
+      width: 100%;
+      max-width: 140px;
+    }
+
+    .multi-grid.two-col {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .multi-grid.two-row {
+      grid-template-rows: 1fr 1fr;
+    }
+
+    .multi-grid.three-col {
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+    }
+
+    .multi-grid.four-grid {
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+    }
+
+    .multi-item {
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .multi-item.tall {
+      grid-row: span 2;
+    }
+
+    .multi-grid.three-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto;
+      gap: 4px;
+    }
+
+    .multi-grid.three-row .wide {
+      grid-column: span 2;
+    }
+
+    .multi-grid.four-main {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 4px;
+    }
+
+    .multi-grid.four-main .main-wide {
+      grid-column: span 3;
+    }
+
+    .multi-grid.four-main-tall {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr 1fr;
+      gap: 4px;
+    }
+
+    .multi-grid.four-main-tall .main-tall {
+      grid-row: span 3;
+    }
+
+    /* Sample Images */
+    .samples-section {
+      margin-top: 32px;
+      padding-top: 32px;
+      border-top: 1px solid var(--border-light);
+    }
+
+    .samples-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .samples-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+    }
+
+    .sample-card {
+      background: var(--bg-subtle);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: all 0.2s ease;
+    }
+
+    .sample-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .sample-card img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .sample-info {
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-white);
+    }
+
+    .sample-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .sample-ratio {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-primary);
+      padding: 4px 10px;
+      background: var(--bg-subtle);
+      border-radius: 6px;
+    }
+
+    /* Reference Table */
+    .reference-section {
+      background: var(--bg-white);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+      border: 1px solid var(--border-light);
+    }
+
+    .reference-header {
+      padding: 24px 28px;
+      border-bottom: 1px solid var(--border-light);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .reference-header-text h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .reference-header-text p {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .copy-btn {
+      padding: 10px 18px;
+      background: var(--facebook-primary);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 13px;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .copy-btn:hover {
+      background: #1565d8;
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .copy-btn.copied {
+      background: #10b981;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th {
+      text-align: left;
+      padding: 14px 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      background: var(--bg-subtle);
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    td {
+      padding: 16px 20px;
+      font-size: 14px;
+      border-bottom: 1px solid var(--border-light);
+      vertical-align: middle;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: var(--bg-subtle);
+    }
+
+    td:first-child {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    td:nth-child(2) {
+      font-family: 'Inter', sans-serif;
+      color: var(--text-secondary);
+    }
+
+    .platform-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .platform-tag {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+
+    .platform-tag.instagram { background: #fce7f3; color: #be185d; }
+    .platform-tag.x { background: #f1f5f9; color: #334155; }
+    .platform-tag.tiktok { background: #ccfbf1; color: #0d9488; }
+    .platform-tag.threads { background: #f1f5f9; color: #334155; }
+    .platform-tag.facebook { background: #dbeafe; color: #1d4ed8; }
+    .platform-tag.linkedin { background: #dbeafe; color: #1e40af; }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .container {
+        padding: 24px 16px 60px;
+      }
+
+      .header h1 {
+        font-size: 26px;
+      }
+
+      .tab-nav {
+        gap: 6px;
+      }
+
+      .tab-btn {
+        padding: 8px 14px;
+        font-size: 13px;
+      }
+
+      .tab-btn .icon {
+        width: 16px;
+        height: 16px;
+      }
+
+      .platform-section {
+        padding: 20px;
+        border-radius: 16px;
+      }
+
+      .platform-header {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .size-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+      }
+
+      .samples-grid {
+        grid-template-columns: 1fr;
+      }
+
+      th, td {
+        padding: 12px 14px;
+        font-size: 13px;
+      }
+
+      .reference-header {
+        flex-direction: column;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>📐 SNS Post Size Guide</h1>
+      <p>各SNSプラットフォームに最適な画像サイズとアスペクト比の完全ガイド</p>
+    </header>
+
+    <nav class="tab-nav">
+      <button class="tab-btn active" data-tab="instagram">
+        <span class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+          </svg>
+        </span>
+        Instagram
+      </button>
+      <button class="tab-btn" data-tab="x">
+        <span class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+        </span>
+        X
+      </button>
+      <button class="tab-btn" data-tab="tiktok">
+        <span class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
+          </svg>
+        </span>
+        TikTok
+      </button>
+      <button class="tab-btn" data-tab="threads">
+        <span class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12.186 24h-.007c-3.581-.024-6.334-1.205-8.184-3.509C2.35 18.44 1.5 15.586 1.5 12.068V12c.015-3.49.87-6.323 2.542-8.422C5.857 1.563 8.596.367 12.11.344h.076c2.456.011 4.593.627 6.387 1.837.09.061.177.125.264.189l-1.817 2.547a8.02 8.02 0 0 0-.19-.134c-1.345-.907-2.962-1.372-4.81-1.384h-.06c-2.69.018-4.724.927-6.044 2.704-1.236 1.665-1.883 4.01-1.894 6.955v.046c.011 2.96.664 5.32 1.908 7.005 1.322 1.79 3.358 2.709 6.054 2.736h.039c2.272-.026 4.063-.705 5.32-2.018 1.226-1.278 1.868-3.018 1.907-5.168l.002-.093c0-1.188-.263-2.138-.784-2.824-.476-.627-1.144-.94-2.044-.96a2.903 2.903 0 0 0-.635.062c.118.587.176 1.2.176 1.832v.183c-.008 1.788-.46 3.32-1.303 4.424-.887 1.16-2.193 1.78-3.778 1.795h-.047c-1.32-.011-2.426-.419-3.29-1.212-.877-.806-1.344-1.918-1.392-3.304l-.002-.11c.005-1.603.517-2.938 1.482-3.859.935-.894 2.21-1.356 3.793-1.378l.07-.001c.658 0 1.278.089 1.846.265.563.175 1.048.429 1.446.756l1.426-2.066a8.102 8.102 0 0 0-2.114-1.073 9.144 9.144 0 0 0-2.691-.428l-.1.001c-2.3.03-4.229.743-5.736 2.119-1.497 1.367-2.277 3.22-2.32 5.51l.001.152c.062 1.917.7 3.523 1.897 4.774 1.228 1.284 2.89 1.953 4.942 1.99h.097c2.187-.023 3.96-.757 5.27-2.185 1.322-1.44 2.01-3.418 2.047-5.879l.001-.139c0-1.828-.438-3.334-1.302-4.478-.9-1.19-2.188-1.817-3.833-1.866l-.115-.002c-1.21.013-2.243.338-3.07.968-.05.037-.098.076-.146.116l-.014.012 1.485 2.17c.362-.263.756-.45 1.174-.557.361-.092.748-.139 1.15-.139l.05.001c.896.018 1.553.296 2.011.848.486.586.733 1.467.733 2.62z"/>
+          </svg>
+        </span>
+        Threads
+      </button>
+      <button class="tab-btn" data-tab="facebook">
+        <span class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+          </svg>
+        </span>
+        Facebook
+      </button>
+      <button class="tab-btn" data-tab="linkedin">
+        <span class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+          </svg>
+        </span>
+        LinkedIn
+      </button>
+      <button class="tab-btn" data-tab="reference">
+        <span class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <path d="M3 9h18M9 21V9"/>
+          </svg>
+        </span>
+        一覧表
+      </button>
+    </nav>
+
+    <!-- Instagram Tab -->
+    <div class="tab-content active" id="instagram">
+      <div class="platform-section">
+        <div class="platform-header">
+          <div class="platform-icon instagram">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+            </svg>
+          </div>
+          <div class="platform-info">
+            <h2>Instagram</h2>
+            <p>ビジュアル重視のSNS。縦長画像がフィードで目立つ。</p>
+          </div>
+        </div>
+
+        <div class="section-divider"><span>フィード投稿</span></div>
+        
+        <div class="size-grid">
+          <div class="size-card instagram">
+            <div class="card-preview instagram-gradient">
+              <div class="aspect-box portrait-4-5">4:5</div>
+              <span class="size-badge">1080×1350</span>
+            </div>
+            <div class="card-info">
+              <div class="label">縦長（推奨）</div>
+              <div class="ratio">4:5</div>
+            </div>
+          </div>
+          <div class="size-card instagram">
+            <div class="card-preview instagram-gradient">
+              <div class="aspect-box portrait-3-4">3:4</div>
+              <span class="size-badge">1080×1440</span>
+            </div>
+            <div class="card-info">
+              <div class="label">縦長</div>
+              <div class="ratio">3:4</div>
+            </div>
+          </div>
+          <div class="size-card instagram">
+            <div class="card-preview instagram-gradient">
+              <div class="aspect-box square">1:1</div>
+              <span class="size-badge">1080×1080</span>
+            </div>
+            <div class="card-info">
+              <div class="label">正方形</div>
+              <div class="ratio">1:1</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-divider"><span>ストーリーズ / リール</span></div>
+        
+        <div class="size-grid">
+          <div class="size-card instagram">
+            <div class="card-preview instagram-gradient">
+              <div class="aspect-box portrait-9-16">9:16</div>
+              <span class="size-badge">1080×1920</span>
+            </div>
+            <div class="card-info">
+              <div class="label">フルスクリーン</div>
+              <div class="ratio">9:16</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="samples-section">
+          <div class="samples-title">表示サンプル</div>
+          <div class="samples-grid">
+            <div class="sample-card">
+              <img src="./insta_sample_001_1-image-post.webp" alt="Instagram 1:1 sample">
+              <div class="sample-info">
+                <span class="sample-label">正方形投稿</span>
+                <span class="sample-ratio">1:1</span>
+              </div>
+            </div>
+            <div class="sample-card">
+              <img src="./insta_sample_002_1-image-post.webp" alt="Instagram 4:5 sample">
+              <div class="sample-info">
+                <span class="sample-label">縦長投稿</span>
+                <span class="sample-ratio">4:5</span>
+              </div>
+            </div>
+            <div class="sample-card">
+              <img src="./insta_sample_003_1-image-post.webp" alt="Instagram 9:16 sample">
+              <div class="sample-info">
+                <span class="sample-label">ストーリーズ</span>
+                <span class="sample-ratio">9:16</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- X Tab -->
+    <div class="tab-content" id="x">
+      <div class="platform-section">
+        <div class="platform-header">
+          <div class="platform-icon x">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+          </div>
+          <div class="platform-info">
+            <h2>X (Twitter)</h2>
+            <p>複数枚投稿時のレイアウトに注意が必要。</p>
+          </div>
+        </div>
+
+        <div class="section-divider"><span>1枚投稿</span></div>
+        
+        <div class="size-grid">
+          <div class="size-card x">
+            <div class="card-preview x-gradient">
+              <div class="aspect-box landscape-16-9">16:9</div>
+              <span class="size-badge">1200×675</span>
+            </div>
+            <div class="card-info">
+              <div class="label">横長</div>
+              <div class="ratio">16:9</div>
+            </div>
+          </div>
+          <div class="size-card x">
+            <div class="card-preview x-gradient">
+              <div class="aspect-box square">1:1</div>
+              <span class="size-badge">1200×1200</span>
+            </div>
+            <div class="card-info">
+              <div class="label">正方形</div>
+              <div class="ratio">1:1</div>
+            </div>
+          </div>
+          <div class="size-card x">
+            <div class="card-preview x-gradient">
+              <div class="aspect-box portrait-8-9">8:9</div>
+              <span class="size-badge">1200×1350</span>
+            </div>
+            <div class="card-info">
+              <div class="label">縦長</div>
+              <div class="ratio">8:9</div>
+            </div>
+          </div>
+          <div class="size-card x">
+            <div class="card-preview x-gradient">
+              <div class="aspect-box portrait-3-4">3:4</div>
+              <span class="size-badge">900×1200</span>
+            </div>
+            <div class="card-info">
+              <div class="label">縦長</div>
+              <div class="ratio">3:4</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-divider"><span>複数枚投稿</span></div>
+        
+        <div class="size-grid">
+          <div class="size-card x">
+            <div class="card-preview x-gradient">
+              <div class="multi-grid two-col" style="height: 80px;">
+                <div class="multi-item" style="height: 100%;">8:9</div>
+                <div class="multi-item" style="height: 100%;">8:9</div>
+              </div>
+            </div>
+            <div class="card-info">
+              <div class="label">2枚投稿</div>
+              <div class="ratio">8:9 × 2</div>
+            </div>
+          </div>
+          <div class="size-card x">
+            <div class="card-preview x-gradient">
+              <div class="multi-grid three-col" style="width: 120px; height: 80px;">
+                <div class="multi-item tall">8:9</div>
+                <div class="multi-item">16:9</div>
+                <div class="multi-item">16:9</div>
+              </div>
+            </div>
+            <div class="card-info">
+              <div class="label">3枚投稿</div>
+              <div class="ratio">8:9 + 16:9×2</div>
+            </div>
+          </div>
+          <div class="size-card x">
+            <div class="card-preview x-gradient">
+              <div class="multi-grid four-grid" style="width: 120px; height: 70px;">
+                <div class="multi-item">16:9</div>
+                <div class="multi-item">16:9</div>
+                <div class="multi-item">16:9</div>
+                <div class="multi-item">16:9</div>
+              </div>
+            </div>
+            <div class="card-info">
+              <div class="label">4枚投稿</div>
+              <div class="ratio">16:9 × 4</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="samples-section">
+          <div class="samples-title">表示サンプル</div>
+          <div class="samples-grid">
+            <div class="sample-card">
+              <img src="./X_sample_007_1-image-post.webp" alt="X 1:1 sample">
+              <div class="sample-info">
+                <span class="sample-label">1枚 - 正方形</span>
+                <span class="sample-ratio">1:1</span>
+              </div>
+            </div>
+            <div class="sample-card">
+              <img src="./X_sample_004_3-image-post.webp" alt="X 16:9 sample">
+              <div class="sample-info">
+                <span class="sample-label">1枚 - 横長</span>
+                <span class="sample-ratio">16:9</span>
+              </div>
+            </div>
+            <div class="sample-card">
+              <img src="./X_sample_003_2-image-post.webp" alt="X 2-image sample">
+              <div class="sample-info">
+                <span class="sample-label">2枚投稿</span>
+                <span class="sample-ratio">8:9 × 2</span>
+              </div>
+            </div>
+            <div class="sample-card">
+              <img src="./X_sample_002_3-image-post.webp" alt="X 3-image sample">
+              <div class="sample-info">
+                <span class="sample-label">3枚投稿</span>
+                <span class="sample-ratio">8:9 + 16:9×2</span>
+              </div>
+            </div>
+            <div class="sample-card">
+              <img src="./X_sample_001_4-image-post.webp" alt="X 4-image sample">
+              <div class="sample-info">
+                <span class="sample-label">4枚投稿</span>
+                <span class="sample-ratio">16:9 × 4</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TikTok Tab -->
+    <div class="tab-content" id="tiktok">
+      <div class="platform-section">
+        <div class="platform-header">
+          <div class="platform-icon tiktok">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
+            </svg>
+          </div>
+          <div class="platform-info">
+            <h2>TikTok</h2>
+            <p>縦型動画がメイン。フルスクリーン9:16推奨。</p>
+          </div>
+        </div>
+
+        <div class="section-divider"><span>投稿サイズ</span></div>
+        
+        <div class="size-grid">
+          <div class="size-card tiktok">
+            <div class="card-preview tiktok-gradient">
+              <div class="aspect-box portrait-9-16">9:16</div>
+              <span class="size-badge">720×1280</span>
+            </div>
+            <div class="card-info">
+              <div class="label">縦長（推奨）</div>
+              <div class="ratio">9:16</div>
+            </div>
+          </div>
+          <div class="size-card tiktok">
+            <div class="card-preview tiktok-gradient">
+              <div class="aspect-box landscape-16-9">16:9</div>
+              <span class="size-badge">1200×675</span>
+            </div>
+            <div class="card-info">
+              <div class="label">横長</div>
+              <div class="ratio">16:9</div>
+            </div>
+          </div>
+          <div class="size-card tiktok">
+            <div class="card-preview tiktok-gradient">
+              <div class="aspect-box square">1:1</div>
+              <span class="size-badge">1200×1200</span>
+            </div>
+            <div class="card-info">
+              <div class="label">正方形</div>
+              <div class="ratio">1:1</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Threads Tab -->
+    <div class="tab-content" id="threads">
+      <div class="platform-section">
+        <div class="platform-header">
+          <div class="platform-icon threads">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12.186 24h-.007c-3.581-.024-6.334-1.205-8.184-3.509C2.35 18.44 1.5 15.586 1.5 12.068V12c.015-3.49.87-6.323 2.542-8.422C5.857 1.563 8.596.367 12.11.344h.076c2.456.011 4.593.627 6.387 1.837.09.061.177.125.264.189l-1.817 2.547a8.02 8.02 0 0 0-.19-.134c-1.345-.907-2.962-1.372-4.81-1.384h-.06c-2.69.018-4.724.927-6.044 2.704-1.236 1.665-1.883 4.01-1.894 6.955v.046c.011 2.96.664 5.32 1.908 7.005 1.322 1.79 3.358 2.709 6.054 2.736h.039c2.272-.026 4.063-.705 5.32-2.018 1.226-1.278 1.868-3.018 1.907-5.168l.002-.093c0-1.188-.263-2.138-.784-2.824-.476-.627-1.144-.94-2.044-.96a2.903 2.903 0 0 0-.635.062c.118.587.176 1.2.176 1.832v.183c-.008 1.788-.46 3.32-1.303 4.424-.887 1.16-2.193 1.78-3.778 1.795h-.047c-1.32-.011-2.426-.419-3.29-1.212-.877-.806-1.344-1.918-1.392-3.304l-.002-.11c.005-1.603.517-2.938 1.482-3.859.935-.894 2.21-1.356 3.793-1.378l.07-.001c.658 0 1.278.089 1.846.265.563.175 1.048.429 1.446.756l1.426-2.066a8.102 8.102 0 0 0-2.114-1.073 9.144 9.144 0 0 0-2.691-.428l-.1.001c-2.3.03-4.229.743-5.736 2.119-1.497 1.367-2.277 3.22-2.32 5.51l.001.152c.062 1.917.7 3.523 1.897 4.774 1.228 1.284 2.89 1.953 4.942 1.99h.097c2.187-.023 3.96-.757 5.27-2.185 1.322-1.44 2.01-3.418 2.047-5.879l.001-.139c0-1.828-.438-3.334-1.302-4.478-.9-1.19-2.188-1.817-3.833-1.866l-.115-.002c-1.21.013-2.243.338-3.07.968-.05.037-.098.076-.146.116l-.014.012 1.485 2.17c.362-.263.756-.45 1.174-.557.361-.092.748-.139 1.15-.139l.05.001c.896.018 1.553.296 2.011.848.486.586.733 1.467.733 2.62z"/>
+            </svg>
+          </div>
+          <div class="platform-info">
+            <h2>Threads</h2>
+            <p>Instagram連携。テキストメインだが画像も重要。</p>
+          </div>
+        </div>
+
+        <div class="section-divider"><span>投稿サイズ</span></div>
+        
+        <div class="size-grid">
+          <div class="size-card threads">
+            <div class="card-preview x-gradient">
+              <div class="aspect-box square">1:1</div>
+              <span class="size-badge">1080×1080</span>
+            </div>
+            <div class="card-info">
+              <div class="label">正方形</div>
+              <div class="ratio">1:1</div>
+            </div>
+          </div>
+          <div class="size-card threads">
+            <div class="card-preview x-gradient">
+              <div class="aspect-box landscape-4-3">4:3</div>
+              <span class="size-badge">1080×810</span>
+            </div>
+            <div class="card-info">
+              <div class="label">横長</div>
+              <div class="ratio">4:3</div>
+            </div>
+          </div>
+          <div class="size-card threads">
+            <div class="card-preview x-gradient">
+              <div class="aspect-box portrait-4-5">4:5</div>
+              <span class="size-badge">1080×1350</span>
+            </div>
+            <div class="card-info">
+              <div class="label">縦長</div>
+              <div class="ratio">4:5</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Facebook Tab -->
+    <div class="tab-content" id="facebook">
+      <div class="platform-section">
+        <div class="platform-header">
+          <div class="platform-icon facebook">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+            </svg>
+          </div>
+          <div class="platform-info">
+            <h2>Facebook</h2>
+            <p>ビジネス・コミュニティ向けの多様なグリッド。</p>
+          </div>
+        </div>
+
+        <div class="section-divider"><span>1枚投稿</span></div>
+        
+        <div class="size-grid">
+          <div class="size-card facebook">
+            <div class="card-preview">
+              <div class="aspect-box landscape-5-4">5:4</div>
+              <span class="size-badge">800×640</span>
+            </div>
+            <div class="card-info">
+              <div class="label">横長</div>
+              <div class="ratio">5:4</div>
+            </div>
+          </div>
+          <div class="size-card facebook">
+            <div class="card-preview">
+              <div class="aspect-box square">1:1</div>
+              <span class="size-badge">1080×1080</span>
+            </div>
+            <div class="card-info">
+              <div class="label">正方形</div>
+              <div class="ratio">1:1</div>
+            </div>
+          </div>
+          <div class="size-card facebook">
+            <div class="card-preview">
+              <div class="aspect-box portrait-4-5">4:5</div>
+              <span class="size-badge">960×1200</span>
+            </div>
+            <div class="card-info">
+              <div class="label">縦長</div>
+              <div class="ratio">4:5</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-divider"><span>2枚投稿</span></div>
+        
+        <div class="size-grid">
+          <div class="size-card facebook">
+            <div class="card-preview">
+              <div class="multi-grid two-col" style="height: 90px; width: 90px;">
+                <div class="multi-item" style="height: 100%;">1:2</div>
+                <div class="multi-item" style="height: 100%;">1:2</div>
+              </div>
+            </div>
+            <div class="card-info">
+              <div class="label">2枚 (縦並び)</div>
+              <div class="ratio">1:2 × 2</div>
+            </div>
+          </div>
+          <div class="size-card facebook">
+            <div class="card-preview">
+              <div class="multi-grid two-row" style="height: 70px; width: 120px;">
+                <div class="multi-item">2:1</div>
+                <div class="multi-item">2:1</div>
+              </div>
+            </div>
+            <div class="card-info">
+              <div class="label">2枚 (横並び)</div>
+              <div class="ratio">2:1 × 2</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-divider"><span>3枚投稿</span></div>
+        
+        <div class="size-grid">
+          <div class="size-card facebook">
+            <div class="card-preview">
+              <div class="multi-grid three-col" style="width: 120px; height: 90px;">
+                <div class="multi-item tall">1:2</div>
+                <div class="multi-item">1:1</div>
+                <div class="multi-item">1:1</div>
+              </div>
+            </div>
+            <div class="card-info">
+              <div class="label">3枚 (縦型メイン)</div>
+              <div class="ratio">1:2 + 1:1×2</div>
+            </div>
+          </div>
+          <div class="size-card facebook">
+            <div class="card-preview">
+              <div class="multi-grid three-row" style="width: 120px; height: 80px;">
+                <div class="multi-item wide">2:1</div>
+                <div class="multi-item">1:1</div>
+                <div class="multi-item">1:1</div>
+              </div>
+            </div>
+            <div class="card-info">
+              <div class="label">3枚 (横型メイン)</div>
+              <div class="ratio">2:1 + 1:1×2</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-divider"><span>4枚投稿</span></div>
+        
+        <div class="size-grid">
+          <div class="size-card facebook">
+            <div class="card-preview">
+              <div class="multi-grid four-grid" style="width: 100px; height: 100px;">
+                <div class="multi-item">1:1</div>
+                <div class="multi-item">1:1</div>
+                <div class="multi-item">1:1</div>
+                <div class="multi-item">1:1</div>
+              </div>
+            </div>
+            <div class="card-info">
+              <div class="label">4枚 (正方形)</div>
+              <div class="ratio">1:1 × 4</div>
+            </div>
+          </div>
+          <div class="size-card facebook">
+            <div class="card-preview">
+              <div class="multi-grid four-main" style="width: 120px; height: 90px;">
+                <div class="multi-item main-wide">3:2</div>
+                <div class="multi-item">1:1</div>
+                <div class="multi-item">1:1</div>
+                <div class="multi-item">1:1</div>
+              </div>
+            </div>
+            <div class="card-info">
+              <div class="label">4枚 (横型メイン)</div>
+              <div class="ratio">3:2 + 1:1×3</div>
+            </div>
+          </div>
+          <div class="size-card facebook">
+            <div class="card-preview">
+              <div class="multi-grid four-main-tall" style="width: 120px; height: 90px;">
+                <div class="multi-item main-tall">2:3</div>
+                <div class="multi-item">1:1</div>
+                <div class="multi-item">1:1</div>
+                <div class="multi-item">1:1</div>
+              </div>
+            </div>
+            <div class="card-info">
+              <div class="label">4枚 (縦型メイン)</div>
+              <div class="ratio">2:3 + 1:1×3</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LinkedIn Tab -->
+    <div class="tab-content" id="linkedin">
+      <div class="platform-section">
+        <div class="platform-header">
+          <div class="platform-icon linkedin">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+            </svg>
+          </div>
+          <div class="platform-info">
+            <h2>LinkedIn</h2>
+            <p>ビジネス向けSNS。プロフェッショナルな印象を。</p>
+          </div>
+        </div>
+
+        <div class="section-divider"><span>1枚投稿</span></div>
+        
+        <div class="size-grid">
+          <div class="size-card linkedin">
+            <div class="card-preview">
+              <div class="aspect-box landscape-5-4">5:4</div>
+              <span class="size-badge">800×640</span>
+            </div>
+            <div class="card-info">
+              <div class="label">横長</div>
+              <div class="ratio">5:4</div>
+            </div>
+          </div>
+          <div class="size-card linkedin">
+            <div class="card-preview">
+              <div class="aspect-box square">1:1</div>
+              <span class="size-badge">1080×1080</span>
+            </div>
+            <div class="card-info">
+              <div class="label">正方形</div>
+              <div class="ratio">1:1</div>
+            </div>
+          </div>
+          <div class="size-card linkedin">
+            <div class="card-preview">
+              <div class="aspect-box portrait-4-5">4:5</div>
+              <span class="size-badge">640×800</span>
+            </div>
+            <div class="card-info">
+              <div class="label">縦長</div>
+              <div class="ratio">4:5</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-divider"><span>2枚投稿</span></div>
+        
+        <div class="size-grid">
+          <div class="size-card linkedin">
+            <div class="card-preview">
+              <div class="multi-grid two-col" style="height: 90px; width: 90px;">
+                <div class="multi-item" style="height: 100%;">1:2</div>
+                <div class="multi-item" style="height: 100%;">1:2</div>
+              </div>
+            </div>
+            <div class="card-info">
+              <div class="label">2枚</div>
+              <div class="ratio">1:2 × 2</div>
+            </div>
+          </div>
+          <div class="size-card linkedin">
+            <div class="card-preview">
+              <div class="multi-grid two-col" style="height: 90px; width: 72px;">
+                <div class="multi-item" style="height: 100%;">4:5</div>
+                <div class="multi-item" style="height: 100%;">4:5</div>
+              </div>
+            </div>
+            <div class="card-info">
+              <div class="label">2枚</div>
+              <div class="ratio">4:5 × 2</div>
+            </div>
+          </div>
+          <div class="size-card linkedin">
+            <div class="card-preview">
+              <div class="multi-grid two-col" style="height: 80px; width: 80px;">
+                <div class="multi-item" style="height: 100%;">1:1</div>
+                <div class="multi-item" style="height: 100%;">1:1</div>
+              </div>
+            </div>
+            <div class="card-info">
+              <div class="label">2枚</div>
+              <div class="ratio">1:1 × 2</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-divider"><span>3枚投稿</span></div>
+        
+        <div class="size-grid">
+          <div class="size-card linkedin">
+            <div class="card-preview">
+              <div class="multi-grid three-col" style="width: 120px; height: 90px;">
+                <div class="multi-item tall">1:2</div>
+                <div class="multi-item">1:1</div>
+                <div class="multi-item">1:1</div>
+              </div>
+            </div>
+            <div class="card-info">
+              <div class="label">3枚 (縦型メイン)</div>
+              <div class="ratio">1:2 + 1:1×2</div>
+            </div>
+          </div>
+          <div class="size-card linkedin">
+            <div class="card-preview">
+              <div class="multi-grid three-row" style="width: 120px; height: 80px;">
+                <div class="multi-item wide">2:1</div>
+                <div class="multi-item">1:1</div>
+                <div class="multi-item">1:1</div>
+              </div>
+            </div>
+            <div class="card-info">
+              <div class="label">3枚 (横型メイン)</div>
+              <div class="ratio">2:1 + 1:1×2</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-divider"><span>4枚投稿</span></div>
+        
+        <div class="size-grid">
+          <div class="size-card linkedin">
+            <div class="card-preview">
+              <div class="multi-grid four-grid" style="width: 100px; height: 100px;">
+                <div class="multi-item">1:1</div>
+                <div class="multi-item">1:1</div>
+                <div class="multi-item">1:1</div>
+                <div class="multi-item">1:1</div>
+              </div>
+            </div>
+            <div class="card-info">
+              <div class="label">4枚 (正方形)</div>
+              <div class="ratio">1:1 × 4</div>
+            </div>
+          </div>
+          <div class="size-card linkedin">
+            <div class="card-preview">
+              <div class="multi-grid four-main" style="width: 120px; height: 90px;">
+                <div class="multi-item main-wide">3:2</div>
+                <div class="multi-item">1:1</div>
+                <div class="multi-item">1:1</div>
+                <div class="multi-item">1:1</div>
+              </div>
+            </div>
+            <div class="card-info">
+              <div class="label">4枚 (横型メイン)</div>
+              <div class="ratio">3:2 + 1:1×3</div>
+            </div>
+          </div>
+          <div class="size-card linkedin">
+            <div class="card-preview">
+              <div class="multi-grid four-main-tall" style="width: 120px; height: 90px;">
+                <div class="multi-item main-tall">2:3</div>
+                <div class="multi-item">1:1</div>
+                <div class="multi-item">1:1</div>
+                <div class="multi-item">1:1</div>
+              </div>
+            </div>
+            <div class="card-info">
+              <div class="label">4枚 (縦型メイン)</div>
+              <div class="ratio">2:3 + 1:1×3</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reference Table Tab -->
+    <div class="tab-content" id="reference">
+      <div class="reference-section">
+        <div class="reference-header">
+          <div class="reference-header-text">
+            <h3>アスペクト比別 必要最低サイズ一覧</h3>
+            <p>各アスペクト比ごとに、全プラットフォームで使い回すために必要な最低サイズ</p>
+          </div>
+          <button class="copy-btn" onclick="copyTable()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            テーブルをコピー
+          </button>
+        </div>
+        <div class="table-wrapper">
+          <table id="reference-table">
+            <thead>
+              <tr>
+                <th>アスペクト比</th>
+                <th>必要最低サイズ</th>
+                <th>該当プラットフォーム</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1:1（正方形）</td>
+                <td>1200×1200px</td>
+                <td>
+                  <div class="platform-tags">
+                    <span class="platform-tag instagram">Instagram</span>
+                    <span class="platform-tag x">X</span>
+                    <span class="platform-tag tiktok">TikTok</span>
+                    <span class="platform-tag threads">Threads</span>
+                    <span class="platform-tag facebook">Facebook</span>
+                    <span class="platform-tag linkedin">LinkedIn</span>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>4:5（縦長）</td>
+                <td>1080×1350px</td>
+                <td>
+                  <div class="platform-tags">
+                    <span class="platform-tag instagram">Instagram</span>
+                    <span class="platform-tag threads">Threads</span>
+                    <span class="platform-tag facebook">Facebook</span>
+                    <span class="platform-tag linkedin">LinkedIn</span>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>3:4（縦長）</td>
+                <td>1080×1440px</td>
+                <td>
+                  <div class="platform-tags">
+                    <span class="platform-tag instagram">Instagram</span>
+                    <span class="platform-tag x">X</span>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>9:16（縦長）</td>
+                <td>1080×1920px</td>
+                <td>
+                  <div class="platform-tags">
+                    <span class="platform-tag instagram">Instagram</span>
+                    <span class="platform-tag tiktok">TikTok</span>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>16:9（横長）</td>
+                <td>1200×675px</td>
+                <td>
+                  <div class="platform-tags">
+                    <span class="platform-tag x">X</span>
+                    <span class="platform-tag tiktok">TikTok</span>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>8:9（縦長）</td>
+                <td>1200×1350px</td>
+                <td>
+                  <div class="platform-tags">
+                    <span class="platform-tag x">X</span>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>5:4（横長）</td>
+                <td>800×640px</td>
+                <td>
+                  <div class="platform-tags">
+                    <span class="platform-tag facebook">Facebook</span>
+                    <span class="platform-tag linkedin">LinkedIn</span>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>4:3（横長）</td>
+                <td>1080×810px</td>
+                <td>
+                  <div class="platform-tags">
+                    <span class="platform-tag threads">Threads</span>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>1:2（縦長）</td>
+                <td>720×1440px</td>
+                <td>
+                  <div class="platform-tags">
+                    <span class="platform-tag facebook">Facebook</span>
+                    <span class="platform-tag linkedin">LinkedIn</span>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>2:1（横長）</td>
+                <td>1440×720px</td>
+                <td>
+                  <div class="platform-tags">
+                    <span class="platform-tag facebook">Facebook</span>
+                    <span class="platform-tag linkedin">LinkedIn</span>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>3:2（横長）</td>
+                <td>1280×853px</td>
+                <td>
+                  <div class="platform-tags">
+                    <span class="platform-tag facebook">Facebook</span>
+                    <span class="platform-tag linkedin">LinkedIn</span>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>2:3（縦長）</td>
+                <td>853×1280px</td>
+                <td>
+                  <div class="platform-tags">
+                    <span class="platform-tag facebook">Facebook</span>
+                    <span class="platform-tag linkedin">LinkedIn</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

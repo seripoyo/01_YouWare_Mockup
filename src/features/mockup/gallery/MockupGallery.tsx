@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { FilterSidebar } from "./components/FilterSidebar";
 import { MockupGrid } from "./components/MockupGrid";
 import { PreviewModal } from "./components/PreviewModal";
@@ -6,6 +6,22 @@ import { useGalleryFilters } from "../hooks/useGalleryFilters";
 import { mockupGalleryItems } from "../data/mockupGalleryData";
 import type { MockupGalleryItem, GalleryFilters } from "./types";
 import type { DeviceCategory } from "../types/frame";
+import {
+  getCurrentLanguage,
+  setLanguageAndReload,
+  getTranslations,
+  LANGUAGE_LABELS,
+  type SupportedLanguage,
+} from "../../../i18n/translations";
+
+// 言語オプション
+const LANGUAGE_OPTIONS: { code: SupportedLanguage; label: string }[] = [
+  { code: "ja", label: "日本語" },
+  { code: "en", label: "English" },
+  { code: "zh-CN", label: "中文（簡体字）" },
+  { code: "zh-TW", label: "中文（繁体字）" },
+  { code: "ko", label: "한국어" },
+];
 
 interface GalleryProps {
   onSelectFrame: (item: MockupGalleryItem) => void;
@@ -30,11 +46,41 @@ export function MockupGallery({ onSelectFrame, onClose }: GalleryProps) {
     useGalleryFilters(mockupGalleryItems);
   const [activeItem, setActiveItem] = useState<MockupGalleryItem | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
+  const langMenuRef = useRef<HTMLDivElement>(null);
+
+  // Get current language and translations
+  const currentLang = getCurrentLanguage();
+  const t = getTranslations();
+
+  // 言語メニューの外側クリックで閉じる
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (langMenuRef.current && !langMenuRef.current.contains(e.target as Node)) {
+        setIsLangMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Handler for filter changes
   const handleFilterChange = (newFilters: GalleryFilters) => {
     setFilters(newFilters);
   };
+
+  // Google Sign In handler (placeholder)
+  const handleGoogleSignIn = () => {
+    console.log("Google Sign In clicked");
+    // TODO: Implement Google Sign In
+  };
+
+  // Language change handler - reload page after changing
+  const handleLanguageChange = (langCode: SupportedLanguage) => {
+    setLanguageAndReload(langCode);
+  };
+
+  const currentLangLabel = LANGUAGE_LABELS[currentLang];
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
@@ -50,20 +96,65 @@ export function MockupGallery({ onSelectFrame, onClose }: GalleryProps) {
             />
           </div>
 
-          {/* Search Bar (Desktop) */}
-          <div className="hidden md:flex flex-1 max-w-xl relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span className="material-icons text-slate-400 text-lg">search</span>
+          {/* Spacer to push buttons to right */}
+          <div className="flex-1" />
+
+          {/* Language Switcher & Google Sign In (Desktop) */}
+          <div className="hidden md:flex items-center gap-3">
+            {/* Language Switcher */}
+            <div className="relative" ref={langMenuRef}>
+              <button
+                onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
+                className="flex items-center gap-2 px-4 py-2 border border-indigo-500 rounded-full bg-white hover:bg-indigo-50 transition-colors"
+                aria-haspopup="true"
+                aria-expanded={isLangMenuOpen}
+              >
+                <span className="text-xs font-medium text-indigo-600 tracking-wide">
+                  {currentLangLabel}
+                </span>
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 18 18"
+                  className={`text-indigo-500 transition-transform ${isLangMenuOpen ? "rotate-180" : ""}`}
+                  fill="currentColor"
+                >
+                  <path d="M9 12L4 7h10L9 12z" />
+                </svg>
+              </button>
+
+              {/* Language Dropdown */}
+              {isLangMenuOpen && (
+                <ul className="absolute top-full right-0 mt-2 w-44 bg-white border border-slate-200 rounded-xl shadow-lg py-2 z-50">
+                  {LANGUAGE_OPTIONS.map((lang) => (
+                    <li key={lang.code}>
+                      <button
+                        onClick={() => handleLanguageChange(lang.code)}
+                        className={`w-full px-4 py-2 text-left text-sm hover:bg-indigo-50 transition-colors ${
+                          currentLang === lang.code ? "text-indigo-600 font-medium bg-indigo-50" : "text-slate-700"
+                        }`}
+                      >
+                        {lang.label}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
-            <input
-              type="text"
-              placeholder="Search by name, color, or tag..."
-              className="block w-full pl-10 pr-3 py-2.5 border border-slate-200 rounded-xl leading-5 bg-slate-50 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200 sm:text-sm"
-              value={filters.search}
-              onChange={(e) =>
-                setFilters({ ...filters, search: e.target.value })
-              }
-            />
+
+            {/* Google Sign In Button */}
+            <button
+              onClick={handleGoogleSignIn}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-full hover:shadow-md transition-all"
+            >
+              <svg width="18" height="18" viewBox="0 0 48 48">
+                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+              </svg>
+              <span className="text-sm font-medium text-slate-700">Sign in</span>
+            </button>
           </div>
 
           {/* Mobile Filter Toggle */}
@@ -76,24 +167,6 @@ export function MockupGallery({ onSelectFrame, onClose }: GalleryProps) {
             </button>
           </div>
 
-        </div>
-
-        {/* Mobile Search Bar */}
-        <div className="md:hidden px-4 pb-4 border-b border-slate-200">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span className="material-icons text-slate-400 text-lg">search</span>
-            </div>
-            <input
-              type="text"
-              placeholder="Search mockups..."
-              className="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-lg bg-white text-sm"
-              value={filters.search}
-              onChange={(e) =>
-                setFilters({ ...filters, search: e.target.value })
-              }
-            />
-          </div>
         </div>
       </header>
 
@@ -111,15 +184,10 @@ export function MockupGallery({ onSelectFrame, onClose }: GalleryProps) {
 
         {/* Content Area */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8">
-          <div className="mb-6 flex items-baseline justify-between">
+          <div className="mb-6">
             <h2 className="text-2xl font-bold text-slate-800">
-              {filters.search
-                ? `Results for "${filters.search}"`
-                : "All Templates"}
+              {t.allTemplates}
             </h2>
-            <span className="text-sm font-medium text-slate-500">
-              {filteredItems.length} items found
-            </span>
           </div>
 
           {/* Active Filters Summary (Chips) */}
