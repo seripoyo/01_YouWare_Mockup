@@ -129,3 +129,12 @@
 .animate-filterExit {
   animation: filterExit 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
+aside .material-icons{
+  color: #2C30FF;
+}
+.font-semibold {
+    font-weight: 900;
+}
+.bg-indigo-50 {
+    background-color: rgb(190 226 247);
+}
