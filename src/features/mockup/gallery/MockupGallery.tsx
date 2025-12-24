@@ -1,7 +1,8 @@
-import React, { useState, useMemo, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { FilterSidebar } from "./components/FilterSidebar";
 import { MockupGrid } from "./components/MockupGrid";
 import { PreviewModal } from "./components/PreviewModal";
+import { AspectRatioGuideModal } from "./components/AspectRatioGuideModal";
 import { useGalleryFilters } from "../hooks/useGalleryFilters";
 import { mockupGalleryItems } from "../data/mockupGalleryData";
 import type { MockupGalleryItem, GalleryFilters } from "./types";
@@ -47,6 +48,7 @@ export function MockupGallery({ onSelectFrame, onClose }: GalleryProps) {
   const [activeItem, setActiveItem] = useState<MockupGalleryItem | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
+  const [isAspectGuideOpen, setIsAspectGuideOpen] = useState(false);
   const langMenuRef = useRef<HTMLDivElement>(null);
 
   // Get current language and translations
@@ -99,8 +101,18 @@ export function MockupGallery({ onSelectFrame, onClose }: GalleryProps) {
           {/* Spacer to push buttons to right */}
           <div className="flex-1" />
 
-          {/* Language Switcher & Google Sign In (Desktop) */}
+          {/* Aspect Ratio Guide & Language Switcher & Google Sign In (Desktop) */}
           <div className="hidden md:flex items-center gap-3">
+            {/* Aspect Ratio Guide Button */}
+            <button
+              onClick={() => setIsAspectGuideOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-full hover:from-indigo-600 hover:to-purple-600 transition-all shadow-md hover:shadow-lg text-sm font-medium"
+            >
+              <span className="material-icons text-base">aspect_ratio</span>
+              <span className="hidden lg:inline">{t.aspectRatioGuide}</span>
+              <span className="lg:hidden">📐</span>
+            </button>
+
             {/* Language Switcher */}
             <div className="relative" ref={langMenuRef}>
               <button
@@ -251,7 +263,7 @@ export function MockupGallery({ onSelectFrame, onClose }: GalleryProps) {
         </main>
       </div>
 
-      {/* Modal */}
+      {/* Preview Modal */}
       <PreviewModal
         item={activeItem}
         onClose={() => setActiveItem(null)}
@@ -260,6 +272,12 @@ export function MockupGallery({ onSelectFrame, onClose }: GalleryProps) {
           onClose();
         }}
         categoryResolver={detectCategory}
+      />
+
+      {/* Aspect Ratio Guide Modal */}
+      <AspectRatioGuideModal
+        isOpen={isAspectGuideOpen}
+        onClose={() => setIsAspectGuideOpen(false)}
       />
     </div>
   );

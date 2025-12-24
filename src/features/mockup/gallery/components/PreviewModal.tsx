@@ -730,6 +730,7 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
   const [editingCorners, setEditingCorners] = useState<Point[]>([]);
   const [draggingCornerIndex, setDraggingCornerIndex] = useState<number | null>(null);
   const [originalCorners, setOriginalCorners] = useState<Point[]>([]);
+  const [hoveredCornerIndex, setHoveredCornerIndex] = useState<number | null>(null);
   
   // 白エリア塗りつぶしプレビュー用ステート
   const [colorFilledUrl, setColorFilledUrl] = useState<string | null>(null);
@@ -977,7 +978,13 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
     // This allows users to click on any device's corner to start editing
     // Note: Only check corners when guidelines are visible
     if (showGuidelines) {
-      const cornerThreshold = 40; // Same as findNearCorner threshold
+      // Calculate dynamic threshold based on display scale to match the drawn handle size
+      // Handle is drawn at 35px screen size (17.5px radius)
+      // We use a slightly larger threshold for better touch targets
+      const displayScale = Math.min(rect.width / frameNatural.w, rect.height / frameNatural.h);
+      const screenHandleRadius = 22; // Slightly larger than 17.5px for easier tapping
+      const cornerThreshold = screenHandleRadius / displayScale;
+
       for (let regionIdx = 0; regionIdx < deviceRegions.length; regionIdx++) {
         const region = deviceRegions[regionIdx];
         const corners = region.corners;
@@ -1633,7 +1640,16 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
 
   // Find which corner is near the given point
   const findNearCorner = useCallback((point: Point, corners: Point[]): number | null => {
-    const threshold = 40; // pixels in canvas coordinates (increased from 20 for larger handles)
+    // Calculate dynamic threshold based on display scale to match the drawn handle size
+    const overlay = overlayCanvasRef.current;
+    let threshold = 40; // fallback
+    if (overlay && frameNatural) {
+      const rect = overlay.getBoundingClientRect();
+      const displayScale = Math.min(rect.width / frameNatural.w, rect.height / frameNatural.h);
+      const screenHandleRadius = 22; // Slightly larger than 17.5px for easier tapping
+      threshold = screenHandleRadius / displayScale;
+    }
+
     for (let i = 0; i < corners.length; i++) {
       const dx = point.x - corners[i].x;
       const dy = point.y - corners[i].y;
@@ -1642,7 +1658,7 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
       }
     }
     return null;
-  }, []);
+  }, [frameNatural]);
 
   // Mouse/Touch handlers for corner dragging
   const handleCornerDragStart = useCallback((clientX: number, clientY: number) => {
@@ -1685,8 +1701,46 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     if (isCornerEditMode && draggingCornerIndex !== null) {
       handleCornerDragMove(e.clientX, e.clientY);
+      return;
     }
-  }, [isCornerEditMode, draggingCornerIndex, handleCornerDragMove]);
+
+    // Check if hovering over a corner handle when guidelines are visible
+    if (showGuidelines && frameNatural && deviceRegions.length > 0) {
+      const canvas = overlayCanvasRef.current;
+      if (!canvas) {
+        setHoveredCornerIndex(null);
+        return;
+      }
+
+      const rect = canvas.getBoundingClientRect();
+      const sx = frameNatural.w / rect.width;
+      const sy = frameNatural.h / rect.height;
+      const x = Math.floor((e.clientX - rect.left) * sx);
+      const y = Math.floor((e.clientY - rect.top) * sy);
+
+      // Calculate dynamic threshold based on display scale
+      const displayScale = Math.min(rect.width / frameNatural.w, rect.height / frameNatural.h);
+      const screenHandleRadius = 22;
+      const cornerThreshold = screenHandleRadius / displayScale;
+
+      // Check all corners across all device regions
+      for (let regionIdx = 0; regionIdx < deviceRegions.length; regionIdx++) {
+        const region = deviceRegions[regionIdx];
+        const corners = region.corners;
+        for (let cornerIdx = 0; cornerIdx < corners.length; cornerIdx++) {
+          const dx = x - corners[cornerIdx].x;
+          const dy = y - corners[cornerIdx].y;
+          if (Math.sqrt(dx * dx + dy * dy) <= cornerThreshold) {
+            setHoveredCornerIndex(regionIdx * 4 + cornerIdx);
+            return;
+          }
+        }
+      }
+      setHoveredCornerIndex(null);
+    } else {
+      setHoveredCornerIndex(null);
+    }
+  }, [isCornerEditMode, draggingCornerIndex, handleCornerDragMove, showGuidelines, frameNatural, deviceRegions]);
 
   const handleMouseUp = useCallback(() => {
     if (isCornerEditMode) {
@@ -1718,7 +1772,11 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
         const x = Math.floor((touch.clientX - rect.left) * sx);
         const y = Math.floor((touch.clientY - rect.top) * sy);
 
-        const cornerThreshold = 40;
+        // Calculate dynamic threshold based on display scale to match the drawn handle size
+        const displayScale = Math.min(rect.width / frameNatural.w, rect.height / frameNatural.h);
+        const screenHandleRadius = 22; // Slightly larger than 17.5px for easier tapping
+        const cornerThreshold = screenHandleRadius / displayScale;
+
         for (let regionIdx = 0; regionIdx < deviceRegions.length; regionIdx++) {
           const region = deviceRegions[regionIdx];
           const corners = region.corners;
@@ -3078,7 +3136,7 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
               style={{
                 cursor: isCornerEditMode
                   ? (draggingCornerIndex !== null ? "grabbing" : "grab")
-                  : (isProcessing ? "wait" : "crosshair"),
+                  : (isProcessing ? "wait" : (hoveredCornerIndex !== null ? "grab" : "crosshair")),
                 touchAction: isCornerEditMode ? "none" : "auto"
               }}
             />

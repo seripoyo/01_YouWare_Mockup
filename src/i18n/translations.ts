@@ -51,6 +51,9 @@ export interface Translations {
   // Gallery
   allTemplates: string;
   itemsFound: (count: number) => string;
+
+  // Aspect Ratio Guide
+  aspectRatioGuide: string;
 }
 
 const ja: Translations = {
@@ -85,6 +88,7 @@ const ja: Translations = {
   signInWithGoogle: "Googleでサインイン",
   allTemplates: "すべてのテンプレート",
   itemsFound: (count) => `${count}件`,
+  aspectRatioGuide: "各SNS投稿前必見！画像比率ガイド",
 };
 
 const en: Translations = {
@@ -119,6 +123,7 @@ const en: Translations = {
   signInWithGoogle: "Sign in with Google",
   allTemplates: "All Templates",
   itemsFound: (count) => `${count} items found`,
+  aspectRatioGuide: "SNS Post Image Ratio Guide – Must-See!",
 };
 
 const zhCN: Translations = {
@@ -153,6 +158,7 @@ const zhCN: Translations = {
   signInWithGoogle: "使用 Google 登录",
   allTemplates: "所有模板",
   itemsFound: (count) => `找到 ${count} 项`,
+  aspectRatioGuide: "发布前必看！图片比例指南",
 };
 
 const zhTW: Translations = {
@@ -187,6 +193,7 @@ const zhTW: Translations = {
   signInWithGoogle: "使用 Google 登入",
   allTemplates: "所有範本",
   itemsFound: (count) => `找到 ${count} 項`,
+  aspectRatioGuide: "發布前必看！圖片比例指南",
 };
 
 const ko: Translations = {
@@ -221,6 +228,7 @@ const ko: Translations = {
   signInWithGoogle: "Google로 로그인",
   allTemplates: "모든 템플릿",
   itemsFound: (count) => `${count}개 항목`,
+  aspectRatioGuide: "SNS 게시 전 필독! 이미지 비율 가이드",
 };
 
 export const translations: Record<SupportedLanguage, Translations> = {
