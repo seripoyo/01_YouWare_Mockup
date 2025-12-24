@@ -1,9 +1,17 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import type { MockupGalleryItem } from "../types";
 import type { DeviceCategory } from "../../types/frame";
-import { detectDeviceScreensWithLog, fillWhiteAreasWithColors, formatDetectionLogForCopy, DEVICE_FILL_COLORS } from "../../../../utils/whiteAreaExtractor";
-import type { ScreenRegion as ExtractorScreenRegion, DetectionLog } from "../../../../utils/whiteAreaExtractor";
+import { detectDeviceScreensWithLog, formatDetectionLogForCopy } from "../../../../utils/whiteAreaExtractor";
+import type { DetectionLog } from "../../../../utils/whiteAreaExtractor";
 import { drawPerspectiveImage, type Point as PerspectivePoint } from "../../../../utils/perspectiveTransform";
+import {
+  ASPECT_RATIO_OPTIONS,
+  DEFAULT_ASPECT_RATIO,
+  calculateInitialCropRect,
+  constrainCropRect,
+  type AspectRatioOption,
+  type CropRect,
+} from "../../../../constants/aspectRatios";
 
 interface PreviewModalProps {
   item: MockupGalleryItem | null;
@@ -724,11 +732,26 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
   // 白エリア塗りつぶしプレビュー用ステート
   const [colorFilledUrl, setColorFilledUrl] = useState<string | null>(null);
   const [showColorFill, setShowColorFill] = useState(false);
-  const [detectedScreenRegions, setDetectedScreenRegions] = useState<ExtractorScreenRegion[]>([]);
+
+  // ガイドライン表示用ステート（デバイス領域の色オーバーレイ表示）
+  const [showGuidelines, setShowGuidelines] = useState(true);
+
+  // タップでアップロードする対象のデバイスインデックス
+  const [tapUploadTargetIndex, setTapUploadTargetIndex] = useState<number | null>(null);
   const [detectionLog, setDetectionLog] = useState<DetectionLog | null>(null);
-  
+
+  // アスペクト比切り抜きモード用ステート
+  const [isCropMode, setIsCropMode] = useState(false);
+  const [selectedAspectRatio, setSelectedAspectRatio] = useState<AspectRatioOption | null>(null);
+  const [cropRect, setCropRect] = useState<CropRect | null>(null);
+  const [isDraggingCrop, setIsDraggingCrop] = useState(false);
+  const [dragStartPos, setDragStartPos] = useState<Point | null>(null);
+  const [dragStartCropRect, setDragStartCropRect] = useState<CropRect | null>(null);
+  const [resizeCorner, setResizeCorner] = useState<'tl' | 'tr' | 'bl' | 'br' | null>(null);
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
+  const cropCanvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Ref to track deviceRegions for cleanup
@@ -762,8 +785,17 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
     setDraggingCornerIndex(null);
     setColorFilledUrl(null);
     setShowColorFill(false);
-    setDetectedScreenRegions([]);
     setDetectionLog(null);
+    setShowGuidelines(true);
+    setTapUploadTargetIndex(null);
+    // アスペクト比切り抜きモードのリセット
+    setIsCropMode(false);
+    setSelectedAspectRatio(null);
+    setCropRect(null);
+    setIsDraggingCrop(false);
+    setDragStartPos(null);
+    setDragStartCropRect(null);
+    setResizeCorner(null);
   }, [item]);
 
   useEffect(() => {
@@ -931,28 +963,31 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
     // Check if clicking on a corner handle of ANY device region
     // If so, select that device and enter corner edit mode directly
     // This allows users to click on any device's corner to start editing
-    const cornerThreshold = 40; // Same as findNearCorner threshold
-    for (let regionIdx = 0; regionIdx < deviceRegions.length; regionIdx++) {
-      const region = deviceRegions[regionIdx];
-      const corners = region.corners;
-      for (let cornerIdx = 0; cornerIdx < corners.length; cornerIdx++) {
-        const dx = x - corners[cornerIdx].x;
-        const dy = y - corners[cornerIdx].y;
-        if (Math.sqrt(dx * dx + dy * dy) <= cornerThreshold) {
-          // Clicked on a corner - select this device and enter edit mode
-          setSelectedRegionIndex(regionIdx);
-          const cornersCopy = corners.map(c => ({ x: c.x, y: c.y }));
-          setOriginalCorners(cornersCopy);
-          setEditingCorners(cornersCopy);
-          setIsCornerEditMode(true);
-          // Start dragging this corner immediately
-          setDraggingCornerIndex(cornerIdx);
-          return;
+    // Note: Only check corners when guidelines are visible
+    if (showGuidelines) {
+      const cornerThreshold = 40; // Same as findNearCorner threshold
+      for (let regionIdx = 0; regionIdx < deviceRegions.length; regionIdx++) {
+        const region = deviceRegions[regionIdx];
+        const corners = region.corners;
+        for (let cornerIdx = 0; cornerIdx < corners.length; cornerIdx++) {
+          const dx = x - corners[cornerIdx].x;
+          const dy = y - corners[cornerIdx].y;
+          if (Math.sqrt(dx * dx + dy * dy) <= cornerThreshold) {
+            // Clicked on a corner - select this device and enter edit mode
+            setSelectedRegionIndex(regionIdx);
+            const cornersCopy = corners.map(c => ({ x: c.x, y: c.y }));
+            setOriginalCorners(cornersCopy);
+            setEditingCorners(cornersCopy);
+            setIsCornerEditMode(true);
+            // Start dragging this corner immediately
+            setDraggingCornerIndex(cornerIdx);
+            return;
+          }
         }
       }
     }
 
-    // Check if clicking on existing region
+    // Check if clicking on existing region - trigger file upload
     for (let i = 0; i < deviceRegions.length; i++) {
       const region = deviceRegions[i];
       if (
@@ -961,8 +996,11 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
         y >= region.rect.y &&
         y <= region.rect.y + region.rect.height
       ) {
+        // 既存領域をタップ -> その領域に画像をアップロード
         setSelectedRegionIndex(i);
+        setTapUploadTargetIndex(i);
         setShowInstructions(false);
+        fileInputRef.current?.click();
         return;
       }
     }
@@ -1085,10 +1123,10 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
     setShowInstructions(false);
     setIsProcessing(false);
     // Note: drawOverlay will be called automatically by the useEffect that watches deviceRegions and selectedRegionIndex
-  }, [frameImageData, frameNatural, deviceRegions]);
+  }, [frameImageData, frameNatural, deviceRegions, showGuidelines]);
 
   // Draw overlay with region highlights and corner handles
-  const drawOverlay = useCallback((regions: DeviceRegion[], selectedIdx: number | null, editingCornersOverride?: Point[]) => {
+  const drawOverlay = useCallback((regions: DeviceRegion[], selectedIdx: number | null, editingCornersOverride?: Point[], guidelinesVisible: boolean = true) => {
     const overlay = overlayCanvasRef.current;
     if (!overlay || !frameNatural) return;
 
@@ -1096,6 +1134,9 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
     if (!ctx) return;
 
     ctx.clearRect(0, 0, overlay.width, overlay.height);
+
+    // ガイドラインが非表示の場合は何も描画しない
+    if (!guidelinesVisible) return;
 
     // First pass: Draw non-selected regions with dimmed appearance
     regions.forEach((region, idx) => {
@@ -1518,11 +1559,11 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
     if (deviceRegions.length === 0) return; // Wait for regions to be detected
 
     if (isCornerEditMode && editingCorners.length > 0) {
-      drawOverlay(deviceRegions, selectedRegionIndex, editingCorners);
+      drawOverlay(deviceRegions, selectedRegionIndex, editingCorners, showGuidelines);
     } else {
-      drawOverlay(deviceRegions, selectedRegionIndex);
+      drawOverlay(deviceRegions, selectedRegionIndex, undefined, showGuidelines);
     }
-  }, [deviceRegions, selectedRegionIndex, drawOverlay, isCornerEditMode, editingCorners, frameNatural]);
+  }, [deviceRegions, selectedRegionIndex, drawOverlay, isCornerEditMode, editingCorners, frameNatural, showGuidelines]);
 
   // Corner editing functions
   const startCornerEditMode = useCallback(() => {
@@ -1678,7 +1719,8 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
         return;
       }
 
-      if (frameNatural) {
+      // Only check corners when guidelines are visible
+      if (frameNatural && showGuidelines) {
         const rect = canvas.getBoundingClientRect();
         const sx = frameNatural.w / rect.width;
         const sy = frameNatural.h / rect.height;
@@ -1738,7 +1780,8 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
     deviceRegions,
     handleCornerDragStart,
     handleCornerDragMove,
-    handleCornerDragEnd
+    handleCornerDragEnd,
+    showGuidelines
   ]);
 
   // Process image file and apply to region
@@ -1770,11 +1813,15 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
   // Handle file upload for selected region
   const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || selectedRegionIndex === null) return;
+    // タップ経由の場合はtapUploadTargetIndexを使用、それ以外はselectedRegionIndexを使用
+    const targetIndex = tapUploadTargetIndex !== null ? tapUploadTargetIndex : selectedRegionIndex;
+    if (!file || targetIndex === null) return;
 
-    processImageForRegion(file, selectedRegionIndex);
+    processImageForRegion(file, targetIndex);
     e.target.value = "";
-  }, [selectedRegionIndex, processImageForRegion]);
+    // タップターゲットをリセット
+    setTapUploadTargetIndex(null);
+  }, [selectedRegionIndex, tapUploadTargetIndex, processImageForRegion]);
 
   // Find region at canvas coordinates
   const findRegionAtPosition = useCallback((clientX: number, clientY: number): number | null => {
@@ -2381,94 +2428,8 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
 
             ctx.putImageData(compositeData, 0, 0);
 
-            // ========== デバッグ可視化（ベゼル復元後に描画） ==========
-            // ダウンロード時はデバッグ可視化を無効化
-            const debugMode = !forDownload; // プレビュー時のみデバッグ表示
-            if (debugMode) {
-              regionsWithImages.forEach((region) => {
-                const corners = region.corners;
-                if (!corners) return;
-
-                // 透視変換と同じロジックでコーナーを並べ替え
-                const centerX = corners.reduce((sum, c) => sum + c.x, 0) / 4;
-                const centerY = corners.reduce((sum, c) => sum + c.y, 0) / 4;
-
-                const cornersWithAngle = corners.map((c, i) => ({
-                  point: c,
-                  index: i,
-                  angle: Math.atan2(c.y - centerY, c.x - centerX)
-                }));
-
-                const topTwo = [...cornersWithAngle].sort((a, b) => a.point.y - b.point.y).slice(0, 2);
-                const bottomTwo = [...cornersWithAngle].sort((a, b) => a.point.y - b.point.y).slice(2, 4);
-
-                topTwo.sort((a, b) => a.point.x - b.point.x);
-                const topLeft = topTwo[0].point;
-                const topRight = topTwo[1].point;
-
-                bottomTwo.sort((a, b) => a.point.x - b.point.x);
-                const bottomLeft = bottomTwo[0].point;
-                const bottomRight = bottomTwo[1].point;
-
-                // 並べ替え後のコーナーを表示
-                // TL=赤, TR=緑, BR=青, BL=黄
-                const sortedCorners = [topLeft, topRight, bottomRight, bottomLeft];
-                const debugColors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00'];
-                const debugLabels = ['TL', 'TR', 'BR', 'BL'];
-
-                sortedCorners.forEach((c, i) => {
-                  ctx.beginPath();
-                  ctx.arc(c.x, c.y, 25, 0, Math.PI * 2);
-                  ctx.fillStyle = debugColors[i];
-                  ctx.fill();
-                  ctx.strokeStyle = '#000';
-                  ctx.lineWidth = 4;
-                  ctx.stroke();
-
-                  ctx.font = 'bold 16px sans-serif';
-                  ctx.fillStyle = '#FFF';
-                  ctx.textAlign = 'center';
-                  ctx.textBaseline = 'middle';
-                  ctx.fillText(debugLabels[i], c.x, c.y);
-                });
-
-                // 4辺を描画（透視変換の順序で）
-                // 上辺: TL→TR（マゼンタ）
-                ctx.beginPath();
-                ctx.moveTo(topLeft.x, topLeft.y);
-                ctx.lineTo(topRight.x, topRight.y);
-                ctx.strokeStyle = '#FF00FF';
-                ctx.lineWidth = 6;
-                ctx.stroke();
-
-                // 右辺: TR→BR（オレンジ）
-                ctx.beginPath();
-                ctx.moveTo(topRight.x, topRight.y);
-                ctx.lineTo(bottomRight.x, bottomRight.y);
-                ctx.strokeStyle = '#FF8800';
-                ctx.lineWidth = 6;
-                ctx.stroke();
-
-                // 下辺: BR→BL（シアン）
-                ctx.beginPath();
-                ctx.moveTo(bottomRight.x, bottomRight.y);
-                ctx.lineTo(bottomLeft.x, bottomLeft.y);
-                ctx.strokeStyle = '#00FFFF';
-                ctx.lineWidth = 6;
-                ctx.stroke();
-
-                // 左辺: BL→TL（ライム）
-                ctx.beginPath();
-                ctx.moveTo(bottomLeft.x, bottomLeft.y);
-                ctx.lineTo(topLeft.x, topLeft.y);
-                ctx.strokeStyle = '#88FF00';
-                ctx.lineWidth = 6;
-                ctx.stroke();
-              });
-              console.log('デバッグ可視化完了: TL=赤, TR=緑, BR=青, BL=黄');
-              console.log('辺の色: 上辺=マゼンタ, 右辺=オレンジ, 下辺=シアン, 左辺=ライム');
-            }
-            // ========== デバッグ可視化終了 ==========
+            // デバッグ可視化は無効化（プロダクション用）
+            // ガイドライン表示はオーバーレイcanvasで行う
 
             const dataUrl = canvas.toDataURL("image/png");
             if (!forDownload) {
@@ -2491,45 +2452,308 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
     }
   }, [deviceRegions, generateComposite]);
 
-  // 白エリア検出＆塗りつぶしプレビュー機能 (Hooks must be before early return)
-  const handleColorFillPreview = useCallback(() => {
-    if (!frameImageData || !frameNatural) return;
+  // 切り抜きオーバーレイ描画
+  const drawCropOverlay = useCallback(() => {
+    const canvas = cropCanvasRef.current;
+    if (!canvas || !frameNatural || !cropRect) return;
 
-    // 白エリアを検出（ログ付き）
-    // DEFAULT_OPTIONSを使用し、段階的輝度閾値と純白モードを適用
-    const { regions, log } = detectDeviceScreensWithLog(frameImageData);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-    setDetectedScreenRegions(regions);
-    setDetectionLog(log);
+    const { w, h } = frameNatural;
+    canvas.width = w;
+    canvas.height = h;
 
-    if (regions.length === 0) {
-      console.log('白エリアが検出されませんでした');
-      setShowColorFill(true); // ログは表示
+    // 1. 暗いオーバーレイを全体に描画
+    ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+    ctx.fillRect(0, 0, w, h);
+
+    // 2. 切り抜き領域を透明にする（穴を開ける）
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.fillStyle = "white";
+    ctx.fillRect(cropRect.x, cropRect.y, cropRect.width, cropRect.height);
+
+    // 3. 白いドット線の枠を描画
+    ctx.globalCompositeOperation = "source-over";
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 3;
+    ctx.setLineDash([10, 10]);
+    ctx.strokeRect(cropRect.x, cropRect.y, cropRect.width, cropRect.height);
+    ctx.setLineDash([]);
+
+    // 4. 四隅のリサイズハンドルを描画
+    const handleSize = 20;
+    const corners = [
+      { x: cropRect.x, y: cropRect.y }, // tl
+      { x: cropRect.x + cropRect.width, y: cropRect.y }, // tr
+      { x: cropRect.x, y: cropRect.y + cropRect.height }, // bl
+      { x: cropRect.x + cropRect.width, y: cropRect.y + cropRect.height }, // br
+    ];
+
+    ctx.fillStyle = "white";
+    corners.forEach((corner) => {
+      ctx.beginPath();
+      ctx.arc(corner.x, corner.y, handleSize, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // 5. 選択中のアスペクト比ラベルを表示
+    if (selectedAspectRatio) {
+      ctx.font = "bold 48px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+      ctx.fillText(
+        selectedAspectRatio.label,
+        cropRect.x + cropRect.width / 2,
+        cropRect.y + cropRect.height / 2
+      );
+    }
+  }, [frameNatural, cropRect, selectedAspectRatio]);
+
+  // 切り抜きオーバーレイ描画のuseEffect
+  useEffect(() => {
+    if (isCropMode && cropRect) {
+      drawCropOverlay();
+    }
+  }, [isCropMode, cropRect, drawCropOverlay]);
+
+  // 座標変換: クライアント座標 → 画像座標
+  const convertToImageCoords = useCallback((clientX: number, clientY: number): Point | null => {
+    const canvas = cropCanvasRef.current;
+    if (!canvas || !frameNatural) return null;
+
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = frameNatural.w / rect.width;
+    const scaleY = frameNatural.h / rect.height;
+
+    return {
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY
+    };
+  }, [frameNatural]);
+
+  // 切り抜き領域内かどうかを判定
+  const isInsideCropRect = useCallback((point: Point): boolean => {
+    if (!cropRect) return false;
+    return (
+      point.x >= cropRect.x &&
+      point.x <= cropRect.x + cropRect.width &&
+      point.y >= cropRect.y &&
+      point.y <= cropRect.y + cropRect.height
+    );
+  }, [cropRect]);
+
+  // リサイズハンドル（四隅）に当たっているかチェック
+  const getResizeCorner = useCallback((point: Point): 'tl' | 'tr' | 'bl' | 'br' | null => {
+    if (!cropRect) return null;
+    const handleRadius = 30; // タッチしやすいように大きめ
+
+    const corners: { key: 'tl' | 'tr' | 'bl' | 'br'; x: number; y: number }[] = [
+      { key: 'tl', x: cropRect.x, y: cropRect.y },
+      { key: 'tr', x: cropRect.x + cropRect.width, y: cropRect.y },
+      { key: 'bl', x: cropRect.x, y: cropRect.y + cropRect.height },
+      { key: 'br', x: cropRect.x + cropRect.width, y: cropRect.y + cropRect.height },
+    ];
+
+    for (const corner of corners) {
+      const dist = Math.hypot(point.x - corner.x, point.y - corner.y);
+      if (dist <= handleRadius) {
+        return corner.key;
+      }
+    }
+    return null;
+  }, [cropRect]);
+
+  // 切り抜きモード: マウスダウン
+  const handleCropMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    const point = convertToImageCoords(e.clientX, e.clientY);
+    if (!point || !cropRect) return;
+
+    // リサイズハンドルをチェック
+    const corner = getResizeCorner(point);
+    if (corner) {
+      setResizeCorner(corner);
+      setIsDraggingCrop(true);
+      setDragStartPos(point);
+      setDragStartCropRect({ ...cropRect });
       return;
     }
 
-    // 塗りつぶしを適用
-    const filledData = fillWhiteAreasWithColors(frameImageData, regions);
+    // 切り抜き領域内ならドラッグ開始
+    if (isInsideCropRect(point)) {
+      setIsDraggingCrop(true);
+      setDragStartPos(point);
+      setDragStartCropRect({ ...cropRect });
+    }
+  }, [convertToImageCoords, cropRect, getResizeCorner, isInsideCropRect]);
 
-    // Canvasに描画してデータURLを取得
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = frameNatural.w;
-    tempCanvas.height = frameNatural.h;
-    const ctx = tempCanvas.getContext('2d');
-    if (!ctx) return;
+  // 切り抜きモード: マウスムーブ
+  const handleCropMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isDraggingCrop || !dragStartPos || !dragStartCropRect || !frameNatural || !selectedAspectRatio) return;
 
-    ctx.putImageData(filledData, 0, 0);
-    setColorFilledUrl(tempCanvas.toDataURL('image/png'));
-    setShowColorFill(true);
-  }, [frameImageData, frameNatural]);
+    const point = convertToImageCoords(e.clientX, e.clientY);
+    if (!point) return;
 
-  // 通常表示に戻す
-  const handleResetColorFill = useCallback(() => {
-    setShowColorFill(false);
-    setColorFilledUrl(null);
-    setDetectedScreenRegions([]);
-    setDetectionLog(null);
+    const dx = point.x - dragStartPos.x;
+    const dy = point.y - dragStartPos.y;
+
+    if (resizeCorner) {
+      // リサイズ処理（アスペクト比維持）
+      const ratio = selectedAspectRatio.ratio;
+      let newWidth = dragStartCropRect.width;
+      let newHeight = dragStartCropRect.height;
+      let newX = dragStartCropRect.x;
+      let newY = dragStartCropRect.y;
+
+      switch (resizeCorner) {
+        case 'br':
+          newWidth = Math.max(100, dragStartCropRect.width + dx);
+          newHeight = newWidth / ratio;
+          break;
+        case 'bl':
+          newWidth = Math.max(100, dragStartCropRect.width - dx);
+          newHeight = newWidth / ratio;
+          newX = dragStartCropRect.x + (dragStartCropRect.width - newWidth);
+          break;
+        case 'tr':
+          newWidth = Math.max(100, dragStartCropRect.width + dx);
+          newHeight = newWidth / ratio;
+          newY = dragStartCropRect.y + (dragStartCropRect.height - newHeight);
+          break;
+        case 'tl':
+          newWidth = Math.max(100, dragStartCropRect.width - dx);
+          newHeight = newWidth / ratio;
+          newX = dragStartCropRect.x + (dragStartCropRect.width - newWidth);
+          newY = dragStartCropRect.y + (dragStartCropRect.height - newHeight);
+          break;
+      }
+
+      // 画像境界内に制限
+      const constrained = constrainCropRect(
+        { x: newX, y: newY, width: newWidth, height: newHeight },
+        frameNatural.w,
+        frameNatural.h
+      );
+      setCropRect(constrained);
+    } else {
+      // 移動処理
+      const newX = Math.max(0, Math.min(frameNatural.w - dragStartCropRect.width, dragStartCropRect.x + dx));
+      const newY = Math.max(0, Math.min(frameNatural.h - dragStartCropRect.height, dragStartCropRect.y + dy));
+      setCropRect({ ...dragStartCropRect, x: newX, y: newY });
+    }
+  }, [isDraggingCrop, dragStartPos, dragStartCropRect, frameNatural, selectedAspectRatio, resizeCorner, convertToImageCoords]);
+
+  // 切り抜きモード: マウスアップ
+  const handleCropMouseUp = useCallback(() => {
+    setIsDraggingCrop(false);
+    setDragStartPos(null);
+    setDragStartCropRect(null);
+    setResizeCorner(null);
   }, []);
+
+  // 切り抜きモード: タッチイベント
+  useEffect(() => {
+    const canvas = cropCanvasRef.current;
+    if (!canvas || !isCropMode) return;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      e.preventDefault();
+
+      const touch = e.touches[0];
+      const point = convertToImageCoords(touch.clientX, touch.clientY);
+      if (!point || !cropRect) return;
+
+      const corner = getResizeCorner(point);
+      if (corner) {
+        setResizeCorner(corner);
+        setIsDraggingCrop(true);
+        setDragStartPos(point);
+        setDragStartCropRect({ ...cropRect });
+        return;
+      }
+
+      if (isInsideCropRect(point)) {
+        setIsDraggingCrop(true);
+        setDragStartPos(point);
+        setDragStartCropRect({ ...cropRect });
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length !== 1 || !isDraggingCrop || !dragStartPos || !dragStartCropRect || !frameNatural || !selectedAspectRatio) return;
+      e.preventDefault();
+
+      const touch = e.touches[0];
+      const point = convertToImageCoords(touch.clientX, touch.clientY);
+      if (!point) return;
+
+      const dx = point.x - dragStartPos.x;
+      const dy = point.y - dragStartPos.y;
+
+      if (resizeCorner) {
+        const ratio = selectedAspectRatio.ratio;
+        let newWidth = dragStartCropRect.width;
+        let newHeight = dragStartCropRect.height;
+        let newX = dragStartCropRect.x;
+        let newY = dragStartCropRect.y;
+
+        switch (resizeCorner) {
+          case 'br':
+            newWidth = Math.max(100, dragStartCropRect.width + dx);
+            newHeight = newWidth / ratio;
+            break;
+          case 'bl':
+            newWidth = Math.max(100, dragStartCropRect.width - dx);
+            newHeight = newWidth / ratio;
+            newX = dragStartCropRect.x + (dragStartCropRect.width - newWidth);
+            break;
+          case 'tr':
+            newWidth = Math.max(100, dragStartCropRect.width + dx);
+            newHeight = newWidth / ratio;
+            newY = dragStartCropRect.y + (dragStartCropRect.height - newHeight);
+            break;
+          case 'tl':
+            newWidth = Math.max(100, dragStartCropRect.width - dx);
+            newHeight = newWidth / ratio;
+            newX = dragStartCropRect.x + (dragStartCropRect.width - newWidth);
+            newY = dragStartCropRect.y + (dragStartCropRect.height - newHeight);
+            break;
+        }
+
+        const constrained = constrainCropRect(
+          { x: newX, y: newY, width: newWidth, height: newHeight },
+          frameNatural.w,
+          frameNatural.h
+        );
+        setCropRect(constrained);
+      } else {
+        const newX = Math.max(0, Math.min(frameNatural.w - dragStartCropRect.width, dragStartCropRect.x + dx));
+        const newY = Math.max(0, Math.min(frameNatural.h - dragStartCropRect.height, dragStartCropRect.y + dy));
+        setCropRect({ ...dragStartCropRect, x: newX, y: newY });
+      }
+    };
+
+    const handleTouchEnd = () => {
+      setIsDraggingCrop(false);
+      setDragStartPos(null);
+      setDragStartCropRect(null);
+      setResizeCorner(null);
+    };
+
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    canvas.addEventListener('touchend', handleTouchEnd);
+    canvas.addEventListener('touchcancel', handleTouchEnd);
+
+    return () => {
+      canvas.removeEventListener('touchstart', handleTouchStart);
+      canvas.removeEventListener('touchmove', handleTouchMove);
+      canvas.removeEventListener('touchend', handleTouchEnd);
+      canvas.removeEventListener('touchcancel', handleTouchEnd);
+    };
+  }, [isCropMode, cropRect, isDraggingCrop, dragStartPos, dragStartCropRect, frameNatural, selectedAspectRatio, resizeCorner, convertToImageCoords, getResizeCorner, isInsideCropRect]);
 
   // Early return after all hooks
   if (!item) return null;
@@ -2566,6 +2790,103 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  // 切り抜きモード開始
+  const handleEnterCropMode = () => {
+    setShowGuidelines(false); // ガイドラインを非表示
+    setIsCropMode(true);
+    setSelectedAspectRatio(DEFAULT_ASPECT_RATIO);
+
+    // 初期切り抜き領域を計算
+    if (frameNatural) {
+      const initialCrop = calculateInitialCropRect(
+        frameNatural.w,
+        frameNatural.h,
+        DEFAULT_ASPECT_RATIO
+      );
+      setCropRect(initialCrop);
+    }
+  };
+
+  // 切り抜きモード終了
+  const handleExitCropMode = () => {
+    setIsCropMode(false);
+    setSelectedAspectRatio(null);
+    setCropRect(null);
+    setIsDraggingCrop(false);
+    setDragStartPos(null);
+    setDragStartCropRect(null);
+    setResizeCorner(null);
+  };
+
+  // アスペクト比選択
+  const handleAspectRatioSelect = (option: AspectRatioOption) => {
+    setSelectedAspectRatio(option);
+
+    // 新しいアスペクト比で切り抜き領域を再計算
+    if (frameNatural) {
+      const newCrop = calculateInitialCropRect(
+        frameNatural.w,
+        frameNatural.h,
+        option
+      );
+      setCropRect(newCrop);
+    }
+  };
+
+  // 切り抜きダウンロード
+  const handleCropDownload = async () => {
+    if (!cropRect || !selectedAspectRatio || !frameNatural || !item) return;
+
+    // 元画像（または合成画像）を取得
+    const sourceUrl = compositeUrl || item.publicPath;
+
+    // 出力サイズを計算（必要最低サイズを保証）
+    const outputWidth = Math.max(selectedAspectRatio.minWidth, Math.round(cropRect.width));
+    const outputHeight = Math.max(selectedAspectRatio.minHeight, Math.round(cropRect.height));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = outputWidth;
+    canvas.height = outputHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // 元画像を読み込み
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => {
+        // 切り抜き領域を描画
+        ctx.drawImage(
+          img,
+          cropRect.x, cropRect.y, cropRect.width, cropRect.height, // ソース
+          0, 0, outputWidth, outputHeight // デスティネーション
+        );
+        resolve();
+      };
+      img.onerror = reject;
+      img.src = sourceUrl;
+    });
+
+    // ダウンロード
+    const dataUrl = canvas.toDataURL("image/png");
+    const link = document.createElement("a");
+    link.href = dataUrl;
+
+    // ファイル名: アスペクト比_日付_時刻.png
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+    const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, '');
+    link.download = `${selectedAspectRatio.label.replace(":", "x")}_${dateStr}_${timeStr}.png`;
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // 切り抜きモードを終了
+    handleExitCropMode();
   };
 
   const handleCopy = async () => {
@@ -2615,26 +2936,13 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
     fileInputRef.current?.click();
   };
 
-  const clearRegion = (index: number) => {
-    setDeviceRegions(prev => {
-      const updated = prev.filter((_, i) => i !== index);
-      // Reindex remaining regions
-      return updated.map((region, i) => ({ ...region, index: i }));
-    });
-    if (selectedRegionIndex === index) {
-      setSelectedRegionIndex(null);
-    } else if (selectedRegionIndex !== null && selectedRegionIndex > index) {
-      setSelectedRegionIndex(selectedRegionIndex - 1);
-    }
-  };
-
   return (
-    <div className="fixed inset-0 z-[140] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-[140] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 pt-8">
       {/* Backdrop */}
       <div className="absolute inset-0" onClick={onClose} />
-      
+
       {/* Modal Container */}
-      <div className="relative z-10 flex w-full max-w-5xl max-h-[90vh] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl md:flex-row">
+      <div className="relative z-10 flex w-full max-w-5xl max-h-[calc(100vh-3rem)] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl md:flex-row">
         {/* Hidden file input */}
         <input
           ref={fileInputRef}
@@ -2645,7 +2953,7 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
         />
 
         {/* Left: Interactive Canvas Area */}
-        <div className="flex-1 bg-gradient-to-br from-slate-100 to-slate-200 p-4 md:p-6 flex flex-col items-center justify-center min-h-[300px] relative overflow-hidden">
+        <div className="flex-1 bg-gradient-to-br from-slate-100 to-slate-200 p-4 md:p-6 flex flex-col items-center justify-center min-h-[200px] relative overflow-auto">
           {/* Instructions */}
           {showInstructions && deviceRegions.length === 0 && !isCornerEditMode && (
             <div className="absolute top-4 left-4 right-4 bg-indigo-600 text-white px-4 py-3 rounded-xl text-sm font-medium shadow-lg z-20 flex items-center gap-3">
@@ -2654,12 +2962,15 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
             </div>
           )}
 
-          {/* Canvas Container */}
-          <div 
-            className={`relative w-full max-w-lg cursor-crosshair transition-all duration-200 ${
+          {/* Canvas Container - max-h制限で縦長画像がはみ出さないように */}
+          <div
+            className={`relative w-full max-w-lg cursor-crosshair transition-all duration-200 flex-shrink-0 ${
               isDraggingOver ? 'scale-[1.02]' : ''
             }`}
-            style={{ aspectRatio: item.aspectRatio.replace(":", "/") }}
+            style={{
+              aspectRatio: item.aspectRatio.replace(":", "/"),
+              maxHeight: 'calc(100% - 4rem)'
+            }}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
@@ -2679,7 +2990,9 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
             {/* to allow preventDefault() for corner dragging */}
             <canvas
               ref={overlayCanvasRef}
-              className="absolute inset-0 h-full w-full object-contain rounded-xl z-10"
+              className={`absolute inset-0 h-full w-full object-contain rounded-xl z-10 transition-opacity duration-200 ${
+                showGuidelines ? "opacity-100" : "opacity-0"
+              }`}
               onClick={isCornerEditMode ? undefined : handleCanvasClick}
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
@@ -2700,9 +3013,9 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
                   <span className="material-icons text-3xl text-indigo-600">add_photo_alternate</span>
                   <div>
                     <p className="font-semibold text-slate-900">
-                      {dragOverRegionIndex !== null 
+                      {dragOverRegionIndex !== null
                         ? `デバイス ${dragOverRegionIndex + 1} にドロップ`
-                        : deviceRegions.length > 0 
+                        : deviceRegions.length > 0
                           ? '画像をドロップ'
                           : '先にマスクを検出してください'
                       }
@@ -2712,94 +3025,42 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
                 </div>
               </div>
             )}
-          </div>
 
-          {/* 白エリア塗りつぶしプレビューボタン */}
-          <div className="mt-4 flex flex-wrap gap-2 justify-center">
-            {!showColorFill ? (
-              <button
-                onClick={handleColorFillPreview}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all bg-gradient-to-r from-pink-400 to-blue-400 text-white shadow-md hover:shadow-lg"
-              >
-                <span className="material-icons text-base">palette</span>
-                白エリアを検出＆塗りつぶし
-              </button>
-            ) : (
-              <div className="flex flex-col items-center gap-2">
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleResetColorFill}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all bg-slate-500 text-white shadow-md hover:bg-slate-600"
-                  >
-                    <span className="material-icons text-base">visibility_off</span>
-                    元に戻す
-                  </button>
-                </div>
-                {/* 検出された領域の情報表示 */}
-                {detectedScreenRegions.length > 0 && (
-                  <div className="text-xs text-slate-600 bg-white/80 rounded-lg px-3 py-2 shadow">
-                    {detectedScreenRegions.map((region, idx) => (
-                      <div key={idx} className="flex items-center gap-2">
-                        <span 
-                          className="inline-block w-4 h-4 rounded-full border border-slate-300"
-                          style={{ backgroundColor: region.fillColor }}
-                        />
-                        <span>デバイス {idx + 1}: {region.bounds.width}x{region.bounds.height}px</span>
-                        <span className="text-slate-400">(スコア: {region.overallScore.toFixed(2)})</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+            {/* Crop Mode Overlay */}
+            {isCropMode && (
+              <canvas
+                ref={cropCanvasRef}
+                className="absolute inset-0 h-full w-full object-contain rounded-xl z-20"
+                style={{
+                  cursor: isDraggingCrop
+                    ? (resizeCorner ? 'nwse-resize' : 'move')
+                    : 'crosshair',
+                  touchAction: 'none'
+                }}
+                onMouseDown={handleCropMouseDown}
+                onMouseMove={handleCropMouseMove}
+                onMouseUp={handleCropMouseUp}
+                onMouseLeave={handleCropMouseUp}
+              />
             )}
           </div>
 
-          {/* Detected Regions List */}
+          {/* ガイドライン表示切替ボタン */}
           {deviceRegions.length > 0 && (
             <div className="mt-4 flex flex-wrap gap-2 justify-center">
-              {deviceRegions.map((region, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setSelectedRegionIndex(idx)}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    setDragOverRegionIndex(idx);
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setIsDraggingOver(false);
-                    setDragOverRegionIndex(null);
-                    const files = e.dataTransfer.files;
-                    if (files.length > 0 && files[0].type.startsWith('image/')) {
-                      processImageForRegion(files[0], idx);
-                      setSelectedRegionIndex(idx);
-                    }
-                  }}
-                  className={`
-                    flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all
-                    ${selectedRegionIndex === idx 
-                      ? "bg-indigo-600 text-white shadow-md" 
-                      : dragOverRegionIndex === idx
-                        ? "bg-indigo-100 text-indigo-700 border-2 border-dashed border-indigo-400"
-                        : "bg-white text-slate-700 border border-slate-200 hover:border-indigo-300"}
-                  `}
-                >
-                  <span className="material-icons text-base">
-                    {region.userImage ? "check_circle" : "crop_free"}
-                  </span>
-                  デバイス {idx + 1}
-                  <span
-                    role="button"
-                    tabIndex={0}
-                    onClick={(e) => { e.stopPropagation(); clearRegion(idx); }}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); clearRegion(idx); } }}
-                    className="ml-1 text-current opacity-60 hover:opacity-100 cursor-pointer"
-                  >
-                    <span className="material-icons text-base">close</span>
-                  </span>
-                </button>
-              ))}
+              <button
+                onClick={() => setShowGuidelines(prev => !prev)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-md hover:shadow-lg ${
+                  showGuidelines
+                    ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white"
+                    : "bg-slate-200 text-slate-700 hover:bg-slate-300"
+                }`}
+              >
+                <span className="material-icons text-base">
+                  {showGuidelines ? "visibility" : "visibility_off"}
+                </span>
+                {showGuidelines ? "ガイドラインを非表示" : "ガイドラインを表示"}
+              </button>
             </div>
           )}
         </div>
@@ -3023,31 +3284,89 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
 
           {/* Action Buttons */}
           <div className="p-6 pt-4 space-y-3 sticky bottom-0 bg-white">
-            {/* Primary Download Button - uses template's default aspect ratio */}
+            {/* Primary Download Button - uses template's default aspect ratio (hidden in crop mode) */}
+            {!isCropMode && (
+              <button
+                onClick={handleDownload}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-sm transition-colors"
+              >
+                <span className="material-icons text-lg">download</span>
+                {item.aspectRatio} でダウンロード
+              </button>
+            )}
+
+            {/* Secondary Download Button - change aspect ratio / Crop mode download */}
             <button
-              onClick={handleDownload}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-sm transition-colors"
+              onClick={isCropMode ? handleCropDownload : handleEnterCropMode}
+              className={`w-full flex items-center justify-center gap-2 px-4 py-3 text-white rounded-xl font-semibold text-sm transition-colors ${
+                isCropMode
+                  ? "bg-[#da3700] hover:bg-[#c53200]"
+                  : "bg-[#da3700] hover:bg-[#c53200]"
+              }`}
             >
-              <span className="material-icons text-lg">download</span>
-              {item.aspectRatio} でダウンロード
+              <span className="material-icons text-lg">
+                {isCropMode ? "download" : "aspect_ratio"}
+              </span>
+              {isCropMode
+                ? `${selectedAspectRatio?.label || ""} でダウンロード`
+                : "画像サイズを変えてダウンロード"
+              }
             </button>
 
-            {/* Secondary Download Button - change aspect ratio */}
-            <button
-              onClick={() => {/* TODO: アスペクト比変更モーダルを開く */}}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#da3700] hover:bg-[#c53200] text-white rounded-xl font-medium text-sm transition-colors"
-            >
-              <span className="material-icons text-lg">aspect_ratio</span>
-              画像サイズを変えてダウンロード
-            </button>
+            {/* Crop Mode: Platform Info */}
+            {isCropMode && selectedAspectRatio && (
+              <div className="text-center text-xs text-slate-500">
+                対応: {selectedAspectRatio.platforms.join(", ")}
+              </div>
+            )}
 
-            <div className="grid grid-cols-2 gap-3">
+            {/* Crop Mode: Aspect Ratio Selector */}
+            {isCropMode && (
+              <div className="flex flex-wrap gap-1.5 justify-center pt-2">
+                {ASPECT_RATIO_OPTIONS.map((option) => (
+                  <button
+                    key={option.label}
+                    onClick={() => handleAspectRatioSelect(option)}
+                    className={`
+                      px-3 py-1.5 rounded-full text-xs font-medium
+                      transition-all duration-200
+                      ${selectedAspectRatio?.label === option.label
+                        ? "bg-[#da3700] text-white shadow-md scale-105"
+                        : "bg-slate-100 border border-slate-200 text-slate-700 hover:border-[#da3700] hover:text-[#da3700]"
+                      }
+                    `}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Crop Mode: Cancel Button */}
+            {isCropMode && (
+              <button
+                onClick={handleExitCropMode}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium text-sm transition-colors"
+              >
+                <span className="material-icons text-lg">close</span>
+                キャンセル
+              </button>
+            )}
+
+            {/* 画像コピー・共有ボタン - compositeUrlがある場合のみスライドインで表示（切り抜きモード中は非表示） */}
+            <div
+              className={`grid grid-cols-2 gap-3 transition-all duration-300 ease-out ${
+                compositeUrl && !isCropMode
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-4 pointer-events-none h-0 overflow-hidden"
+              }`}
+            >
               <button
                 onClick={handleCopy}
                 className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 rounded-xl font-medium text-sm transition-colors"
               >
                 <span className="material-icons text-lg">content_copy</span>
-                {compositeUrl ? "画像コピー" : "URLコピー"}
+                画像をコピー
               </button>
               <button
                 onClick={handleShare}

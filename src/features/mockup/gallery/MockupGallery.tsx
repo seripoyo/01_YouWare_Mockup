@@ -43,17 +43,11 @@ export function MockupGallery({ onSelectFrame, onClose }: GalleryProps) {
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
           {/* Logo / Title */}
           <div className="flex items-center gap-3 min-w-fit">
-            <div className="bg-slate-900 text-white p-2 rounded-lg">
-              <span className="material-icons">grid_view</span>
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-slate-900 leading-tight">
-                MockupUI
-              </h1>
-              <p className="text-xs text-slate-500 font-medium">
-                Template Library
-              </p>
-            </div>
+            <img
+              src="/assets/pages-img/logo.webp"
+              alt="モックアップジェネレーターツール"
+              className="h-12 w-auto object-contain"
+            />
           </div>
 
           {/* Search Bar (Desktop) */}
