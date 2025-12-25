@@ -12,19 +12,42 @@
 
 ## ディレクトリ構成（本プロジェクト特有）
 
-- `public/assets/frames/` … 端末フレーム画像（透過PNG）。本番参照は絶対パス `/assets/frames/...`
-- `public/assets/backgrounds/` … 背景画像（任意）
-- `src/features/mockup/` … モックアップ機能のコード領域
-  - `components/` … UI コンポーネント（今後追加）
-  - `hooks/` … カスタムフック（今後追加）
-  - `utils/` … アスペクト比やフィット計算等のユーティリティ（今後追加）
-  - `types/` … 型定義（Frame/Aspect など、今後追加）
-  - `data/frames.sample.json` … フレームメタデータのサンプル（ユーザー提供画像に合わせて `frames.json` を用意する想定）
-- `docs/` … 仕様・運用資料
-  - `mockup-app-specification.md` … 添付仕様の保管
-  - `FRAMES.md` … フレーム運用ガイド
+### 静的アセット (`public/assets/`)
+- `public/assets/fonts/` … カスタムフォント（New Atten Round, GenJyuuGothicX）
+- `public/assets/frames/` … 端末フレーム画像（透過PNG）
+
+**重要**: `public/` 配下のファイルは Vite によって `/assets/...` としてアクセス可能。ビルド時に `dist/assets/` へ自動コピーされる。
+
+### モックアップ機能 (`src/features/mockup/`)
+  - `components/` … UI コンポーネント（MultiDeviceMockup, MockupGallery など実装済み）
+  - `hooks/` … カスタムフック（useGalleryFilters など実装済み）
+  - `gallery/` … ギャラリー機能（シーン選択）
+  - `utils/` … アスペクト比やフィット計算等のユーティリティ
+  - `types/` … 型定義（Frame/Aspect など）
+  - `data/` … フレームメタデータ格納予定
+
+### ドキュメント (`docs/`)
+  - `mockup-app-specification.md` … ユーザー提供仕様の保管
+  - `FRAMES.md` … フレーム運用ガイド（登録手順・品質基準）
 
 補足: 本番コードでは静的アセットは必ず絶対パス `/assets/...` で参照し、`src/assets/` は使用しません（Vite 本番ビルドでのパス解決のため）。
+
+## GitHubからのインポート要件
+
+### インポート概要
+- インポートするリポジトリは"https://github.com/seripoyo/01_YouWare_Mockup"
+- インポートする際は、リポジトリ直下にあるものはこのプロジェクト直下にそのままインポートする。勝手にディレクトリ構造を変えてはならない。
+- GitHubと接続した時に「リポジトリ内でインポート不要なディレクトリ」に記載したディレクトリ及びその中のファイル以外で、現在のYouWareのファイルとGitHubの同じ名前のファイルが異なる場合は、GitHubのファイルを最新版としてインポートする。
+
+### 01_YouWare_Mockupリポジトリ内でインポート不要なディレクトリ
+
+以下はインポートする際に対象外とし、読み込み・確認自体もスキップするものとする。
+
+- node_modulesディレクトリ
+- publicディレクトリ
+- docsディレクトリ
+- distディレクトリ
+
 
 ## 実装方針（MVP）
 - ユーザー画像を選択したフレームのスクリーン領域にフィット（cover/contain 切替は今後）
@@ -43,10 +66,43 @@
 YouWare のゼロトレランス方針: 変更後は必ず `npm run build` を実行し、エラーを解消してから先に進めてください。
 
 ## アセット運用規約（重要）
-- 本番参照は絶対パス: 例 `src` からは `"/assets/frames/iphone-15-pro.png"`
-- `src/assets/` の相対参照（例: `./src/assets/...`）は禁止
-- フレーム PNG はスクリーン領域を完全透過させること
-- 推奨解像度や登録手順は `docs/FRAMES.md` を参照
+
+### 静的アセット配置ルール
+- **配置場所**: `public/assets/` 配下に配置
+- **参照パス**: コード内では必ず絶対パス `/assets/...` で参照
+- **ビルド動作**: Vite が自動的に `public/` を `dist/` にコピー
+- **禁止事項**: `src/assets/` からの相対参照（例: `./src/assets/...`）は使用禁止
+
+### アセットの種類と要件
+
+#### フォントファイル (`public/assets/fonts/`)
+- New Atten Round: regular, Bold, ExtraBold (woff2/woff)
+- GenJyuuGothicX: Regular, Medium, Bold, Heavy (woff2/woff)
+- **現状**: ディレクトリのみ作成済み。フォント未配置の場合はシステムフォントにフォールバック
+
+#### デバイスフレーム (`public/assets/frames/`)
+- **形式**: 透過PNG
+- **スクリーン領域**: 完全透過させること
+- **推奨解像度**: 2500-5000px（高品質出力用）
+- **命名規則**: 小文字ハイフン区切り（例: `iphone-15-pro.png`）
+- **メタデータ**: `src/features/mockup/data/frames.json` に登録
+- **詳細**: `docs/FRAMES.md` を参照
+
+#### 背景画像 (`public/assets/backgrounds/`)
+- **用途**: 複数端末合成時の背景（任意）
+- **形式**: PNG, JPG, WebP
+- **推奨解像度**: 1920x1080 以上
+
+### アセット追加手順
+1. ファイルを `public/assets/` 配下の適切なディレクトリに配置
+2. コード内で `/assets/...` として参照
+3. `npm run build` でビルド検証
+4. フレーム画像の場合は `src/features/mockup/data/frames.json` にメタデータ登録
+
+### トラブルシューティング
+- **ビルド警告**: フォントファイル未配置時の警告は無視可（runtime 解決）
+- **404 エラー**: パス参照が `/assets/` で始まっているか確認
+- **フレーム表示されない**: `frames.json` の登録と PNG 配置を確認
 
 ## 高レベル構成と今後の配置
 - UI/編集: `src/features/mockup/components` にドラッグ&ドロップやキャンバス、エクスポートパネル等を配置予定
@@ -104,3 +160,34 @@ DEVICE_FILL_COLORS = {
 
 ### 使用方法
 PreviewModalで「白エリアを検出＆塗りつぶし」ボタンをクリックすると、検出された各デバイスの画面領域が上記の色で塗りつぶされたプレビューが表示される。
+
+## モバイル画像保存機能
+
+### 概要
+モバイルデバイス（iOS/Android）とデスクトップで画像ダウンロードを正しく動作させるためのクロスプラットフォーム対応実装。
+
+### 主要ファイル
+- `src/utils/mobileFeatures.ts` - モバイル機能のユーティリティ（画像保存、WebView連携など）
+
+### 実装戦略
+1. **WebView環境**: ネイティブブリッジ経由で写真ギャラリーに保存
+2. **iOS Safari**: Web Share API → 失敗時は新規タブで画像表示（長押し保存の案内付き）
+3. **Android**: Web Share API → 失敗時はanchor download
+4. **デスクトップ**: blob URLを使用したanchor download
+
+### iOS Safariの制限事項
+- anchor要素の`download`属性が無視される
+- data URLへのリンクは画像として新規タブで開かれる
+- Web Share APIでのファイル共有はiOS 15+で対応
+
+### 使用例
+```typescript
+import { saveImageToDevice } from '../../../../utils/mobileFeatures';
+
+const handleDownload = async () => {
+  const success = await saveImageToDevice(imageDataUrl, 'filename.png');
+  if (!success) {
+    alert('保存に失敗しました');
+  }
+};
+```
