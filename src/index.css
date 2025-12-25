@@ -164,6 +164,14 @@ aside .material-icons {
   }
 }
 
+@media (max-width: 520px) {
+  button.px-6.py-3.bg-white\/20.backdrop-blur-md.border.border-white\/30.rounded-full.text-white.font-medium.text-sm.tracking-wide.shadow-xl.hover\:bg-white\/30.transition-colors.flex.items-center.gap-2 {
+    font-size: 12px;
+    padding: 0.5rem 0.7rem !important;
+  }
+}
+
+
 .relative.rounded-3xl.overflow-hidden.hover\:shadow-\[0_20px_50px_-12px_rgba\(0\,0\,0\,0\.2\)\].transition-all.duration-700.cursor-pointer.transform.hover\:-translate-y-2.bg-slate-200 {
   border-radius: 5px !important;
 }

@@ -13,6 +13,7 @@ import {
   type AspectRatioOption,
   type CropRect,
 } from "../../../../constants/aspectRatios";
+import { AspectRatioGuideBottomSheet } from "./AspectRatioGuideBottomSheet";
 
 interface PreviewModalProps {
   item: MockupGalleryItem | null;
@@ -756,6 +757,9 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
   const [croppedImageUrl, setCroppedImageUrl] = useState<string | null>(null);
   const [croppedAspectRatio, setCroppedAspectRatio] = useState<string | null>(null);
 
+  // 画像比率ガイドボトムシート用ステート
+  const [isAspectGuideOpen, setIsAspectGuideOpen] = useState(false);
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
   const cropCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -1158,18 +1162,21 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
     if (!guidelinesVisible) return;
 
     // ============================================
-    // 表示スケールを計算してハンドルサイズを画面上で35pxに統一
+    // 表示スケールを計算してハンドルサイズを調整
+    // PC: 35px, スマートフォン: 15px
     // ============================================
     const rect = overlay.getBoundingClientRect();
     const displayScale = Math.min(rect.width / frameNatural.w, rect.height / frameNatural.h);
 
-    // 画面上で35px（直径）= 半径17.5px に統一
+    // スマートフォン表示時は15px（半径7.5px）、それ以外は35px（半径17.5px）
     // 画像座標系でのサイズ = 画面上のサイズ / 表示スケール
-    const targetScreenRadius = 17.5; // 35px / 2
+    const isMobileView = window.innerWidth < 768;
+    const targetScreenRadius = isMobileView ? 7.5 : 17.5; // モバイル: 15px / 2, PC: 35px / 2
     const baseHandleRadius = targetScreenRadius / displayScale;
 
     // フォントサイズも同様にスケール調整（画面上で固定サイズになるように）
-    const targetFontSize = 12; // 画面上で12px
+    // モバイル時は小さいハンドルに合わせてフォントサイズも縮小
+    const targetFontSize = isMobileView ? 8 : 12; // モバイル: 8px, PC: 12px
     const baseFontSize = targetFontSize / displayScale;
     const labelFontSize = targetFontSize / displayScale;
     const lineWidthScale = 1 / displayScale;
@@ -1205,8 +1212,8 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
       ctx.stroke();
 
       // Always draw corner handles for selected region (not just in edit mode)
-      // Use consistent 35px screen size for all handles
-      const handleRadius = baseHandleRadius; // 35px統一（編集モードでも同じサイズ）
+      // PC: 35px, スマートフォン: 15px（レスポンシブ対応）
+      const handleRadius = baseHandleRadius;
 
       // Different colors for each corner for better visibility
       const cornerColors = [
@@ -3247,76 +3254,14 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
 
           {/* Content */}
           <div className="flex-1 px-4 md:px-6 space-y-3 md:space-y-5">
-            {/* Selected Region Actions */}
-            {selectedRegion !== null && (
-              <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-100">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-sm font-semibold text-indigo-900">
-                    {t.selectingDevice(selectedRegionIndex! + 1)}
-                  </p>
-                  {selectedRegion.userImage && (
-                    <span className="text-xs text-indigo-600 font-medium flex items-center gap-1">
-                      <span className="material-icons text-sm">check</span>
-                      {t.imageUploaded}
-                    </span>
-                  )}
-                </div>
-                
-                {/* Corner Edit Mode Hint */}
-                {isCornerEditMode ? (
-                  <div className="bg-orange-500 text-white px-4 py-3 rounded-xl text-sm font-medium shadow-lg flex items-center gap-3">
-                    <span className="material-icons text-xl">touch_app</span>
-                    <span>頂点をドラッグして位置を微調整できます</span>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <button
-                      onClick={triggerFileInput}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-sm transition-colors"
-                    >
-                      <span className="material-icons text-lg">add_photo_alternate</span>
-                      {selectedRegion.userImage ? t.changeImage : t.uploadImage}
-                    </button>
-
-                    {/* Fit Mode Selector */}
-                    {selectedRegion.userImage && (
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => {
-                            setDeviceRegions(prev => prev.map((r, idx) =>
-                              idx === selectedRegionIndex ? { ...r, fitMode: 'cover' } : r
-                            ));
-                          }}
-                          className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-lg font-medium text-sm transition-colors ${
-                            selectedRegion.fitMode === 'cover'
-                              ? 'bg-indigo-600 text-white'
-                              : 'bg-white border border-slate-200 text-slate-700 hover:border-indigo-300'
-                          }`}
-                        >
-                          <span className="material-icons text-base">crop</span>
-                          {t.cover}
-                        </button>
-                        <button
-                          onClick={() => {
-                            setDeviceRegions(prev => prev.map((r, idx) =>
-                              idx === selectedRegionIndex ? { ...r, fitMode: 'contain' } : r
-                            ));
-                          }}
-                          className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-lg font-medium text-sm transition-colors ${
-                            selectedRegion.fitMode === 'contain'
-                              ? 'bg-indigo-600 text-white'
-                              : 'bg-white border border-slate-200 text-slate-700 hover:border-indigo-300'
-                          }`}
-                        >
-                          <span className="material-icons text-base">fit_screen</span>
-                          {t.contain}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
+            {/* Aspect Ratio Guide Button - Mobile Only */}
+            <button
+              onClick={() => setIsAspectGuideOpen(true)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white rounded-xl font-semibold text-sm transition-all shadow-md md:hidden"
+            >
+              <span className="material-icons text-lg">aspect_ratio</span>
+              {t.aspectRatioGuide}
+            </button>
 
             {/* Aspect Ratio & Device - モバイルでは非表示 */}
             <div className="hidden md:grid grid-cols-2 gap-4">
@@ -3543,6 +3488,12 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
           </div>
         </div>
       </div>
+
+      {/* Aspect Ratio Guide Bottom Sheet */}
+      <AspectRatioGuideBottomSheet
+        isOpen={isAspectGuideOpen}
+        onClose={() => setIsAspectGuideOpen(false)}
+      />
     </div>
   );
 }
