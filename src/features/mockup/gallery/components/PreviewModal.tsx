@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import type { MockupGalleryItem } from "../types";
 import type { DeviceCategory } from "../../types/frame";
 import { getTranslations } from "../../../../i18n/translations";
@@ -722,6 +722,7 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
   const [frameImageData, setFrameImageData] = useState<ImageData | null>(null);
   const [frameNatural, setFrameNatural] = useState<{ w: number; h: number } | null>(null);
   const [compositeUrl, setCompositeUrl] = useState<string | null>(null);
+  const [isCompositing, setIsCompositing] = useState(false); // 合成処理中フラグ（フリッカー防止）
   const [isProcessing, setIsProcessing] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false); // Start hidden, show only if auto-detection fails
   const [isDraggingOver, setIsDraggingOver] = useState(false);
@@ -765,9 +766,12 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
   const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
   const cropCanvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   // Ref to track deviceRegions for cleanup
   const deviceRegionsRef = useRef<DeviceRegion[]>([]);
+
+  // 合成中にフリッカーを防ぐための安定した表示URL
+  const stableDisplayUrlRef = useRef<string | null>(null);
   
   // Keep ref in sync with state
   useEffect(() => {
@@ -790,6 +794,8 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
     setFrameImageData(null);
     setFrameNatural(null);
     setCompositeUrl(null);
+    setIsCompositing(false);
+    stableDisplayUrlRef.current = null; // フリッカー防止用Refもリセット
     setShowInstructions(false); // Start hidden, auto-detection will show if it fails
     setIsCornerEditMode(false);
     setEditingCorners([]);
@@ -1563,13 +1569,16 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
   useEffect(() => {
     if (!frameNatural) return; // Wait for frame to be loaded
     if (deviceRegions.length === 0) return; // Wait for regions to be detected
+    // 合成処理中はオーバーレイを更新しない（フリッカー防止）
+    // 合成完了後にisCompositingがfalseになり、再度このeffectが評価される
+    if (isCompositing) return;
 
     if (isCornerEditMode && editingCorners.length > 0) {
       drawOverlay(deviceRegions, selectedRegionIndex, editingCorners, showGuidelines);
     } else {
       drawOverlay(deviceRegions, selectedRegionIndex, undefined, showGuidelines);
     }
-  }, [deviceRegions, selectedRegionIndex, drawOverlay, isCornerEditMode, editingCorners, frameNatural, showGuidelines]);
+  }, [deviceRegions, selectedRegionIndex, drawOverlay, isCornerEditMode, editingCorners, frameNatural, showGuidelines, isCompositing]);
 
   // Corner editing functions
   const startCornerEditMode = useCallback(() => {
@@ -1860,9 +1869,7 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
         }
         return region;
       }));
-
-      // Regenerate composite
-      generateComposite();
+      // Note: generateComposite() is triggered automatically by useEffect watching deviceRegions
     };
     img.src = url;
   }, []);
@@ -2505,9 +2512,35 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
   // Regenerate composite when device regions change
   useEffect(() => {
     if (deviceRegions.some(r => r.userImage)) {
-      generateComposite();
+      setIsCompositing(true);
+      generateComposite().finally(() => {
+        setIsCompositing(false);
+      });
     }
   }, [deviceRegions, generateComposite]);
+
+  // 安定した表示URLを計算（フリッカー防止）
+  // 合成中は前のURLを維持し、合成完了後に新しいURLに更新
+  const stableDisplayUrl = useMemo(() => {
+    // 切り抜き画像がある場合は優先
+    if (croppedImageUrl) {
+      stableDisplayUrlRef.current = croppedImageUrl;
+      return croppedImageUrl;
+    }
+    // カラーフィルプレビュー
+    if (showColorFill && colorFilledUrl) {
+      stableDisplayUrlRef.current = colorFilledUrl;
+      return colorFilledUrl;
+    }
+    // 合成中は前のURLを維持（初回の場合はitem.publicPath）
+    if (isCompositing) {
+      return stableDisplayUrlRef.current || item?.publicPath || '';
+    }
+    // 合成完了後またはユーザー画像がない場合
+    const newUrl = compositeUrl || item?.publicPath || '';
+    stableDisplayUrlRef.current = newUrl;
+    return newUrl;
+  }, [croppedImageUrl, showColorFill, colorFilledUrl, isCompositing, compositeUrl, item?.publicPath]);
 
   // 切り抜きオーバーレイ描画
   const drawCropOverlay = useCallback(() => {
@@ -3055,18 +3088,53 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
   };
 
   const handleShare = async () => {
-    if (navigator.share) {
-      try {
+    if (!navigator.share) {
+      handleCopy();
+      return;
+    }
+
+    try {
+      // 共有する画像URLを決定（クロップ画像 > 合成画像 > オリジナル）
+      const imageUrl = croppedImageUrl || compositeUrl || item.publicPath;
+
+      // 画像をBlobとして取得
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+
+      // ファイル名を生成（ダウンロード時と同じ命名規則）
+      const now = new Date();
+      const dateStr = now.getFullYear().toString() +
+        (now.getMonth() + 1).toString().padStart(2, '0') +
+        now.getDate().toString().padStart(2, '0');
+      const timeStr = now.getHours().toString().padStart(2, '0') +
+        now.getMinutes().toString().padStart(2, '0') +
+        now.getSeconds().toString().padStart(2, '0');
+      const aspectRatioStr = (croppedAspectRatio || item.aspectRatio).replace(':', 'x');
+      const fileName = `${aspectRatioStr}_${dateStr}_${timeStr}.png`;
+
+      // BlobからFileオブジェクトを作成
+      const file = new File([blob], fileName, { type: 'image/png' });
+
+      // canShareでファイル共有がサポートされているか確認
+      const shareData: ShareData = {
+        text: 'モックアップ生成ツール：https://mockup-generator.work/',
+        files: [file],
+      };
+
+      if (navigator.canShare && navigator.canShare(shareData)) {
+        // ファイル付きで共有
+        await navigator.share(shareData);
+      } else {
+        // ファイル共有非対応の場合はテキストのみ
         await navigator.share({
-          title: displayTitle,
-          text: `Check out this ${item.deviceType} mockup template`,
-          url: window.location.origin + item.publicPath,
+          text: 'モックアップ生成ツール：https://mockup-generator.work/',
         });
-      } catch (err) {
+      }
+    } catch (err) {
+      // ユーザーがキャンセルした場合はエラーログを出さない
+      if (err instanceof Error && err.name !== 'AbortError') {
         console.error("Share failed:", err);
       }
-    } else {
-      handleCopy();
     }
   };
 
@@ -3119,14 +3187,9 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
             <canvas ref={canvasRef} className="hidden" />
 
             {/* Display image or composite (or color fill preview or cropped image) */}
+            {/* stableDisplayUrlを使用してフリッカーを防止 */}
             <img
-              src={
-                croppedImageUrl
-                  ? croppedImageUrl
-                  : showColorFill && colorFilledUrl
-                    ? colorFilledUrl
-                    : (compositeUrl || item.publicPath)
-              }
+              src={stableDisplayUrl}
               alt={item.originalFilename}
               className="absolute inset-0 h-full w-full object-contain rounded-xl shadow-lg"
             />
