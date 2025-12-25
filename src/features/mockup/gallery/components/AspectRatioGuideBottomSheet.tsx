@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getTranslations } from "../../../../i18n/translations";
+import { getTranslations, type Translations } from "../../../../i18n/translations";
 
 interface AspectRatioGuideBottomSheetProps {
   isOpen: boolean;
@@ -144,13 +144,13 @@ export function AspectRatioGuideBottomSheet({ isOpen, onClose }: AspectRatioGuid
 
         {/* Content */}
         <div className="overflow-y-auto overflow-x-hidden p-3" style={{ maxHeight: "calc(75vh - 110px)" }}>
-          {activeTab === "instagram" && <InstagramContentCompact />}
-          {activeTab === "x" && <XContentCompact />}
-          {activeTab === "tiktok" && <TikTokContentCompact />}
-          {activeTab === "threads" && <ThreadsContentCompact />}
-          {activeTab === "facebook" && <FacebookContentCompact />}
-          {activeTab === "linkedin" && <LinkedInContentCompact />}
-          {activeTab === "reference" && <ReferenceTableCompact />}
+          {activeTab === "instagram" && <InstagramContentCompact t={t} />}
+          {activeTab === "x" && <XContentCompact t={t} />}
+          {activeTab === "tiktok" && <TikTokContentCompact t={t} />}
+          {activeTab === "threads" && <ThreadsContentCompact t={t} />}
+          {activeTab === "facebook" && <FacebookContentCompact t={t} />}
+          {activeTab === "linkedin" && <LinkedInContentCompact t={t} />}
+          {activeTab === "reference" && <ReferenceTableCompact t={t} />}
         </div>
       </div>
     </div>
@@ -263,133 +263,136 @@ function PlatformHeaderCompact({
   );
 }
 
+// LinkedIn の高さに合わせた最小高さ
+const MIN_CONTENT_HEIGHT = 320;
+
 // Instagram Content Compact
-function InstagramContentCompact() {
+function InstagramContentCompact({ t }: { t: Translations }) {
   return (
-    <div className="bg-white rounded-xl p-3 shadow-sm border border-slate-100">
+    <div className="bg-white rounded-xl p-3 shadow-sm border border-slate-100" style={{ minHeight: MIN_CONTENT_HEIGHT }}>
       <PlatformHeaderCompact
         name="Instagram"
-        description="縦長画像がフィードで目立つ"
+        description={t.instagramDesc}
         iconSrc="/assets/icon/Instagram.webp"
       />
 
-      <SectionDividerCompact title="フィード投稿" />
+      <SectionDividerCompact title={t.feedPost} />
       <div className="grid grid-cols-3 gap-2">
-        <SizeCardCompact ratio="4:5" size="1080×1350" label="縦長（推奨）" aspectType="portrait-4-5" gradient="instagram" />
-        <SizeCardCompact ratio="3:4" size="1080×1440" label="縦長" aspectType="portrait-3-4" gradient="instagram" />
-        <SizeCardCompact ratio="1:1" size="1080×1080" label="正方形" aspectType="square" gradient="instagram" />
+        <SizeCardCompact ratio="4:5" size="1080×1350" label={t.portraitRecommended} aspectType="portrait-4-5" gradient="instagram" />
+        <SizeCardCompact ratio="3:4" size="1080×1440" label={t.portrait} aspectType="portrait-3-4" gradient="instagram" />
+        <SizeCardCompact ratio="1:1" size="1080×1080" label={t.square} aspectType="square" gradient="instagram" />
       </div>
 
-      <SectionDividerCompact title="ストーリーズ / リール" />
+      <SectionDividerCompact title={t.storiesReels} />
       <div className="grid grid-cols-3 gap-2">
-        <SizeCardCompact ratio="9:16" size="1080×1920" label="フルスクリーン" aspectType="portrait-9-16" gradient="instagram" />
+        <SizeCardCompact ratio="9:16" size="1080×1920" label={t.fullscreen} aspectType="portrait-9-16" gradient="instagram" />
       </div>
     </div>
   );
 }
 
 // X Content Compact
-function XContentCompact() {
+function XContentCompact({ t }: { t: Translations }) {
   return (
-    <div className="bg-white rounded-xl p-3 shadow-sm border border-slate-100">
+    <div className="bg-white rounded-xl p-3 shadow-sm border border-slate-100" style={{ minHeight: MIN_CONTENT_HEIGHT }}>
       <PlatformHeaderCompact
         name="X (Twitter)"
-        description="複数枚投稿時のレイアウトに注意"
+        description={t.xDesc}
         iconSrc="/assets/icon/x.webp"
       />
 
-      <SectionDividerCompact title="1枚投稿" />
+      <SectionDividerCompact title={t.singlePost} />
       <div className="grid grid-cols-4 gap-2">
-        <SizeCardCompact ratio="16:9" size="1200×675" label="横長" aspectType="landscape-16-9" gradient="x" />
-        <SizeCardCompact ratio="1:1" size="1200×1200" label="正方形" aspectType="square" gradient="x" />
-        <SizeCardCompact ratio="8:9" size="1200×1350" label="縦長" aspectType="portrait-8-9" gradient="x" />
-        <SizeCardCompact ratio="3:4" size="900×1200" label="縦長" aspectType="portrait-3-4" gradient="x" />
+        <SizeCardCompact ratio="16:9" size="1200×675" label={t.landscape} aspectType="landscape-16-9" gradient="x" />
+        <SizeCardCompact ratio="1:1" size="1200×1200" label={t.square} aspectType="square" gradient="x" />
+        <SizeCardCompact ratio="8:9" size="1200×1350" label={t.portrait} aspectType="portrait-8-9" gradient="x" />
+        <SizeCardCompact ratio="3:4" size="900×1200" label={t.portrait} aspectType="portrait-3-4" gradient="x" />
       </div>
 
-      <SectionDividerCompact title="複数枚投稿" />
+      <SectionDividerCompact title={t.multiplePost} />
       <div className="grid grid-cols-3 gap-2">
-        <MultiImageCardCompact layout="2col" label="2枚投稿" ratioText="8:9 × 2" />
-        <MultiImageCardCompact layout="3col" label="3枚投稿" ratioText="8:9 + 16:9×2" />
-        <MultiImageCardCompact layout="4grid" label="4枚投稿" ratioText="16:9 × 4" />
+        <MultiImageCardCompact layout="2col" label="2" ratioText="8:9 × 2" />
+        <MultiImageCardCompact layout="3col" label="3" ratioText="8:9 + 16:9×2" />
+        <MultiImageCardCompact layout="4grid" label="4" ratioText="16:9 × 4" />
       </div>
     </div>
   );
 }
 
 // TikTok Content Compact
-function TikTokContentCompact() {
+function TikTokContentCompact({ t }: { t: Translations }) {
   return (
-    <div className="bg-white rounded-xl p-3 shadow-sm border border-slate-100">
+    <div className="bg-white rounded-xl p-3 shadow-sm border border-slate-100" style={{ minHeight: MIN_CONTENT_HEIGHT }}>
       <PlatformHeaderCompact
         name="TikTok"
-        description="縦型動画がメイン。9:16推奨"
+        description={t.tiktokDesc}
         iconSrc="/assets/icon/tiktok.webp"
       />
 
-      <SectionDividerCompact title="投稿サイズ" />
+      <SectionDividerCompact title={t.postSize} />
       <div className="grid grid-cols-3 gap-2">
-        <SizeCardCompact ratio="9:16" size="720×1280" label="縦長（推奨）" aspectType="portrait-9-16" gradient="tiktok" />
-        <SizeCardCompact ratio="16:9" size="1200×675" label="横長" aspectType="landscape-16-9" gradient="tiktok" />
-        <SizeCardCompact ratio="1:1" size="1200×1200" label="正方形" aspectType="square" gradient="tiktok" />
+        <SizeCardCompact ratio="9:16" size="720×1280" label={t.portraitRecommended} aspectType="portrait-9-16" gradient="tiktok" />
+        <SizeCardCompact ratio="16:9" size="1200×675" label={t.landscape} aspectType="landscape-16-9" gradient="tiktok" />
+        <SizeCardCompact ratio="1:1" size="1200×1200" label={t.square} aspectType="square" gradient="tiktok" />
       </div>
     </div>
   );
 }
 
 // Threads Content Compact
-function ThreadsContentCompact() {
+function ThreadsContentCompact({ t }: { t: Translations }) {
   return (
-    <div className="bg-white rounded-xl p-3 shadow-sm border border-slate-100">
+    <div className="bg-white rounded-xl p-3 shadow-sm border border-slate-100" style={{ minHeight: MIN_CONTENT_HEIGHT }}>
       <PlatformHeaderCompact
         name="Threads"
-        description="Instagram連携。画像も重要"
+        description={t.threadsDesc}
         iconSrc="/assets/icon/Threads.webp"
       />
 
-      <SectionDividerCompact title="投稿サイズ" />
+      <SectionDividerCompact title={t.postSize} />
       <div className="grid grid-cols-3 gap-2">
-        <SizeCardCompact ratio="1:1" size="1080×1080" label="正方形" aspectType="square" gradient="x" />
-        <SizeCardCompact ratio="4:3" size="1080×810" label="横長" aspectType="landscape-4-3" gradient="x" />
-        <SizeCardCompact ratio="4:5" size="1080×1350" label="縦長" aspectType="portrait-4-5" gradient="x" />
+        <SizeCardCompact ratio="1:1" size="1080×1080" label={t.square} aspectType="square" gradient="x" />
+        <SizeCardCompact ratio="4:3" size="1080×810" label={t.landscape} aspectType="landscape-4-3" gradient="x" />
+        <SizeCardCompact ratio="4:5" size="1080×1350" label={t.portrait} aspectType="portrait-4-5" gradient="x" />
       </div>
     </div>
   );
 }
 
 // Facebook Content Compact
-function FacebookContentCompact() {
+function FacebookContentCompact({ t }: { t: Translations }) {
   return (
-    <div className="bg-white rounded-xl p-3 shadow-sm border border-slate-100">
+    <div className="bg-white rounded-xl p-3 shadow-sm border border-slate-100" style={{ minHeight: MIN_CONTENT_HEIGHT }}>
       <PlatformHeaderCompact
         name="Facebook"
-        description="ビジネス・コミュニティ向け"
+        description={t.facebookDesc}
         iconSrc="/assets/icon/Facebook.webp"
       />
 
-      <SectionDividerCompact title="1枚投稿" />
+      <SectionDividerCompact title={t.singlePost} />
       <div className="grid grid-cols-3 gap-2">
-        <SizeCardCompact ratio="5:4" size="800×640" label="横長" aspectType="landscape-5-4" gradient="default" />
-        <SizeCardCompact ratio="1:1" size="1080×1080" label="正方形" aspectType="square" gradient="default" />
-        <SizeCardCompact ratio="4:5" size="960×1200" label="縦長" aspectType="portrait-4-5" gradient="default" />
+        <SizeCardCompact ratio="5:4" size="800×640" label={t.landscape} aspectType="landscape-5-4" gradient="default" />
+        <SizeCardCompact ratio="1:1" size="1080×1080" label={t.square} aspectType="square" gradient="default" />
+        <SizeCardCompact ratio="4:5" size="960×1200" label={t.portrait} aspectType="portrait-4-5" gradient="default" />
       </div>
 
-      <SectionDividerCompact title="複数枚投稿" />
+      <SectionDividerCompact title={t.multiplePost} />
       <div className="grid grid-cols-3 gap-2">
-        <FBMultiImageCardCompact layout="2col-vertical" label="2枚" ratioText="1:2 × 2" />
-        <FBMultiImageCardCompact layout="3col-tall" label="3枚" ratioText="1:2 + 1:1×2" />
-        <FBMultiImageCardCompact layout="4grid" label="4枚" ratioText="1:1 × 4" />
+        <FBMultiImageCardCompact layout="2col-vertical" label="2" ratioText="1:2 × 2" />
+        <FBMultiImageCardCompact layout="3col-tall" label="3" ratioText="1:2 + 1:1×2" />
+        <FBMultiImageCardCompact layout="4grid" label="4" ratioText="1:1 × 4" />
       </div>
     </div>
   );
 }
 
 // LinkedIn Content Compact
-function LinkedInContentCompact() {
+function LinkedInContentCompact({ t }: { t: Translations }) {
   return (
-    <div className="bg-white rounded-xl p-3 shadow-sm border border-slate-100">
+    <div className="bg-white rounded-xl p-3 shadow-sm border border-slate-100" style={{ minHeight: MIN_CONTENT_HEIGHT }}>
       <PlatformHeaderCompact
         name="LinkedIn"
-        description="ビジネス向けSNS"
+        description={t.linkedinDesc}
         iconClass="bg-[#0A66C2]"
         icon={
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -398,18 +401,18 @@ function LinkedInContentCompact() {
         }
       />
 
-      <SectionDividerCompact title="1枚投稿" />
+      <SectionDividerCompact title={t.singlePost} />
       <div className="grid grid-cols-3 gap-2">
-        <SizeCardCompact ratio="5:4" size="800×640" label="横長" aspectType="landscape-5-4" gradient="default" />
-        <SizeCardCompact ratio="1:1" size="1080×1080" label="正方形" aspectType="square" gradient="default" />
-        <SizeCardCompact ratio="4:5" size="640×800" label="縦長" aspectType="portrait-4-5" gradient="default" />
+        <SizeCardCompact ratio="5:4" size="800×640" label={t.landscape} aspectType="landscape-5-4" gradient="default" />
+        <SizeCardCompact ratio="1:1" size="1080×1080" label={t.square} aspectType="square" gradient="default" />
+        <SizeCardCompact ratio="4:5" size="640×800" label={t.portrait} aspectType="portrait-4-5" gradient="default" />
       </div>
 
-      <SectionDividerCompact title="複数枚投稿" />
+      <SectionDividerCompact title={t.multiplePost} />
       <div className="grid grid-cols-3 gap-2">
-        <LinkedInMultiCardCompact layout="1-2" label="2枚" ratioText="1:2 × 2" />
-        <FBMultiImageCardCompact layout="3col-tall" label="3枚" ratioText="1:2 + 1:1×2" />
-        <FBMultiImageCardCompact layout="4grid" label="4枚" ratioText="1:1 × 4" />
+        <LinkedInMultiCardCompact layout="1-2" label="2" ratioText="1:2 × 2" />
+        <FBMultiImageCardCompact layout="3col-tall" label="3" ratioText="1:2 + 1:1×2" />
+        <FBMultiImageCardCompact layout="4grid" label="4" ratioText="1:1 × 4" />
       </div>
     </div>
   );
@@ -571,7 +574,7 @@ function LinkedInMultiCardCompact({
 }
 
 // Reference Table Compact
-function ReferenceTableCompact() {
+function ReferenceTableCompact({ t }: { t: Translations }) {
   const data = [
     { ratio: "1:1", size: "1200×1200", platforms: ["IG", "X", "TT", "Th", "FB", "LI"] },
     { ratio: "4:5", size: "1080×1350", platforms: ["IG", "Th", "FB", "LI"] },
@@ -596,15 +599,15 @@ function ReferenceTableCompact() {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
       <div className="p-2 border-b border-slate-100">
-        <h3 className="text-xs font-bold text-slate-900">比率別サイズ一覧</h3>
-        <p className="text-[9px] text-slate-500 mt-0.5">IG=Instagram, TT=TikTok, Th=Threads, FB=Facebook, LI=LinkedIn</p>
+        <h3 className="text-xs font-bold text-slate-900">{t.ratioSizeList}</h3>
+        <p className="text-[9px] text-slate-500 mt-0.5">{t.ratioSizeListNote}</p>
       </div>
       <div className="overflow-hidden">
         <table className="w-full text-xs">
           <thead>
             <tr className="bg-slate-50">
-              <th className="text-left px-2 py-1.5 text-[9px] font-semibold text-slate-500">比率</th>
-              <th className="text-left px-2 py-1.5 text-[9px] font-semibold text-slate-500">サイズ</th>
+              <th className="text-left px-2 py-1.5 text-[9px] font-semibold text-slate-500">{t.ratioHeader}</th>
+              <th className="text-left px-2 py-1.5 text-[9px] font-semibold text-slate-500">{t.sizeHeader}</th>
               <th className="text-left px-2 py-1.5 text-[9px] font-semibold text-slate-500">SNS</th>
             </tr>
           </thead>

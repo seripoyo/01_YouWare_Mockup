@@ -14,6 +14,7 @@ import {
   type CropRect,
 } from "../../../../constants/aspectRatios";
 import { AspectRatioGuideBottomSheet } from "./AspectRatioGuideBottomSheet";
+import { saveImageToDevice } from "../../../../utils/mobileFeatures";
 
 interface PreviewModalProps {
   item: MockupGalleryItem | null;
@@ -2862,16 +2863,17 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
     // 切り抜き画像がある場合はそれをダウンロード
     if (croppedImageUrl) {
       url = croppedImageUrl;
-      const link = document.createElement("a");
-      link.href = url;
       // ファイル名: アスペクト比_日付_時刻.png
       const now = new Date();
       const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
       const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, '');
-      link.download = `${(croppedAspectRatio || "cropped").replace(":", "x")}_${dateStr}_${timeStr}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const filename = `${(croppedAspectRatio || "cropped").replace(":", "x")}_${dateStr}_${timeStr}.png`;
+
+      // モバイル対応の保存処理
+      const success = await saveImageToDevice(url, filename);
+      if (!success) {
+        alert('画像の保存に失敗しました。もう一度お試しください。');
+      }
       return;
     }
 
@@ -2888,17 +2890,19 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
       url = item.publicPath;
     }
 
-    const link = document.createElement("a");
-    link.href = url;
-    // compositeUrlはPNG形式なので、拡張子を.pngに変更
-    if (url.startsWith('data:')) {
-      link.download = `edited_${baseName}.png`;
+    // ファイル名を決定
+    let filename: string;
+    if (url.startsWith('data:') || url.startsWith('blob:')) {
+      filename = `edited_${baseName}.png`;
     } else {
-      link.download = item.originalFilename;
+      filename = item.originalFilename;
     }
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+
+    // モバイル対応の保存処理
+    const success = await saveImageToDevice(url, filename);
+    if (!success) {
+      alert('画像の保存に失敗しました。もう一度お試しください。');
+    }
   };
 
   // 切り抜きモード開始
@@ -2997,18 +3001,18 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
 
     // ダウンロード
     const dataUrl = canvas.toDataURL("image/png");
-    const link = document.createElement("a");
-    link.href = dataUrl;
 
     // ファイル名: アスペクト比_日付_時刻.png
     const now = new Date();
     const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
     const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, '');
-    link.download = `${selectedAspectRatio.label.replace(":", "x")}_${dateStr}_${timeStr}.png`;
+    const filename = `${selectedAspectRatio.label.replace(":", "x")}_${dateStr}_${timeStr}.png`;
 
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // モバイル対応の保存処理
+    const success = await saveImageToDevice(dataUrl, filename);
+    if (!success) {
+      alert('画像の保存に失敗しました。もう一度お試しください。');
+    }
 
     // 切り抜きモードを終了
     handleExitCropMode();
@@ -3087,7 +3091,7 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
         />
 
         {/* Left: Interactive Canvas Area - モバイルでは画面の55%を確保 */}
-        <div className="flex-1 bg-gradient-to-br from-slate-100 to-slate-200 p-2 md:p-6 flex flex-col items-center justify-center min-h-[40vh] md:min-h-[200px] relative overflow-auto">
+        <div className="flex-1 bg-gradient-to-br from-slate-100 to-slate-200 p-4 md:p-8 flex flex-col items-center justify-center min-h-[40vh] md:min-h-[200px] relative overflow-auto">
           {/* Instructions */}
           {showInstructions && deviceRegions.length === 0 && !isCornerEditMode && (
             <div className="absolute top-4 left-4 right-4 bg-indigo-600 text-white px-4 py-3 rounded-xl text-sm font-medium shadow-lg z-20 flex items-center gap-3">
@@ -3098,14 +3102,14 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
 
           {/* Canvas Container - max-h制限で縦長画像がはみ出さないように */}
           <div
-            className={`relative w-full max-w-lg cursor-crosshair transition-all duration-200 flex-shrink-0 ${
+            className={`relative w-full max-w-md cursor-crosshair transition-all duration-200 flex-shrink-0 ${
               isDraggingOver ? 'scale-[1.02]' : ''
             }`}
             style={{
               aspectRatio: croppedAspectRatio
                 ? croppedAspectRatio.replace(":", "/")
                 : item.aspectRatio.replace(":", "/"),
-              maxHeight: 'calc(100% - 4rem)'
+              maxHeight: 'calc(100% - 2rem)'
             }}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -3238,7 +3242,7 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
         </div>
 
         {/* Right: Info Panel - モバイルでは残りの高さを使用 */}
-        <div className="w-full md:w-80 flex flex-col bg-white border-t md:border-t-0 md:border-l border-slate-200 flex-shrink-0 max-h-[45vh] md:max-h-none overflow-y-auto">
+        <div className="w-full md:w-80 flex flex-col justify-between bg-white border-t md:border-t-0 md:border-l border-slate-200 flex-shrink-0 max-h-[45vh] md:max-h-none overflow-y-auto">
           {/* Header */}
           <div className="flex items-start justify-between p-4 md:p-6 pb-2 md:pb-4 sticky top-0 bg-white z-10">
             <h2 className="text-lg md:text-2xl font-bold text-slate-900 leading-tight">
@@ -3253,49 +3257,51 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
           </div>
 
           {/* Content */}
-          <div className="flex-1 px-4 md:px-6 space-y-3 md:space-y-5">
-            {/* Aspect Ratio Guide Button - Mobile Only */}
+          <div className="px-4 md:px-6 space-y-3 md:space-y-5">
+            {/* Aspect Ratio Guide Button */}
             <button
               onClick={() => setIsAspectGuideOpen(true)}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white rounded-xl font-semibold text-sm transition-all shadow-md md:hidden"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white rounded-xl font-semibold text-sm transition-all shadow-md"
             >
               <span className="material-icons text-lg">aspect_ratio</span>
               {t.aspectRatioGuide}
             </button>
 
-            {/* Aspect Ratio & Device - モバイルでは非表示 */}
-            <div className="hidden md:grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                  ASPECT RATIO
-                </p>
-                <p className="text-lg font-bold text-slate-900">{item.aspectRatio}</p>
+            {/* Fit Mode Selector (画像がアップロードされている場合のみ表示) */}
+            {selectedRegionIndex !== null && deviceRegions[selectedRegionIndex]?.userImage && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setDeviceRegions(prev => prev.map((r, idx) =>
+                      idx === selectedRegionIndex ? { ...r, fitMode: 'cover' } : r
+                    ));
+                  }}
+                  className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-lg font-medium text-sm transition-colors ${
+                    deviceRegions[selectedRegionIndex]?.fitMode === 'cover'
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-white border border-slate-200 text-slate-700 hover:border-indigo-300'
+                  }`}
+                >
+                  <span className="material-icons text-base">crop</span>
+                  {t.cover}
+                </button>
+                <button
+                  onClick={() => {
+                    setDeviceRegions(prev => prev.map((r, idx) =>
+                      idx === selectedRegionIndex ? { ...r, fitMode: 'contain' } : r
+                    ));
+                  }}
+                  className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-lg font-medium text-sm transition-colors ${
+                    deviceRegions[selectedRegionIndex]?.fitMode === 'contain'
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-white border border-slate-200 text-slate-700 hover:border-indigo-300'
+                  }`}
+                >
+                  <span className="material-icons text-base">fit_screen</span>
+                  {t.contain}
+                </button>
               </div>
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                  DEVICE
-                </p>
-                <p className="text-lg font-bold text-slate-900">{item.deviceType}</p>
-              </div>
-            </div>
-
-            {/* Attributes - モバイルでは非表示 */}
-            <div className="hidden md:block">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">
-                ATTRIBUTES
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {attributes.map((attr) => (
-                  <span
-                    key={attr}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-full text-xs font-medium"
-                  >
-                    <span className="material-icons text-sm text-slate-400">local_offer</span>
-                    {attr}
-                  </span>
-                ))}
-              </div>
-            </div>
+            )}
 
             {/* 検出ログ表示 - モバイルでは非表示 */}
             {detectionLog && (
@@ -3367,7 +3373,7 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
           </div>
 
           {/* Action Buttons */}
-          <div className="p-6 pt-4 space-y-3 sticky bottom-0 bg-white">
+          <div className="p-4 md:p-6 pt-4 space-y-3 mt-auto bg-white">
             {/* Cropped Image Info & Reset Button */}
             {croppedImageUrl && croppedAspectRatio && !isCropMode && (
               <div className="flex items-center justify-between bg-orange-50 border border-orange-200 rounded-xl px-4 py-2">

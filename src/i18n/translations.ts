@@ -54,6 +54,34 @@ export interface Translations {
 
   // Aspect Ratio Guide
   aspectRatioGuide: string;
+
+  // Aspect Ratio Guide - Platform descriptions
+  instagramDesc: string;
+  xDesc: string;
+  tiktokDesc: string;
+  threadsDesc: string;
+  facebookDesc: string;
+  linkedinDesc: string;
+
+  // Aspect Ratio Guide - Section titles
+  feedPost: string;
+  storiesReels: string;
+  singlePost: string;
+  multiplePost: string;
+  postSize: string;
+  ratioSizeList: string;
+  ratioSizeListNote: string;
+
+  // Aspect Ratio Guide - Card labels
+  portraitRecommended: string;
+  portrait: string;
+  square: string;
+  fullscreen: string;
+  landscape: string;
+
+  // Aspect Ratio Guide - Table headers
+  ratioHeader: string;
+  sizeHeader: string;
 }
 
 const ja: Translations = {
@@ -88,7 +116,35 @@ const ja: Translations = {
   signInWithGoogle: "Googleでサインイン",
   allTemplates: "すべてのテンプレート",
   itemsFound: (count) => `${count}件`,
-  aspectRatioGuide: "各SNS投稿前必見！画像比率ガイド",
+  aspectRatioGuide: "要確認！画像比率ガイド",
+
+  // Aspect Ratio Guide - Platform descriptions
+  instagramDesc: "縦長画像がフィードで目立つ",
+  xDesc: "複数枚投稿時のレイアウトに注意",
+  tiktokDesc: "縦型動画がメイン。9:16推奨",
+  threadsDesc: "Instagram連携。画像も重要",
+  facebookDesc: "ビジネス・コミュニティ向け",
+  linkedinDesc: "ビジネス向けSNS",
+
+  // Aspect Ratio Guide - Section titles
+  feedPost: "フィード投稿",
+  storiesReels: "ストーリーズ / リール",
+  singlePost: "1枚投稿",
+  multiplePost: "複数枚投稿",
+  postSize: "投稿サイズ",
+  ratioSizeList: "比率別サイズ一覧",
+  ratioSizeListNote: "IG=Instagram, TT=TikTok, Th=Threads, FB=Facebook, LI=LinkedIn",
+
+  // Aspect Ratio Guide - Card labels
+  portraitRecommended: "縦長（推奨）",
+  portrait: "縦長",
+  square: "正方形",
+  fullscreen: "フルスクリーン",
+  landscape: "横長",
+
+  // Aspect Ratio Guide - Table headers
+  ratioHeader: "比率",
+  sizeHeader: "サイズ",
 };
 
 const en: Translations = {
@@ -124,6 +180,34 @@ const en: Translations = {
   allTemplates: "All Templates",
   itemsFound: (count) => `${count} items found`,
   aspectRatioGuide: "SNS Post Image Ratio Guide – Must-See!",
+
+  // Aspect Ratio Guide - Platform descriptions
+  instagramDesc: "Portrait images stand out in feed",
+  xDesc: "Pay attention to multi-image layout",
+  tiktokDesc: "Vertical video is main. 9:16 recommended",
+  threadsDesc: "Instagram integration. Images matter",
+  facebookDesc: "For business & community",
+  linkedinDesc: "Business-oriented SNS",
+
+  // Aspect Ratio Guide - Section titles
+  feedPost: "Feed Post",
+  storiesReels: "Stories / Reels",
+  singlePost: "Single Image",
+  multiplePost: "Multiple Images",
+  postSize: "Post Size",
+  ratioSizeList: "Ratio & Size List",
+  ratioSizeListNote: "IG=Instagram, TT=TikTok, Th=Threads, FB=Facebook, LI=LinkedIn",
+
+  // Aspect Ratio Guide - Card labels
+  portraitRecommended: "Portrait (Rec.)",
+  portrait: "Portrait",
+  square: "Square",
+  fullscreen: "Full Screen",
+  landscape: "Landscape",
+
+  // Aspect Ratio Guide - Table headers
+  ratioHeader: "Ratio",
+  sizeHeader: "Size",
 };
 
 const zhCN: Translations = {
@@ -159,6 +243,34 @@ const zhCN: Translations = {
   allTemplates: "所有模板",
   itemsFound: (count) => `找到 ${count} 项`,
   aspectRatioGuide: "发布前必看！图片比例指南",
+
+  // Aspect Ratio Guide - Platform descriptions
+  instagramDesc: "竖图在信息流中更显眼",
+  xDesc: "注意多图布局",
+  tiktokDesc: "以竖视频为主，推荐9:16",
+  threadsDesc: "与Instagram联动，图片也很重要",
+  facebookDesc: "面向商业和社区",
+  linkedinDesc: "面向商务的社交网络",
+
+  // Aspect Ratio Guide - Section titles
+  feedPost: "信息流帖子",
+  storiesReels: "快拍 / Reels",
+  singlePost: "单图投稿",
+  multiplePost: "多图投稿",
+  postSize: "投稿尺寸",
+  ratioSizeList: "比例尺寸一览",
+  ratioSizeListNote: "IG=Instagram, TT=TikTok, Th=Threads, FB=Facebook, LI=LinkedIn",
+
+  // Aspect Ratio Guide - Card labels
+  portraitRecommended: "竖图（推荐）",
+  portrait: "竖图",
+  square: "正方形",
+  fullscreen: "全屏",
+  landscape: "横图",
+
+  // Aspect Ratio Guide - Table headers
+  ratioHeader: "比例",
+  sizeHeader: "尺寸",
 };
 
 const zhTW: Translations = {
@@ -194,6 +306,34 @@ const zhTW: Translations = {
   allTemplates: "所有範本",
   itemsFound: (count) => `找到 ${count} 項`,
   aspectRatioGuide: "發布前必看！圖片比例指南",
+
+  // Aspect Ratio Guide - Platform descriptions
+  instagramDesc: "直式圖片在動態消息中更顯眼",
+  xDesc: "注意多圖佈局",
+  tiktokDesc: "以直式影片為主，推薦9:16",
+  threadsDesc: "與Instagram聯動，圖片也很重要",
+  facebookDesc: "面向商業和社群",
+  linkedinDesc: "面向商務的社群網路",
+
+  // Aspect Ratio Guide - Section titles
+  feedPost: "動態消息貼文",
+  storiesReels: "限時動態 / Reels",
+  singlePost: "單張投稿",
+  multiplePost: "多張投稿",
+  postSize: "投稿尺寸",
+  ratioSizeList: "比例尺寸一覽",
+  ratioSizeListNote: "IG=Instagram, TT=TikTok, Th=Threads, FB=Facebook, LI=LinkedIn",
+
+  // Aspect Ratio Guide - Card labels
+  portraitRecommended: "直式（推薦）",
+  portrait: "直式",
+  square: "正方形",
+  fullscreen: "全螢幕",
+  landscape: "橫式",
+
+  // Aspect Ratio Guide - Table headers
+  ratioHeader: "比例",
+  sizeHeader: "尺寸",
 };
 
 const ko: Translations = {
@@ -229,6 +369,34 @@ const ko: Translations = {
   allTemplates: "모든 템플릿",
   itemsFound: (count) => `${count}개 항목`,
   aspectRatioGuide: "SNS 게시 전 필독! 이미지 비율 가이드",
+
+  // Aspect Ratio Guide - Platform descriptions
+  instagramDesc: "세로 이미지가 피드에서 눈에 띔",
+  xDesc: "다중 이미지 레이아웃 주의",
+  tiktokDesc: "세로 동영상이 메인. 9:16 권장",
+  threadsDesc: "Instagram 연동. 이미지도 중요",
+  facebookDesc: "비즈니스 및 커뮤니티용",
+  linkedinDesc: "비즈니스용 SNS",
+
+  // Aspect Ratio Guide - Section titles
+  feedPost: "피드 게시물",
+  storiesReels: "스토리 / 릴스",
+  singlePost: "단일 이미지",
+  multiplePost: "다중 이미지",
+  postSize: "게시물 크기",
+  ratioSizeList: "비율별 크기 목록",
+  ratioSizeListNote: "IG=Instagram, TT=TikTok, Th=Threads, FB=Facebook, LI=LinkedIn",
+
+  // Aspect Ratio Guide - Card labels
+  portraitRecommended: "세로(권장)",
+  portrait: "세로",
+  square: "정사각형",
+  fullscreen: "전체 화면",
+  landscape: "가로",
+
+  // Aspect Ratio Guide - Table headers
+  ratioHeader: "비율",
+  sizeHeader: "크기",
 };
 
 export const translations: Record<SupportedLanguage, Translations> = {
