@@ -116,7 +116,7 @@ const ja: Translations = {
   signInWithGoogle: "Googleでサインイン",
   allTemplates: "すべてのテンプレート",
   itemsFound: (count) => `${count}件`,
-  aspectRatioGuide: "要確認！画像比率ガイド",
+  aspectRatioGuide: "必見！SNS画像比率ガイド",
 
   // Aspect Ratio Guide - Platform descriptions
   instagramDesc: "縦長画像がフィードで目立つ",
