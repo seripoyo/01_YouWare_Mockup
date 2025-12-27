@@ -62,6 +62,8 @@
 ## コマンド
 - 依存関係インストール: `npm install`
 - 本番ビルド: `npm run build`
+- 開発サーバー（ローカル確認用）: `npm run dev`
+- テスト実行: `npm test` (設定されている場合)
 
 YouWare のゼロトレランス方針: 変更後は必ず `npm run build` を実行し、エラーを解消してから先に進めてください。
 
@@ -115,9 +117,25 @@ YouWare のゼロトレランス方針: 変更後は必ず `npm run build` を�
 - index.html のエントリ `<script type="module" src="/src/main.tsx"></script>` は変更不可
 - 画像や CSS のビルド後パスを前提に、静的参照は `/assets/` で統一
 
-## データベース／バックエンド
-- 現時点では未実装。エクスポート履歴やユーザープロジェクト保存が必要になった段階で、Youware Backend（D1/R2/認証）を採用します。
-- 導入時は `/backend/` 以下に Worker 構成・`schema.sql` を設置し、R2 は「プリサインURL経由の直PUT/GET」ポリシーに従います。
+## バックエンド・認証 (Youbase)
+- **Youbase** を採用し、認証・データベース・ストレージ機能を提供
+- **認証**: `client.auth.signIn.social` を使用して Google ログイン等を実装
+  - **重要**: `callbackURL` は必ず **絶対パス** (`window.location.href`) を指定すること。相対パス (`window.location.pathname`) を指定すると、バックエンドドメイン上で解決され、リダイレクト後に 404 エラーが発生します。
+- **データベース**: D1 (SQLite) + Drizzle ORM
+- **ストレージ**: R2 (S3互換)
+
+### 画像アップロード履歴機能
+- **テーブル**: `image_history` テーブルでユーザーごとのアップロード履歴を管理
+- **エンドポイント**:
+  - `GET /api/images/history` - ユーザーのアップロード履歴取得
+  - `POST /api/images/upload/presign` - アップロード用のpresigned URL取得
+  - `POST /api/images/history` - アップロード完了後のメタデータ保存
+  - `POST /api/images/reupload` - 履歴から画像を再アップロード
+  - `DELETE /api/images/history/:id` - 履歴から画像を削除
+- **フロントエンド**: `/archive` ページでアップロード履歴を表示
+  - 認証済みユーザーのみアクセス可能
+  - トップページと共通のヘッダーを使用
+  - ホームとアーカイブのナビゲーション実装済み
 
 ## フレームの登録フロー（運用）
 1. 透過 PNG を `public/assets/frames/` に配置
@@ -191,3 +209,21 @@ const handleDownload = async () => {
   }
 };
 ```
+
+## ギャラリー無限スクロール・軽量アニメーション
+
+### 概要
+MockupGrid コンポーネントは、大量のテンプレート画像を効率的に表示するため、以下の最適化を実装:
+
+### パフォーマンス最適化
+1. **無限スクロール**: 初期表示24枚、スクロールで追加読み込み（Intersection Observer使用）
+2. **DOM削減**: `display: none` ではなく、React のレンダリングツリーから完全に除外
+3. **GSAP Flip廃止**: 全要素の位置計算をなくし、`gsap.from` による軽量フェードインに変更
+4. **適切なメモ化**: `useMemo` / `useCallback` でフィルタリング・エラー処理を最適化
+
+### 設定値
+- `ITEMS_PER_PAGE = 24` - 1回の読み込み枚数
+- `LOAD_THRESHOLD = 200` - 読み込みトリガー位置（画面下端からのpx）
+
+### 主要ファイル
+- `src/features/mockup/gallery/components/MockupGrid.tsx`
