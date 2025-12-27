@@ -14,6 +14,10 @@ export default {
         // English-only font
         en: ['"New Atten Round"', 'system-ui', 'sans-serif'],
       },
+      screens: {
+        // カスタムブレークポイント: 960px
+        'tablet': '960px',
+      },
     },
   },
   plugins: [],

@@ -3,6 +3,9 @@ import { FilterSidebar } from "./components/FilterSidebar";
 import { MockupGrid } from "./components/MockupGrid";
 import { PreviewModal } from "./components/PreviewModal";
 import { AspectRatioGuideModal } from "./components/AspectRatioGuideModal";
+import { BottomNav } from "./components/BottomNav";
+import { SearchBottomSheet } from "./components/SearchBottomSheet";
+import { SettingsBottomSheet } from "./components/SettingsBottomSheet";
 import { useGalleryFilters } from "../hooks/useGalleryFilters";
 import { mockupGalleryItems } from "../data/mockupGalleryData";
 import type { MockupGalleryItem, GalleryFilters } from "./types";
@@ -51,6 +54,11 @@ export function MockupGallery({ onSelectFrame, onClose }: GalleryProps) {
   const [isAspectGuideOpen, setIsAspectGuideOpen] = useState(false);
   const langMenuRef = useRef<HTMLDivElement>(null);
 
+  // Bottom Navigation state
+  const [activeTab, setActiveTab] = useState<"home" | "bookmark" | "search" | "usage" | "setting">("home");
+  const [isSearchSheetOpen, setIsSearchSheetOpen] = useState(false);
+  const [isSettingsSheetOpen, setIsSettingsSheetOpen] = useState(false);
+
   // Get current language and translations
   const currentLang = getCurrentLanguage();
   const t = getTranslations();
@@ -80,6 +88,38 @@ export function MockupGallery({ onSelectFrame, onClose }: GalleryProps) {
   // Language change handler - reload page after changing
   const handleLanguageChange = (langCode: SupportedLanguage) => {
     setLanguageAndReload(langCode);
+  };
+
+  // Bottom Nav tab change handler
+  const handleTabChange = (tab: "home" | "bookmark" | "search" | "usage" | "setting") => {
+    setActiveTab(tab);
+
+    // Close any open sheets first
+    setIsSearchSheetOpen(false);
+    setIsSettingsSheetOpen(false);
+
+    switch (tab) {
+      case "home":
+        // Navigate to top page
+        window.location.href = "/";
+        break;
+      case "bookmark":
+        // Navigate to bookmark page
+        window.location.href = "/bookmark";
+        break;
+      case "search":
+        // Open search bottom sheet
+        setIsSearchSheetOpen(true);
+        break;
+      case "usage":
+        // Navigate to usage page (could be documentation or help)
+        window.location.href = "/usage";
+        break;
+      case "setting":
+        // Open settings bottom sheet
+        setIsSettingsSheetOpen(true);
+        break;
+    }
   };
 
   const currentLangLabel = LANGUAGE_LABELS[currentLang];
@@ -169,14 +209,9 @@ export function MockupGallery({ onSelectFrame, onClose }: GalleryProps) {
             </button>
           </div>
 
-          {/* Mobile Filter Toggle */}
-          <div className="flex items-center gap-2 md:hidden">
-            <button
-              onClick={() => setIsSidebarOpen(true)}
-              className="p-2.5 text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 active:bg-slate-100"
-            >
-              <span className="material-icons text-xl">tune</span>
-            </button>
+          {/* Mobile Header - Empty now since we use BottomNav */}
+          <div className="flex items-center gap-2 tablet:hidden">
+            {/* フィルターボタンを削除 - BottomNavのSearchボタンを使用 */}
           </div>
 
         </div>
@@ -184,18 +219,20 @@ export function MockupGallery({ onSelectFrame, onClose }: GalleryProps) {
 
       {/* Main Layout */}
       <div className="flex flex-1 max-w-screen-2xl mx-auto w-full">
-        {/* Sidebar */}
-        <FilterSidebar
-          filters={filters}
-          onChange={handleFilterChange}
-          options={availableFilters}
-          total={filteredItems.length}
-          isOpen={isSidebarOpen}
-          onClose={() => setIsSidebarOpen(false)}
-        />
+        {/* Sidebar - 960px以上で表示 */}
+        <div className="hidden tablet:block">
+          <FilterSidebar
+            filters={filters}
+            onChange={handleFilterChange}
+            options={availableFilters}
+            total={filteredItems.length}
+            isOpen={true}
+            onClose={() => {}}
+          />
+        </div>
 
         {/* Content Area */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 p-4 sm:p-6 tablet:p-8 pb-24 tablet:pb-8">
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-slate-800">
               {t.allTemplates}
@@ -278,6 +315,34 @@ export function MockupGallery({ onSelectFrame, onClose }: GalleryProps) {
       <AspectRatioGuideModal
         isOpen={isAspectGuideOpen}
         onClose={() => setIsAspectGuideOpen(false)}
+      />
+
+      {/* Mobile Bottom Navigation - 960px以下で表示 */}
+      <BottomNav
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+      />
+
+      {/* Search Bottom Sheet - フィルター検索メニュー */}
+      <SearchBottomSheet
+        isOpen={isSearchSheetOpen}
+        onClose={() => {
+          setIsSearchSheetOpen(false);
+          setActiveTab("home");
+        }}
+        filters={filters}
+        onChange={handleFilterChange}
+        options={availableFilters}
+        total={filteredItems.length}
+      />
+
+      {/* Settings Bottom Sheet - 設定メニュー */}
+      <SettingsBottomSheet
+        isOpen={isSettingsSheetOpen}
+        onClose={() => {
+          setIsSettingsSheetOpen(false);
+          setActiveTab("home");
+        }}
       />
     </div>
   );

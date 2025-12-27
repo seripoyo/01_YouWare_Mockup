@@ -103,26 +103,26 @@ export function FilterSidebar({
 
   return (
     <>
-      {/* Mobile Overlay */}
+      {/* Mobile Overlay - 960px以下でのみ表示（ただし現在はBottomNavを使用しているため基本的に使用しない） */}
       {isOpen && onClose && (
         <div
-          className="fixed inset-0 bg-black/40 z-40 lg:hidden backdrop-blur-sm transition-opacity"
+          className="fixed inset-0 bg-black/40 z-40 tablet:hidden backdrop-blur-sm transition-opacity"
           onClick={onClose}
         />
       )}
 
-      {/* Sidebar Container */}
+      {/* Sidebar Container - 960px以上では常に表示 */}
       <aside
         className={`
-          fixed top-0 left-0 z-50 h-full w-72 bg-white border-r border-slate-200 
-          transform transition-transform duration-300 ease-in-out shadow-xl 
-          lg:shadow-none lg:sticky lg:top-0 lg:transform-none lg:h-screen
-          ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+          fixed top-0 left-0 z-50 h-full w-72 bg-white border-r border-slate-200
+          transform transition-transform duration-300 ease-in-out shadow-xl
+          tablet:shadow-none tablet:sticky tablet:top-0 tablet:transform-none tablet:h-screen
+          ${isOpen ? "translate-x-0" : "-translate-x-full tablet:translate-x-0"}
         `}
       >
         <div className="p-6 h-full overflow-y-auto">
-          {/* Mobile Header */}
-          <div className="flex items-center justify-between mb-6 lg:hidden">
+          {/* Mobile Header - 960px以下でのみ表示（ただし現在はBottomNavを使用） */}
+          <div className="flex items-center justify-between mb-6 tablet:hidden">
             <h2 className="text-lg font-bold text-slate-900">{t.menu}</h2>
             {onClose && (
               <button
@@ -134,8 +134,8 @@ export function FilterSidebar({
             )}
           </div>
 
-          {/* Mobile: Language Switcher & Google Sign In */}
-          <div className="lg:hidden mb-6 space-y-3">
+          {/* Mobile: Language Switcher & Google Sign In - 960px以下でのみ表示（ただし現在はBottomNavを使用） */}
+          <div className="tablet:hidden mb-6 space-y-3">
             {/* Language Switcher */}
             <div>
               <button

@@ -3148,18 +3148,33 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
       <div className="absolute inset-0" onClick={onClose} />
 
       {/* Modal Container - モバイルでは画面いっぱいに表示 */}
-      <div className="relative z-10 flex w-full max-w-5xl h-[calc(100dvh-1rem)] md:max-h-[calc(100vh-2rem)] md:h-auto flex-col overflow-hidden rounded-xl md:rounded-2xl bg-white shadow-2xl md:flex-row">
-        {/* Hidden file input */}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={handleFileUpload}
-        />
+      <div className="relative z-10 flex w-full max-w-5xl h-[calc(100dvh-1rem)] md:max-h-[calc(100vh-2rem)] md:h-auto flex-col overflow-hidden rounded-xl md:rounded-2xl bg-white shadow-2xl">
+        {/* Modal Header - 常に最上部に固定 */}
+        <div className="flex items-center justify-between px-4 md:px-6 py-3 md:py-4 bg-white border-b border-slate-200 flex-shrink-0">
+          <h2 className="text-lg md:text-xl font-bold text-slate-900">
+            {displayTitle}
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-slate-400 hover:text-slate-600 transition-colors p-1 min-w-[44px] min-h-[44px] flex items-center justify-center"
+          >
+            <span className="material-icons text-xl">close</span>
+          </button>
+        </div>
 
-        {/* Left: Interactive Canvas Area - モバイルでは画面の55%を確保 */}
-        <div className="flex-1 bg-gradient-to-br from-slate-100 to-slate-200 p-4 md:p-8 flex flex-col items-center justify-center min-h-[40vh] md:min-h-[200px] relative overflow-auto">
+        {/* Main Content Area */}
+        <div className="flex flex-1 flex-col md:flex-row overflow-hidden">
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileUpload}
+          />
+
+          {/* Left: Interactive Canvas Area - モバイルでは画面の55%を確保 */}
+          <div className="flex-1 bg-gradient-to-br from-slate-100 to-slate-200 p-4 md:p-8 flex flex-col items-center justify-center min-h-[40vh] md:min-h-[200px] relative overflow-auto">
           {/* Instructions */}
           {showInstructions && deviceRegions.length === 0 && !isCornerEditMode && (
             <div className="absolute top-4 left-4 right-4 bg-indigo-600 text-white px-4 py-3 rounded-xl text-sm font-medium shadow-lg z-20 flex items-center gap-3">
@@ -3305,22 +3320,9 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
         </div>
 
         {/* Right: Info Panel - モバイルでは残りの高さを使用 */}
-        <div className="w-full md:w-80 flex flex-col justify-between bg-white border-t md:border-t-0 md:border-l border-slate-200 flex-shrink-0 max-h-[45vh] md:max-h-none overflow-y-auto">
-          {/* Header */}
-          <div className="flex items-start justify-between p-4 md:p-6 pb-2 md:pb-4 sticky top-0 bg-white z-10">
-            <h2 className="text-lg md:text-2xl font-bold text-slate-900 leading-tight">
-              {displayTitle}
-            </h2>
-            <button
-              onClick={onClose}
-              className="text-slate-400 hover:text-slate-600 transition-colors p-1 -mr-1 -mt-1 min-w-[44px] min-h-[44px] flex items-center justify-center"
-            >
-              <span className="material-icons text-xl">close</span>
-            </button>
-          </div>
-
-          {/* Content */}
-          <div className="px-4 md:px-6 space-y-3 md:space-y-5">
+        <div className="w-full md:w-80 flex flex-col bg-white border-t md:border-t-0 md:border-l border-slate-200 flex-shrink-0 max-h-[45vh] md:max-h-none overflow-y-auto">
+          {/* Content - スクロール可能 */}
+          <div className="px-4 md:px-6 py-4 space-y-3 md:space-y-5">
             {/* Aspect Ratio Guide Button */}
             <button
               onClick={() => setIsAspectGuideOpen(true)}
@@ -3556,6 +3558,7 @@ export function PreviewModal({ item, onClose, onSelectFrame, categoryResolver }:
             </div>
           </div>
         </div>
+        </div>{/* Main Content Area終了 */}
       </div>
 
       {/* Aspect Ratio Guide Bottom Sheet */}

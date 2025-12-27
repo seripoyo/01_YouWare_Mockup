@@ -78,6 +78,7 @@
    - Japanese: Zen Maru Gothic (fallback for CJK characters)
    ========================================================================== */
 @layer base {
+
   html,
   body {
     font-family: "New Atten Round", "Zen Maru Gothic", system-ui, -apple-system, sans-serif;
@@ -183,6 +184,10 @@ aside .material-icons {
     font-size: 12px;
     padding: 0.5rem 0.7rem !important;
   }
+  .flex.items-start.justify-between.p-4.md\:p-6.pb-2.md\:pb-4.sticky.top-0.bg-white.z-10 {
+    display: flex;
+    align-items: center;
+}
 }
 
 
@@ -194,4 +199,26 @@ button.px-3.py-1\.5.rounded-full.text-xs.font-medium.border.transition-all.durat
 button.px-3.py-2.rounded-md.text-sm.border.transition-all.duration-200.text-center.bg-slate-900.text-white.border-slate-900.shadow-md {
   background-color: #2A3EDB;
   color: white;
+}
+
+@media (min-width: 1024px) {
+  .lg\:inline {
+    display: inline;
+    line-height: 2;
+    top: 3px;
+    position: relative;
+  }
+}
+
+.material-icons {
+  position: relative;
+  top: -1px;
+}
+
+header span.material-icons.text-base {
+  top: 0.5px;
+  left: 1.1px;
+}
+.flex-1.bg-gradient-to-br.from-slate-100.to-slate-200.p-4.md\:p-8.flex.flex-col.items-center.justify-center.min-h-\[40vh\].md\:min-h-\[200px\].relative.overflow-auto span.material-icons.text-base{
+  top: -1px;
 }
