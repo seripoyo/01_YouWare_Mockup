@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Custom Fonts - New Atten Round (English) & GenJyuuGothicX (Japanese)
+   Custom Fonts - New Atten Round (English) & Zen Maru Gothic (Japanese)
    ========================================================================== */
 
 /* New Atten Round - English font */
@@ -26,45 +26,46 @@
   src: url('/assets/fonts/New-Atten-Round-ExtraBold.woff2') format('woff2'),
     url('/assets/fonts/New-Atten-Round-ExtraBold.woff') format('woff');
   font-weight: 900;
-  font-style: bold;
+  font-style: normal;
   font-display: swap;
 }
 
-/* GenJyuuGothicX - Japanese font */
+/* Zen Maru Gothic - Japanese font */
+/* Baseline adjustment: ascent-override fixes vertical alignment with Latin fonts */
+/* Medium = 400 (regular) */
 @font-face {
-  font-family: 'GenJyuuGothicX';
-  src: url('/assets/fonts/GenJyuuGothicX-Regular.woff2') format('woff2'),
-    url('/assets/fonts/GenJyuuGothicX-Regular.woff') format('woff');
+  font-family: 'Zen Maru Gothic';
+  src: url('/assets/fonts/ZenMaruGothic-Medium.woff2') format('woff2'),
+    url('/assets/fonts/ZenMaruGothic-Medium.woff') format('woff');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
+  ascent-override: 88%;
+  descent-override: 22%;
 }
 
+/* Bold = 700 */
 @font-face {
-  font-family: 'GenJyuuGothicX';
-  src: url('/assets/fonts/GenJyuuGothicX-Medium.woff2') format('woff2'),
-    url('/assets/fonts/GenJyuuGothicX-Medium.woff') format('woff');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'GenJyuuGothicX';
-  src: url('/assets/fonts/GenJyuuGothicX-Bold.woff2') format('woff2'),
-    url('/assets/fonts/GenJyuuGothicX-Bold.woff') format('woff');
+  font-family: 'Zen Maru Gothic';
+  src: url('/assets/fonts/ZenMaruGothic-Bold.woff2') format('woff2'),
+    url('/assets/fonts/ZenMaruGothic-Bold.woff') format('woff');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
+  ascent-override: 88%;
+  descent-override: 22%;
 }
 
+/* Black = 900 */
 @font-face {
-  font-family: 'GenJyuuGothicX';
-  src: url('/assets/fonts/GenJyuuGothicX-Heavy.woff2') format('woff2'),
-    url('/assets/fonts/GenJyuuGothicX-Heavy.woff') format('woff');
+  font-family: 'Zen Maru Gothic';
+  src: url('/assets/fonts/ZenMaruGothic-Black.woff2') format('woff2'),
+    url('/assets/fonts/ZenMaruGothic-Black.woff') format('woff');
   font-weight: 900;
   font-style: normal;
   font-display: swap;
+  ascent-override: 88%;
+  descent-override: 22%;
 }
 
 @tailwind base;
@@ -74,11 +75,12 @@
 /* ==========================================================================
    Global Font Application
    - English: New Atten Round (primary)
-   - Japanese: GenJyuuGothicX (fallback for CJK characters)
+   - Japanese: Zen Maru Gothic (fallback for CJK characters)
    ========================================================================== */
 @layer base {
-  html {
-    font-family: "New Atten Round", "GenJyuuGothicX", system-ui, -apple-system, sans-serif;
+  html,
+  body {
+    font-family: "New Atten Round", "Zen Maru Gothic", system-ui, -apple-system, sans-serif;
   }
 }
 
@@ -131,6 +133,18 @@
 
 .animate-filterExit {
   animation: filterExit 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* ==========================================================================
+   Material Icons - Vertical alignment fix for Japanese fonts
+   Japanese fonts (Zen Maru Gothic) have larger ascent, causing text to appear
+   higher than icons in flexbox layouts. This adjustment moves icons up slightly
+   to align with the visual center of Japanese text.
+   ========================================================================== */
+.material-icons {
+  position: relative;
+  top: 0.1em;
+  line-height: 1;
 }
 
 aside .material-icons {
