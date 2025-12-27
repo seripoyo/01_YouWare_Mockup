@@ -14,6 +14,7 @@ import {
   LANGUAGE_LABELS,
   type SupportedLanguage,
 } from "../../../i18n/translations";
+import { client, getCurrentUser } from "../../../api/client";
 
 // 言語オプション
 const LANGUAGE_OPTIONS: { code: SupportedLanguage; label: string }[] = [
@@ -49,11 +50,16 @@ export function MockupGallery({ onSelectFrame, onClose }: GalleryProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const [isAspectGuideOpen, setIsAspectGuideOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const langMenuRef = useRef<HTMLDivElement>(null);
 
   // Get current language and translations
   const currentLang = getCurrentLanguage();
   const t = getTranslations();
+
+  useEffect(() => {
+    getCurrentUser().then(setUser);
+  }, []);
 
   // 言語メニューの外側クリックで閉じる
   useEffect(() => {
@@ -71,10 +77,19 @@ export function MockupGallery({ onSelectFrame, onClose }: GalleryProps) {
     setFilters(newFilters);
   };
 
-  // Google Sign In handler (placeholder)
-  const handleGoogleSignIn = () => {
-    console.log("Google Sign In clicked");
-    // TODO: Implement Google Sign In
+  // Google Sign In handler - now uses Youbase OAuth
+  const handleGoogleSignIn = async () => {
+    try {
+      console.log("Google Sign In clicked - initiating OAuth flow");
+      // Redirect to Google OAuth with callback URL
+      await client.auth.signIn.social({
+        provider: "google",
+        callbackURL: window.location.href, // Return to current page after login
+      });
+    } catch (error) {
+      console.error("Google Sign In error:", error);
+      alert("ログインに失敗しました。もう一度お試しください。");
+    }
   };
 
   // Language change handler - reload page after changing
@@ -98,6 +113,27 @@ export function MockupGallery({ onSelectFrame, onClose }: GalleryProps) {
             />
           </div>
 
+          {/* Navigation */}
+          <nav className="hidden md:flex items-center gap-4">
+            <a
+              href="/"
+              className="text-sm font-medium text-indigo-600 transition-colors"
+            >
+              ホーム
+            </a>
+            <a
+              href="/archive"
+              onClick={(e) => {
+                e.preventDefault();
+                window.history.pushState({}, "", "/archive");
+                window.location.reload();
+              }}
+              className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors"
+            >
+              アーカイブ
+            </a>
+          </nav>
+
           {/* Spacer to push buttons to right */}
           <div className="flex-1" />
 
@@ -109,8 +145,7 @@ export function MockupGallery({ onSelectFrame, onClose }: GalleryProps) {
               className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-full hover:from-indigo-600 hover:to-purple-600 transition-all shadow-md hover:shadow-lg text-sm font-medium"
             >
               <span className="material-icons text-base">aspect_ratio</span>
-              <span className="hidden lg:inline">{t.aspectRatioGuide}</span>
-              <span className="lg:hidden">📐</span>
+              <span>{t.aspectRatioGuide}</span>
             </button>
 
             {/* Language Switcher */}
@@ -155,18 +190,20 @@ export function MockupGallery({ onSelectFrame, onClose }: GalleryProps) {
             </div>
 
             {/* Google Sign In Button */}
-            <button
-              onClick={handleGoogleSignIn}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-full hover:shadow-md transition-all"
-            >
-              <svg width="18" height="18" viewBox="0 0 48 48">
-                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
-                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
-                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
-                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
-              </svg>
-              <span className="text-sm font-medium text-slate-700">Sign in</span>
-            </button>
+            {!user && (
+              <button
+                onClick={handleGoogleSignIn}
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-full hover:shadow-md transition-all"
+              >
+                <svg width="18" height="18" viewBox="0 0 48 48">
+                  <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+                  <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+                  <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+                  <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+                </svg>
+                <span className="text-sm font-medium text-slate-700">Sign in</span>
+              </button>
+            )}
           </div>
 
           {/* Mobile Filter Toggle */}
@@ -192,6 +229,7 @@ export function MockupGallery({ onSelectFrame, onClose }: GalleryProps) {
           total={filteredItems.length}
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
+          user={user}
         />
 
         {/* Content Area */}

@@ -1,68 +1,53 @@
 /* ==========================================================================
-   Custom Fonts - New Atten Round (English) & GenJyuuGothicX (Japanese)
+   Custom Fonts - Dongle (English) & UD Degital (Japanese)
    ========================================================================== */
 
-/* New Atten Round - English font */
+/* Dongle - English font */
+/* Light = default (400) */
 @font-face {
-  font-family: 'New Atten Round';
-  src: url('/assets/fonts/New-Atten-Round-regular.woff2') format('woff2'),
-    url('/assets/fonts/New-Atten-Round-regular.woff') format('woff');
+  font-family: 'Dongle';
+  src: url('/assets/fonts/Dongle-Light.woff2') format('woff2'),
+    url('/assets/fonts/Dongle-Light.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Regular = 600 */
+@font-face {
+  font-family: 'Dongle';
+  src: url('/assets/fonts/Dongle-Regular.woff2') format('woff2'),
+    url('/assets/fonts/Dongle-Regular.woff') format('woff');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Bold = 900 */
+@font-face {
+  font-family: 'Dongle';
+  src: url('/assets/fonts/Dongle-Bold.woff2') format('woff2'),
+    url('/assets/fonts/Dongle-Bold.woff') format('woff');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* UD Degital - Japanese font */
+@font-face {
+  font-family: 'UD Degital';
+  src: url('/assets/fonts/UD-degital.woff2') format('woff2'),
+    url('/assets/fonts/UD-degital.woff') format('woff');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'New Atten Round';
-  src: url('/assets/fonts/New-Atten-Round-Bold.woff2') format('woff2'),
-    url('/assets/fonts/New-Atten-Round-Bold.woff') format('woff');
+  font-family: 'UD Degital';
+  src: url('/assets/fonts/UD-degital-bold.woff2') format('woff2'),
+    url('/assets/fonts/UD-degital-bold.woff') format('woff');
   font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'New Atten Round';
-  src: url('/assets/fonts/New-Atten-Round-ExtraBold.woff2') format('woff2'),
-    url('/assets/fonts/New-Atten-Round-ExtraBold.woff') format('woff');
-  font-weight: 900;
-  font-style: bold;
-  font-display: swap;
-}
-
-/* GenJyuuGothicX - Japanese font */
-@font-face {
-  font-family: 'GenJyuuGothicX';
-  src: url('/assets/fonts/GenJyuuGothicX-Regular.woff2') format('woff2'),
-    url('/assets/fonts/GenJyuuGothicX-Regular.woff') format('woff');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'GenJyuuGothicX';
-  src: url('/assets/fonts/GenJyuuGothicX-Medium.woff2') format('woff2'),
-    url('/assets/fonts/GenJyuuGothicX-Medium.woff') format('woff');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'GenJyuuGothicX';
-  src: url('/assets/fonts/GenJyuuGothicX-Bold.woff2') format('woff2'),
-    url('/assets/fonts/GenJyuuGothicX-Bold.woff') format('woff');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'GenJyuuGothicX';
-  src: url('/assets/fonts/GenJyuuGothicX-Heavy.woff2') format('woff2'),
-    url('/assets/fonts/GenJyuuGothicX-Heavy.woff') format('woff');
-  font-weight: 900;
   font-style: normal;
   font-display: swap;
 }
@@ -73,12 +58,12 @@
 
 /* ==========================================================================
    Global Font Application
-   - English: New Atten Round (primary)
-   - Japanese: GenJyuuGothicX (fallback for CJK characters)
+   - English: Dongle (primary)
+   - Japanese: UD Degital (fallback for CJK characters)
    ========================================================================== */
 @layer base {
   html {
-    font-family: "New Atten Round", "GenJyuuGothicX", system-ui, -apple-system, sans-serif;
+    font-family: "Dongle", "UD Degital", system-ui, -apple-system, sans-serif;
   }
 }
 

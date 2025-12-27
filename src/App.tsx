@@ -1,14 +1,39 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import MultiDeviceMockup from "./features/mockup/components/MultiDeviceMockup";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { DeviceDebugger } from "./components/DeviceDebugger";
 import { MockupGallery, type MockupGalleryItem } from "./features/mockup/gallery";
+import { ArchivePage } from "./features/mockup/gallery/components/ArchivePage";
 
-type ViewMode = "gallery" | "editor";
+type ViewMode = "gallery" | "editor" | "archive";
 
 function App() {
   const [view, setView] = useState<ViewMode>("gallery");
   const [selectedMockup, setSelectedMockup] = useState<MockupGalleryItem | null>(null);
+
+  // URL-based routing
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path === "/archive") {
+      setView("archive");
+    } else {
+      setView("gallery");
+    }
+
+    // Listen to popstate for back/forward navigation
+    const handlePopState = () => {
+      const currentPath = window.location.pathname;
+      if (currentPath === "/archive") {
+        setView("archive");
+      } else {
+        setView("gallery");
+        setSelectedMockup(null);
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   const handleSelectFrame = (item: MockupGalleryItem) => {
     setSelectedMockup(item);
@@ -16,6 +41,7 @@ function App() {
   };
 
   const handleBackToGallery = () => {
+    window.history.pushState({}, "", "/");
     setView("gallery");
     setSelectedMockup(null);
   };
@@ -28,6 +54,15 @@ function App() {
           onSelectFrame={handleSelectFrame}
           onClose={() => {}}
         />
+      </ErrorBoundary>
+    );
+  }
+
+  // アーカイブビュー
+  if (view === "archive") {
+    return (
+      <ErrorBoundary>
+        <ArchivePage onBack={handleBackToGallery} />
       </ErrorBoundary>
     );
   }
