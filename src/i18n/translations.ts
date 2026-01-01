@@ -47,6 +47,7 @@ export interface Translations {
   aspectRatio: string;
   colorTheme: string;
   signInWithGoogle: string;
+  searchWithConditions: string;
 
   // Gallery
   allTemplates: string;
@@ -114,6 +115,7 @@ const ja: Translations = {
   aspectRatio: "アスペクト比",
   colorTheme: "カラー",
   signInWithGoogle: "Googleでサインイン",
+  searchWithConditions: "この条件で探す",
   allTemplates: "すべてのテンプレート",
   itemsFound: (count) => `${count}件`,
   aspectRatioGuide: "必見！SNS画像比率ガイド",
@@ -177,6 +179,7 @@ const en: Translations = {
   aspectRatio: "Aspect Ratio",
   colorTheme: "Color",
   signInWithGoogle: "Sign in with Google",
+  searchWithConditions: "Search with these filters",
   allTemplates: "All Templates",
   itemsFound: (count) => `${count} items found`,
   aspectRatioGuide: "SNS Post Image Ratio Guide – Must-See!",
@@ -240,6 +243,7 @@ const zhCN: Translations = {
   aspectRatio: "宽高比",
   colorTheme: "颜色",
   signInWithGoogle: "使用 Google 登录",
+  searchWithConditions: "按此条件搜索",
   allTemplates: "所有模板",
   itemsFound: (count) => `找到 ${count} 项`,
   aspectRatioGuide: "发布前必看！图片比例指南",
@@ -303,6 +307,7 @@ const zhTW: Translations = {
   aspectRatio: "寬高比",
   colorTheme: "顏色",
   signInWithGoogle: "使用 Google 登入",
+  searchWithConditions: "按此條件搜尋",
   allTemplates: "所有範本",
   itemsFound: (count) => `找到 ${count} 項`,
   aspectRatioGuide: "發布前必看！圖片比例指南",
@@ -366,6 +371,7 @@ const ko: Translations = {
   aspectRatio: "종횡비",
   colorTheme: "색상",
   signInWithGoogle: "Google로 로그인",
+  searchWithConditions: "이 조건으로 검색",
   allTemplates: "모든 템플릿",
   itemsFound: (count) => `${count}개 항목`,
   aspectRatioGuide: "SNS 게시 전 필독! 이미지 비율 가이드",

@@ -90,6 +90,172 @@
 </head>
 
 <body>
+  <!-- Loading Screen - フォント読み込みとReact初期化中に表示 -->
+  <div id="loading-screen" style="
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: #ffffff;
+    transition: opacity 0.4s ease-out, visibility 0.4s ease-out;
+  ">
+    <style>
+      /* 猫の揺れアニメーション */
+      @keyframes catSway {
+        0%, 100% { transform: rotate(-3deg); }
+        50% { transform: rotate(3deg); }
+      }
+      /* しっぽの揺れ */
+      @keyframes tailWag {
+        0%, 100% { transform: rotate(-8deg); }
+        50% { transform: rotate(8deg); }
+      }
+      /* 肉球のパルス */
+      @keyframes pawPulse {
+        0%, 100% { transform: scale(0.85); opacity: 0.4; }
+        50% { transform: scale(1.1); opacity: 1; }
+      }
+      /* ドットアニメーション */
+      @keyframes dotFade {
+        0%, 60%, 100% { opacity: 0.3; }
+        30% { opacity: 1; }
+      }
+      /* フェードアウト */
+      #loading-screen.fade-out {
+        opacity: 0;
+        visibility: hidden;
+      }
+      /* Reactアプリのコンテンツ: 初期状態は非表示 */
+      #root {
+        opacity: 0;
+        transition: opacity 0.5s ease-out;
+      }
+      /* ローディング完了後に表示 */
+      body.app-loaded #root {
+        opacity: 1;
+      }
+
+      /* === ローディング要素のスタイル === */
+      /* 猫コンテナ */
+      .loading-cat-container {
+        position: relative;
+        width: 100px;
+        height: 100px;
+        margin-bottom: 16px;
+      }
+      /* 猫SVG - sample.htmlの調整を適用 */
+      .loading-cat {
+        position: relative;
+        right: 13px;
+        top: -20px;
+        width: 100px;
+        height: 100px;
+        fill: #6B7280;
+        animation: catSway 3.5s ease-in-out infinite;
+        transform-origin: center bottom;
+      }
+      /* 肉球SVG - sample.htmlの調整を適用 */
+      .loading-paw {
+        width: 25px;
+        height: 25px;
+        fill: #9CA3AF;
+        margin-bottom: 20px;
+        animation: pawPulse 2.4s ease-in-out infinite;
+      }
+      /* Loadingテキスト */
+      .loading-text {
+        font-family: Georgia, 'Times New Roman', serif;
+        font-size: 18px;
+        color: #6B7280;
+        letter-spacing: 4px;
+        font-style: italic;
+        margin: 0;
+        display: flex;
+      }
+      /* 各文字のスタイル */
+      .loading-char {
+        display: inline-block;
+        animation: charFadeInOut 3.5s ease-in-out infinite;
+      }
+      /* 1文字ずつ遅延 (10文字: L-o-a-d-i-n-g-.-.-.) - 0.2sずつ遅延 */
+      .loading-char:nth-child(1)  { animation-delay: 0.0s; }
+      .loading-char:nth-child(2)  { animation-delay: 0.2s; }
+      .loading-char:nth-child(3)  { animation-delay: 0.4s; }
+      .loading-char:nth-child(4)  { animation-delay: 0.6s; }
+      .loading-char:nth-child(5)  { animation-delay: 0.8s; }
+      .loading-char:nth-child(6)  { animation-delay: 1.0s; }
+      .loading-char:nth-child(7)  { animation-delay: 1.2s; }
+      .loading-char:nth-child(8)  { animation-delay: 1.4s; }
+      .loading-char:nth-child(9)  { animation-delay: 1.6s; }
+      .loading-char:nth-child(10) { animation-delay: 1.8s; }
+
+      /* 1文字ずつふわっと出現→消えるアニメーション（最後に0.5s待機） */
+      @keyframes charFadeInOut {
+        0% {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        17% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        43% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        70% {
+          opacity: 0;
+          transform: translateY(-8px);
+        }
+        85%, 100% {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+      }
+    </style>
+
+    <!-- 猫のコンテナ -->
+    <div class="loading-cat-container">
+      <!-- 猫 (cat) -->
+      <svg class="loading-cat" viewBox="0 0 128 128">
+        <g>
+          <path d="m13.7 127h43.5 1.8c1.7 0 3-1.3 3-3s-1.3-3-3-3h-1.8c-4.3 0-8.3-1.9-10.9-5.3-2.7-3.3-3.7-7.6-2.7-11.8l21.1-94 .5.5c4.2 4.3 9.8 6.6 15.8 6.6s11.6-2.3 15.8-6.5l.5-.5 21.1 94c.9 4.2-.1 8.5-2.7 11.8-2.7 3.3-6.7 5.3-10.9 5.3h-.8c-1.7 0-3 1.3-3 3s1.3 3 3 3h.8c6.1 0 11.8-2.7 15.6-7.5s5.2-10.9 3.9-16.9l-22.4-99.4c-.2-1.1-1-1.9-2.1-2.2-1-.3-2.2 0-3 .8l-4.3 4.3c-3 3.1-7.1 4.8-11.5 4.8s-8.5-1.7-11.5-4.8l-4.3-4.3c-.8-.8-1.9-1.1-3-.8s-1.9 1.2-2.1 2.2l-22.3 99.3c-1.3 6 .1 12.1 3.9 16.9.4.5.9 1 1.3 1.5h-29.3c-2.6 0-4.7-2.1-4.7-4.7 0-1.4.6-2.8 1.8-3.7s2.6-1.2 4-.9l11.9 2.8c1.6.4 3.2-.6 3.6-2.2s-.6-3.2-2.2-3.6l-11.9-2.8c-3.2-.7-6.5 0-9.1 2.1-2.6 2-4 5.1-4 8.4-.1 5.8 4.7 10.6 10.6 10.6z"/>
+          <path d="m58.4 71.1c-1.6.3-2.7 1.9-2.4 3.5l9 45.1c.8 4.2 4.6 7.3 8.9 7.3h1c2.3 0 4.4-.9 6-2.3 1.6 1.4 3.7 2.3 6 2.3 4.3 0 8-3.1 8.9-7.3l9-45.1c.3-1.6-.7-3.2-2.4-3.5-1.6-.3-3.2.7-3.5 2.4l-9 45.1c-.3 1.4-1.5 2.4-3 2.4-1.7 0-3-1.4-3-3v-34c0-1.7-1.3-3-3-3s-3 1.3-3 3v34c0 1.7-1.4 3-3 3h-1c-1.4 0-2.7-1-3-2.4l-9-45.1c-.3-1.7-1.9-2.8-3.5-2.4z"/>
+          <circle cx="71" cy="34" r="3"/>
+          <circle cx="91" cy="34" r="3"/>
+        </g>
+      </svg>
+    </div>
+
+    <!-- 肉球アイコン -->
+    <svg class="loading-paw" viewBox="0 0 128 128">
+      <g>
+        <path d="m50.2 66.1-11.4 17.1c-3.4 5.2-3.8 11.5-.8 17 2.9 5.5 8.4 8.8 14.6 8.8h22.8c6.2 0 11.7-3.3 14.6-8.8s2.6-11.8-.8-17l-11.4-17.1c-3.1-4.6-8.2-7.4-13.8-7.4s-10.7 2.8-13.8 7.4z"/>
+        <path d="m44 14c-7.2 0-13 7.2-13 16s5.8 16 13 16 13-7.2 13-16-5.8-16-13-16z"/>
+        <path d="m5 64c0 8.8 5.8 16 13 16s13-7.2 13-16-5.8-16-13-16-13 7.2-13 16z"/>
+        <path d="m110 48c-7.2 0-13 7.2-13 16s5.8 16 13 16 13-7.2 13-16-5.8-16-13-16z"/>
+        <path d="m84 14c-7.2 0-13 7.2-13 16s5.8 16 13 16 13-7.2 13-16-5.8-16-13-16z"/>
+      </g>
+    </svg>
+
+    <!-- Loading テキスト - 1文字ずつふわっと出現するアニメーション -->
+    <p class="loading-text">
+      <span class="loading-char">L</span>
+      <span class="loading-char">o</span>
+      <span class="loading-char">a</span>
+      <span class="loading-char">d</span>
+      <span class="loading-char">i</span>
+      <span class="loading-char">n</span>
+      <span class="loading-char">g</span>
+      <span class="loading-char">.</span>
+      <span class="loading-char">.</span>
+      <span class="loading-char">.</span>
+    </p>
+  </div>
+
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
 </body>
