@@ -98,7 +98,7 @@
 }
 
 .animate-fadeIn {
-  animation: fadeIn 0.3s ease-out forwards;
+  animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 /* Filter animation - smooth enter with scale and opacity
@@ -168,31 +168,67 @@ aside .material-icons {
   margin-top: 1.5rem;
 }
 
-@media (max-width: 960px) {
-  .relative.w-full.columns-1.sm\:columns-2.lg\:columns-3.xl\:columns-4.gap-6.pb-20 {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    /* grid-template-rows: repeat(5, 1fr); */
-    grid-column-gap: 15px;
-    grid-row-gap: 4px;
-    border-radius: 0 !important;
-  }
+/* ==========================================================================
+   モバイルファースト: スマホではグリッド、タブレット以上ではMasonry
+   ========================================================================== */
+
+/* スマホ（デフォルト）: グリッドレイアウト */
+.mockup-gallery-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  columns: unset !important;
+  grid-column-gap: 15px;
+  grid-row-gap: 15px;
 }
 
-@media (max-width: 520px) {
+/* スマホ用border-radius 10px */
+.mockup-card {
+  border-radius: 10px !important;
+}
+
+/* スマホでのボタンサイズ調整 */
+button.px-6.py-3.bg-white\/20.backdrop-blur-md.border.border-white\/30.rounded-full.text-white.font-medium.text-sm.tracking-wide.shadow-xl.hover\:bg-white\/30.transition-colors.flex.items-center.gap-2 {
+  font-size: 12px;
+  padding: 0.5rem 0.7rem !important;
+}
+
+.flex.items-start.justify-between.p-4.md\:p-6.pb-2.md\:pb-4.sticky.top-0.bg-white.z-10 {
+  display: flex;
+  align-items: center;
+}
+
+/* タブレット以上（591px〜）: Masonryレイアウト（columns）*/
+@media (min-width: 591px) {
+  .mockup-gallery-grid {
+    display: block !important;
+    columns: 2 !important;
+    grid-template-columns: unset !important;
+  }
+
+  /* タブレット以上: border-radius 5px */
+  .mockup-card {
+    border-radius: 5px !important;
+  }
+
+  /* ボタンサイズをリセット */
   button.px-6.py-3.bg-white\/20.backdrop-blur-md.border.border-white\/30.rounded-full.text-white.font-medium.text-sm.tracking-wide.shadow-xl.hover\:bg-white\/30.transition-colors.flex.items-center.gap-2 {
-    font-size: 12px;
-    padding: 0.5rem 0.7rem !important;
+    font-size: inherit;
+    padding: 0.75rem 1.5rem !important;
   }
-  .flex.items-start.justify-between.p-4.md\:p-6.pb-2.md\:pb-4.sticky.top-0.bg-white.z-10 {
-    display: flex;
-    align-items: center;
-}
 }
 
+/* デスクトップ（1024px〜）: 3カラム */
+@media (min-width: 1024px) {
+  .mockup-gallery-grid {
+    columns: 3 !important;
+  }
+}
 
-.relative.rounded-3xl.overflow-hidden.hover\:shadow-\[0_20px_50px_-12px_rgba\(0\,0\,0\,0\.2\)\].transition-all.duration-700.cursor-pointer.transform.hover\:-translate-y-2.bg-slate-200 {
-  border-radius: 5px !important;
+/* 大画面（1280px〜）: 4カラム */
+@media (min-width: 1280px) {
+  .mockup-gallery-grid {
+    columns: 4 !important;
+  }
 }
 
 button.px-3.py-1\.5.rounded-full.text-xs.font-medium.border.transition-all.duration-200.bg-indigo-100.text-indigo-800.border-indigo-200,
@@ -219,6 +255,7 @@ header span.material-icons.text-base {
   top: 0.5px;
   left: 1.1px;
 }
-.flex-1.bg-gradient-to-br.from-slate-100.to-slate-200.p-4.md\:p-8.flex.flex-col.items-center.justify-center.min-h-\[40vh\].md\:min-h-\[200px\].relative.overflow-auto span.material-icons.text-base{
+
+.flex-1.bg-gradient-to-br.from-slate-100.to-slate-200.p-4.md\:p-8.flex.flex-col.items-center.justify-center.min-h-\[40vh\].md\:min-h-\[200px\].relative.overflow-auto span.material-icons.text-base {
   top: -1px;
 }
