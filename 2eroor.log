@@ -1,0 +1,8 @@
+{
+  "type": "ErrorBoundary",
+  "name": "TypeError",
+  "message": "Cannot read properties of undefined (reading 'filter')",
+  "stack": "TypeError: Cannot read properties of undefined (reading 'filter')\n    at http://localhost:5173/src/features/mockup/hooks/useGalleryFilters.ts?t=1766881508714:55:22\n    at updateMemo (http://localhost:5173/node_modules/.vite/deps/chunk-LPF6KSF2.js?v=70cd6442:12258:27)\n    at Object.useMemo (http://localhost:5173/node_modules/.vite/deps/chunk-LPF6KSF2.js?v=70cd6442:12774:24)\n    at useMemo (http://localhost:5173/node_modules/.vite/deps/chunk-PMKBOVCG.js?v=70cd6442:1094:29)\n    at useGalleryFilters (http://localhost:5173/src/features/mockup/hooks/useGalleryFilters.ts?t=1766881508714:53:25)\n    at MockupGallery (http://localhost:5173/src/features/mockup/gallery/MockupGallery.tsx?t=1766881508714:55:82)\n    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/chunk-LPF6KSF2.js?v=70cd6442:11596:26)\n    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/chunk-LPF6KSF2.js?v=70cd6442:14630:28)\n    at beginWork (http://localhost:5173/node_modules/.vite/deps/chunk-LPF6KSF2.js?v=70cd6442:15972:22)\n    at beginWork$1 (http://localhost:5173/node_modules/.vite/deps/chunk-LPF6KSF2.js?v=70cd6442:19806:22)",
+  "componentStack": "\n    at MockupGallery (http://localhost:5173/src/features/mockup/gallery/MockupGallery.tsx?t=1766881508714:53:33)\n    at ErrorBoundary (http://localhost:5173/src/components/ErrorBoundary.tsx:7:5)\n    at App (http://localhost:5173/src/App.tsx?t=1766881189626:26:27)",
+  "time": "2025-12-28T00:25:08.606Z"
+}
