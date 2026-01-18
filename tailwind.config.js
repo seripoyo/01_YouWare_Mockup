@@ -15,7 +15,9 @@ export default {
         en: ['"New Atten Round"', 'system-ui', 'sans-serif'],
       },
       screens: {
-        // カスタムブレークポイント: 960px
+        // スマートフォン: 590px
+        'smartphone': '590px',
+        // タブレット: 960px
         'tablet': '960px',
       },
     },

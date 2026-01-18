@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import type { GalleryFilters, MockupGalleryItem } from "../gallery/types";
 
 const DEFAULT_FILTERS: GalleryFilters = {
@@ -7,6 +7,26 @@ const DEFAULT_FILTERS: GalleryFilters = {
   colors: [],
   search: "",
 };
+
+// Fisher-Yates shuffle algorithm (deterministic with seed for consistent display)
+function shuffleArray<T>(array: T[], seed: number = 42): T[] {
+  const shuffled = [...array];
+  let currentIndex = shuffled.length;
+
+  // Simple seeded random number generator
+  const seededRandom = () => {
+    seed = (seed * 9301 + 49297) % 233280;
+    return seed / 233280;
+  };
+
+  while (currentIndex > 0) {
+    const randomIndex = Math.floor(seededRandom() * currentIndex);
+    currentIndex--;
+    [shuffled[currentIndex], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[currentIndex]];
+  }
+
+  return shuffled;
+}
 
 // Excluded colors that should not appear in the filter list
 const EXCLUDED_COLORS = new Set([
@@ -30,8 +50,18 @@ function isValidFilterColor(color: string): boolean {
 export function useGalleryFilters(items: MockupGalleryItem[]) {
   const [filters, setFilters] = useState<GalleryFilters>(DEFAULT_FILTERS);
 
+  // Shuffle items once on initial load for Pinterest-style variety
+  const shuffledItemsRef = useRef<MockupGalleryItem[] | null>(null);
+  if (shuffledItemsRef.current === null) {
+    shuffledItemsRef.current = shuffleArray(items);
+  }
+  const shuffledItems = shuffledItemsRef.current;
+
   const filteredItems = useMemo(() => {
-    return items.filter((item) => {
+    // Use shuffled items as base for filtering
+    const baseItems = shuffledItems;
+
+    return baseItems.filter((item) => {
       if (filters.device && item.deviceType !== filters.device) {
         return false;
       }
@@ -59,7 +89,7 @@ export function useGalleryFilters(items: MockupGalleryItem[]) {
 
       return true;
     });
-  }, [items, filters]);
+  }, [shuffledItems, filters]);
 
   const availableFilters = useMemo(() => {
     const devices = new Set<string>();

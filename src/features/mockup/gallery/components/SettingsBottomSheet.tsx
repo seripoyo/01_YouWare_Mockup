@@ -35,29 +35,42 @@ export function SettingsBottomSheet({
     setLanguageAndReload(langCode);
   };
 
+  // ボトムナビ: h-16(64px) + mb-2(8px) + safe-area
+  // パネルはボトムナビの「下（背面）」に位置し、ナビの下から伸びてくるように見せる
+  // z-indexをボトムナビ(30)より下(25)に設定
+  // サイドマージンはボトムナビ(mx-3=12px)より大きく設定して一回り小さく見せる
+  const bottomNavHeight = 67; // 64px + 8px margin - 5px調整
+
   return (
     <>
-      {/* Overlay - 960px以下でのみ表示 */}
+      {/* Overlay - 960px以下でのみ表示、背景をぼかさない */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/40 z-[10] backdrop-blur-sm transition-opacity tablet:hidden"
+          className="fixed inset-0 bg-black/30 z-[24] transition-opacity tablet:hidden"
           onClick={onClose}
         />
       )}
 
-      {/* Bottom Sheet - 960px以下でのみ表示 */}
+      {/* Bottom Sheet - 960px以下でのみ表示、ボトムナビより下（z-[25]） */}
+      {/* ボトムナビの背面から上へスライドイン、サイドはボトムナビより一回り小さく */}
       <div
         className={`
-          fixed bottom-0 left-0 right-0 z-[20] bg-white rounded-t-3xl shadow-2xl tablet:hidden
-          transform transition-transform duration-300 ease-out
-          ${isOpen ? "translate-y-0" : "translate-y-full"}
+          fixed left-0 right-0 z-[25] bg-white shadow-2xl tablet:hidden
+          transition-all duration-300 ease-out
+          ${isOpen ? "" : "pointer-events-none"}
         `}
         style={{
-          maxHeight: "70vh",
-          marginLeft: "0.75rem",
-          marginRight: "0.75rem",
-          marginBottom: "calc(80px + env(safe-area-inset-bottom))",
-          borderRadius: "1.5rem",
+          maxHeight: "80vh",
+          marginLeft: "2rem",
+          marginRight: "2rem",
+          // ボトムナビとの間に外部余白なし（直接つながるように）
+          bottom: `calc(${bottomNavHeight}px + env(safe-area-inset-bottom))`,
+          // 上左右のみ丸み、下左右は0
+          borderRadius: "1.25rem 1.25rem 0 0",
+          // 非表示時: パネルをボトムナビの後ろに完全に隠す
+          // 表示時: ボトムナビの上に出てくる（ただしz-indexはナビより下なので背面から）
+          transform: isOpen ? "translateY(0)" : "translateY(calc(100% + 100px))",
+          opacity: isOpen ? 1 : 0,
         }}
       >
         {/* Handle */}
@@ -77,7 +90,7 @@ export function SettingsBottomSheet({
         </div>
 
         {/* Content */}
-        <div className="px-5 py-4 overflow-y-auto" style={{ maxHeight: "calc(70vh - 100px)" }}>
+        <div className="px-5 py-4 overflow-y-auto" style={{ maxHeight: "calc(80vh - 100px)" }}>
           {/* Language Switcher */}
           <div className="mb-6">
             <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
@@ -144,7 +157,7 @@ export function SettingsBottomSheet({
           </div>
 
           {/* Additional Settings can be added here */}
-          <div className="pb-4">
+          <div className="pb-6">
             <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
               <span className="material-icons text-sm text-indigo-500">info</span>
               {t.about || "情報"}

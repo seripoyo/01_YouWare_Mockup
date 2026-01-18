@@ -149,8 +149,7 @@ export function MockupGallery({ onSelectFrame, onClose }: GalleryProps) {
               className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-full hover:from-indigo-600 hover:to-purple-600 transition-all shadow-md hover:shadow-lg text-sm font-medium"
             >
               <span className="material-icons text-base">aspect_ratio</span>
-              <span className="hidden lg:inline">{t.aspectRatioGuide}</span>
-              <span className="lg:hidden">📐</span>
+              {t.aspectRatioGuide}
             </button>
 
             {/* Language Switcher */}

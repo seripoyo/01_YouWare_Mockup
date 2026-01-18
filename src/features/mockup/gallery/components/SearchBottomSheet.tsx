@@ -69,29 +69,42 @@ export function SearchBottomSheet({
   const hasActiveFilters =
     filters.device || filters.ratio || filters.colors.length > 0;
 
+  // ボトムナビ: h-16(64px) + mb-2(8px) + safe-area
+  // パネルはボトムナビの「下（背面）」に位置し、ナビの下から伸びてくるように見せる
+  // z-indexをボトムナビ(30)より下(25)に設定
+  // サイドマージンはボトムナビ(mx-3=12px)より大きく設定して一回り小さく見せる
+  const bottomNavHeight = 67; // 64px + 8px margin - 5px調整
+
   return (
     <>
-      {/* Overlay - 960px以下でのみ表示 */}
+      {/* Overlay - 960px以下でのみ表示、背景をぼかさない */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/40 z-[10] backdrop-blur-sm transition-opacity tablet:hidden"
+          className="fixed inset-0 bg-black/30 z-[24] transition-opacity tablet:hidden"
           onClick={onClose}
         />
       )}
 
-      {/* Bottom Sheet - 960px以下でのみ表示 */}
+      {/* Bottom Sheet - 960px以下でのみ表示、ボトムナビより下（z-[25]） */}
+      {/* ボトムナビの背面から上へスライドイン、サイドはボトムナビより一回り小さく */}
       <div
         className={`
-          fixed bottom-0 left-0 right-0 z-[20] bg-white rounded-t-3xl shadow-2xl tablet:hidden
-          transform transition-transform duration-300 ease-out
-          ${isOpen ? "translate-y-0" : "translate-y-full"}
+          fixed left-0 right-0 z-[25] bg-white shadow-2xl tablet:hidden
+          transition-all duration-300 ease-out
+          ${isOpen ? "" : "pointer-events-none"}
         `}
         style={{
           maxHeight: "80vh",
-          marginLeft: "0.75rem",
-          marginRight: "0.75rem",
-          marginBottom: "calc(80px + env(safe-area-inset-bottom))",
-          borderRadius: "1.5rem",
+          marginLeft: "2rem",
+          marginRight: "2rem",
+          // ボトムナビとの間に外部余白なし（直接つながるように）
+          bottom: `calc(${bottomNavHeight}px + env(safe-area-inset-bottom))`,
+          // 上左右のみ丸み、下左右は0
+          borderRadius: "1.25rem 1.25rem 0 0",
+          // 非表示時: パネルをボトムナビの後ろに完全に隠す
+          // 表示時: ボトムナビの上に出てくる（ただしz-indexはナビより下なので背面から）
+          transform: isOpen ? "translateY(0)" : "translateY(calc(100% + 100px))",
+          opacity: isOpen ? 1 : 0,
         }}
       >
         {/* Handle */}
@@ -111,7 +124,7 @@ export function SearchBottomSheet({
         </div>
 
         {/* Content */}
-        <div className="px-5 py-4 overflow-y-auto" style={{ maxHeight: "calc(80vh - 120px)" }}>
+        <div className="px-5 py-4 overflow-y-auto" style={{ maxHeight: "calc(80vh - 100px)" }}>
           {/* Count & Clear */}
           <div className="flex items-center justify-between mb-4">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
@@ -207,6 +220,17 @@ export function SearchBottomSheet({
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Search Button */}
+          <div className="pt-2 pb-2">
+            <button
+              onClick={onClose}
+              className="w-full py-3.5 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl shadow-md hover:from-indigo-600 hover:to-purple-600 active:from-indigo-700 active:to-purple-700 transition-all duration-300 min-h-[48px]"
+              style={{ fontWeight: 600, letterSpacing: "1px" }}
+            >
+              {t.searchWithConditions || "この条件で探す"}
+            </button>
           </div>
         </div>
       </div>

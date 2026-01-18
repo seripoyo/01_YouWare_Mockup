@@ -1,7 +1,6 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import type { MockupGalleryItem } from "../types";
 import { getTranslations } from "../../../../i18n/translations";
-import gsap from "gsap";
 
 // Constants for infinite scroll
 const ITEMS_PER_PAGE = 24;
@@ -29,9 +28,6 @@ export function MockupGrid({
   
   // Track previous filter key to detect filter changes
   const prevFilterKeyRef = useRef<string>("");
-  
-  // Track items that have been animated
-  const animatedIdsRef = useRef<Set<string>>(new Set());
 
   // Track broken image IDs
   const [brokenImageIds, setBrokenImageIds] = useState<Set<string>>(new Set());
@@ -58,23 +54,36 @@ export function MockupGrid({
     return visibleItemsProp.filter(item => validIds.has(item.id));
   }, [visibleItemsProp, validItems]);
 
-  // Create a stable key for filter changes
-  const filterKey = useMemo(() => 
+  // Create a stable key for filter changes (used for animation re-trigger)
+  const [animationKey, setAnimationKey] = useState(0);
+  const filterKey = useMemo(() =>
     filteredItems.map(item => item.id).slice(0, 10).join(","),
     [filteredItems]
   );
 
-  // Reset display count and animation tracking when filter changes
+  // Reset display count and animation key when filter changes
   useEffect(() => {
     if (prevFilterKeyRef.current !== filterKey) {
+      // Skip scroll on initial mount (empty string)
+      const isInitialMount = prevFilterKeyRef.current === "";
       prevFilterKeyRef.current = filterKey;
       setDisplayCount(ITEMS_PER_PAGE);
-      animatedIdsRef.current = new Set();
+      // Increment animation key to force re-render and re-trigger animations
+      setAnimationKey(prev => prev + 1);
+
+      // Smooth scroll to top of grid when filter changes (not on initial mount)
+      if (!isInitialMount && containerRef.current) {
+        const gridTop = containerRef.current.getBoundingClientRect().top + window.scrollY - 100;
+        window.scrollTo({
+          top: Math.max(0, gridTop),
+          behavior: 'smooth'
+        });
+      }
     }
   }, [filterKey]);
 
   // Items to actually render (sliced for infinite scroll)
-  const displayedItems = useMemo(() => 
+  const displayedItems = useMemo(() =>
     filteredItems.slice(0, displayCount),
     [filteredItems, displayCount]
   );
@@ -99,36 +108,6 @@ export function MockupGrid({
     return () => observer.disconnect();
   }, [hasMore, filteredItems.length]);
 
-  // Lightweight fade-in animation for newly rendered items (no Flip!)
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    const newItems: HTMLElement[] = [];
-    const allItems = containerRef.current.querySelectorAll('.mockup-item');
-    
-    allItems.forEach((el) => {
-      const id = (el as HTMLElement).dataset.id;
-      if (id && !animatedIdsRef.current.has(id)) {
-        animatedIdsRef.current.add(id);
-        newItems.push(el as HTMLElement);
-      }
-    });
-
-    if (newItems.length === 0) return;
-
-    // Simple fade-in animation
-    gsap.fromTo(newItems,
-      { opacity: 0, y: 20 },
-      { 
-        opacity: 1, 
-        y: 0, 
-        duration: 0.3, 
-        ease: "power2.out",
-        stagger: 0.02
-      }
-    );
-  }, [displayedItems]);
-
   if (filteredItems.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-96 text-slate-400">
@@ -143,26 +122,37 @@ export function MockupGrid({
   return (
     <>
       {/* Masonry layout with CSS columns - only render displayed items */}
-      <div ref={containerRef} className="relative w-full columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6 pb-8">
+      <div ref={containerRef} className="mockup-gallery-grid relative w-full columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6 pb-8">
         {displayedItems.map((item) => (
           <div
-            key={item.id}
+            key={`${animationKey}-${item.id}`}
             data-id={item.id}
-            className="mockup-item mb-6 w-full break-inside-avoid opacity-0"
+            className="mockup-item mb-6 w-full break-inside-avoid animate-fadeIn"
             onClick={() => onSelect(item)}
           >
-            {/* Card Container */}
-            <div className="group relative rounded-3xl overflow-hidden hover:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.2)] cursor-pointer transform hover:-translate-y-2 bg-slate-200 transition-shadow duration-200">
-              {/* Image Container */}
-              <div
-                className="relative w-full"
-                style={{ aspectRatio: item.aspectRatio.replace(":", "/") }}
-              >
+            {/* Card Container - ふわっとしたhoverアニメーション */}
+            <div
+              className="mockup-card group relative rounded-3xl overflow-hidden cursor-pointer bg-slate-200"
+              style={{
+                transition: 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                willChange: 'transform, box-shadow',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-8px)';
+                e.currentTarget.style.boxShadow = '0 20px 50px -12px rgba(0,0,0,0.2)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            >
+              {/* Image Container - 画像の自然なアスペクト比を使用（Pinterest風Masonry） */}
+              <div className="relative w-full">
                 <img
                   src={item.publicPath}
                   alt={item.displayName}
                   loading="lazy"
-                  className="w-full h-full object-cover absolute inset-0"
+                  className="w-full h-auto object-cover"
                   onError={() => handleImageError(item.id)}
                 />
 
