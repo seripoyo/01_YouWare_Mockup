@@ -1,6 +1,10 @@
 import React from "react";
 import type { GalleryFilters, FilterOptions } from "../types";
-import { getTranslations } from "../../../../i18n/translations";
+import {
+  getTranslations,
+  type DeviceTypeTranslations,
+  type ColorTranslations,
+} from "../../../../i18n/translations";
 
 const ASPECT_RATIOS = ["1:1", "4:5", "16:9", "9:16"];
 
@@ -162,7 +166,7 @@ export function SearchBottomSheet({
                 >
                   <span className="flex items-center gap-2">
                     <DeviceIcon type={device} />
-                    {device}
+                    {t.deviceTypes[device as keyof DeviceTypeTranslations] || device}
                   </span>
                   {filters.device === device && (
                     <span className="material-icons text-sm">check</span>
@@ -216,7 +220,7 @@ export function SearchBottomSheet({
                     }
                   `}
                 >
-                  {color}
+                  {t.colorNames[color as keyof ColorTranslations] || color}
                 </button>
               ))}
             </div>

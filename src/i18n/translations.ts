@@ -12,10 +12,38 @@ export const LANGUAGE_LABELS: Record<SupportedLanguage, string> = {
   ko: "한국어",
 };
 
+// デバイスタイプの翻訳マッピング
+export interface DeviceTypeTranslations {
+  "Device Set": string;
+  "Laptop": string;
+  "Smartphone": string;
+  "Tablet": string;
+}
+
+// カラー名の翻訳マッピング
+export interface ColorTranslations {
+  "Beige": string;
+  "Blue": string;
+  "Brown": string;
+  "Gray": string;
+  "Green": string;
+  "Orange": string;
+  "Pink": string;
+  "Red": string;
+  "Silver": string;
+  "White": string;
+}
+
 export interface Translations {
   // MockupGrid
   useThisTemplate: string;
   noTemplatesFound: string;
+
+  // Device Type translations
+  deviceTypes: DeviceTypeTranslations;
+
+  // Color translations
+  colorNames: ColorTranslations;
 
   // PreviewModal
   deviceLabel: (deviceNum: number) => string;
@@ -88,6 +116,28 @@ export interface Translations {
 const ja: Translations = {
   useThisTemplate: "このテンプレートを使う",
   noTemplatesFound: "テンプレートが見つかりませんでした",
+
+  // Device Type translations - 日本語
+  deviceTypes: {
+    "Device Set": "複数デバイス",
+    "Laptop": "ノートパソコン",
+    "Smartphone": "スマートフォン",
+    "Tablet": "タブレット",
+  },
+
+  // Color translations - カタカナ表記
+  colorNames: {
+    "Beige": "ベージュ",
+    "Blue": "ブルー",
+    "Brown": "ブラウン",
+    "Gray": "グレー",
+    "Green": "グリーン",
+    "Orange": "オレンジ",
+    "Pink": "ピンク",
+    "Red": "レッド",
+    "Silver": "シルバー",
+    "White": "ホワイト",
+  },
   deviceLabel: (deviceNum) => `デバイス ${deviceNum}`,
   dropToDevice: (deviceNum) => `デバイス ${deviceNum} にドロップ`,
   selectingDevice: (deviceNum) => `デバイス ${deviceNum} を選択中`,
@@ -114,7 +164,7 @@ const ja: Translations = {
   deviceType: "デバイス",
   aspectRatio: "アスペクト比",
   colorTheme: "カラー",
-  signInWithGoogle: "Googleでサインイン",
+  signInWithGoogle: "サインイン",
   searchWithConditions: "この条件で探す",
   allTemplates: "すべてのテンプレート",
   itemsFound: (count) => `${count}件`,
@@ -152,6 +202,28 @@ const ja: Translations = {
 const en: Translations = {
   useThisTemplate: "Use this template",
   noTemplatesFound: "No templates found",
+
+  // Device Type translations - English
+  deviceTypes: {
+    "Device Set": "Multi-Device",
+    "Laptop": "Laptop",
+    "Smartphone": "Smartphone",
+    "Tablet": "Tablet",
+  },
+
+  // Color translations - English
+  colorNames: {
+    "Beige": "Beige",
+    "Blue": "Blue",
+    "Brown": "Brown",
+    "Gray": "Gray",
+    "Green": "Green",
+    "Orange": "Orange",
+    "Pink": "Pink",
+    "Red": "Red",
+    "Silver": "Silver",
+    "White": "White",
+  },
   deviceLabel: (deviceNum) => `Device ${deviceNum}`,
   dropToDevice: (deviceNum) => `Drop to Device ${deviceNum}`,
   selectingDevice: (deviceNum) => `Selecting Device ${deviceNum}`,
@@ -216,6 +288,28 @@ const en: Translations = {
 const zhCN: Translations = {
   useThisTemplate: "使用此模板",
   noTemplatesFound: "未找到模板",
+
+  // Device Type translations - 简体中文
+  deviceTypes: {
+    "Device Set": "多设备",
+    "Laptop": "笔记本电脑",
+    "Smartphone": "智能手机",
+    "Tablet": "平板电脑",
+  },
+
+  // Color translations - 简体中文
+  colorNames: {
+    "Beige": "米色",
+    "Blue": "蓝色",
+    "Brown": "棕色",
+    "Gray": "灰色",
+    "Green": "绿色",
+    "Orange": "橙色",
+    "Pink": "粉色",
+    "Red": "红色",
+    "Silver": "银色",
+    "White": "白色",
+  },
   deviceLabel: (deviceNum) => `设备 ${deviceNum}`,
   dropToDevice: (deviceNum) => `拖放到设备 ${deviceNum}`,
   selectingDevice: (deviceNum) => `正在选择设备 ${deviceNum}`,
@@ -280,6 +374,28 @@ const zhCN: Translations = {
 const zhTW: Translations = {
   useThisTemplate: "使用此範本",
   noTemplatesFound: "未找到範本",
+
+  // Device Type translations - 繁體中文
+  deviceTypes: {
+    "Device Set": "多裝置",
+    "Laptop": "筆記型電腦",
+    "Smartphone": "智慧型手機",
+    "Tablet": "平板電腦",
+  },
+
+  // Color translations - 繁體中文
+  colorNames: {
+    "Beige": "米色",
+    "Blue": "藍色",
+    "Brown": "棕色",
+    "Gray": "灰色",
+    "Green": "綠色",
+    "Orange": "橙色",
+    "Pink": "粉色",
+    "Red": "紅色",
+    "Silver": "銀色",
+    "White": "白色",
+  },
   deviceLabel: (deviceNum) => `裝置 ${deviceNum}`,
   dropToDevice: (deviceNum) => `拖放到裝置 ${deviceNum}`,
   selectingDevice: (deviceNum) => `正在選擇裝置 ${deviceNum}`,
@@ -344,6 +460,28 @@ const zhTW: Translations = {
 const ko: Translations = {
   useThisTemplate: "이 템플릿 사용하기",
   noTemplatesFound: "템플릿을 찾을 수 없습니다",
+
+  // Device Type translations - 한국어
+  deviceTypes: {
+    "Device Set": "멀티 디바이스",
+    "Laptop": "노트북",
+    "Smartphone": "스마트폰",
+    "Tablet": "태블릿",
+  },
+
+  // Color translations - 한국어
+  colorNames: {
+    "Beige": "베이지",
+    "Blue": "블루",
+    "Brown": "브라운",
+    "Gray": "그레이",
+    "Green": "그린",
+    "Orange": "오렌지",
+    "Pink": "핑크",
+    "Red": "레드",
+    "Silver": "실버",
+    "White": "화이트",
+  },
   deviceLabel: (deviceNum) => `디바이스 ${deviceNum}`,
   dropToDevice: (deviceNum) => `디바이스 ${deviceNum}에 드롭`,
   selectingDevice: (deviceNum) => `디바이스 ${deviceNum} 선택 중`,

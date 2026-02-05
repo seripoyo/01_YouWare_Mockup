@@ -6,6 +6,8 @@ import {
   getTranslations,
   LANGUAGE_LABELS,
   type SupportedLanguage,
+  type DeviceTypeTranslations,
+  type ColorTranslations,
 } from "../../../../i18n/translations";
 import { client } from "../../../../api/client";
 
@@ -247,7 +249,7 @@ export function FilterSidebar({
                 >
                   <span className="flex items-center gap-2">
                     <DeviceIcon type={device} />
-                    {device}
+                    {t.deviceTypes[device as keyof DeviceTypeTranslations] || device}
                   </span>
                   {filters.device === device && (
                     <span className="material-icons text-sm">check</span>
@@ -301,7 +303,7 @@ export function FilterSidebar({
                     }
                   `}
                 >
-                  {color}
+                  {t.colorNames[color as keyof ColorTranslations] || color}
                 </button>
               ))}
             </div>
